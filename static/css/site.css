@@ -1,0 +1,90 @@
+/* ============================================================
+   site.css - Estilos de la zona pública (home, items)
+   ============================================================ */
+
+.hero {
+    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+    color: #fff;
+}
+.hero__inner {
+    max-width: var(--container);
+    margin: 0 auto;
+    padding: 4.5rem 1.5rem;
+    text-align: center;
+}
+.hero__title { font-size: 3rem; font-weight: 800; letter-spacing: -0.03em; }
+.hero__subtitle {
+    max-width: 620px;
+    margin: 1rem auto 2rem;
+    font-size: 1.1rem;
+    opacity: 0.92;
+}
+.hero__subtitle code { background: rgba(255, 255, 255, 0.2); color: #fff; }
+.hero__actions { display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap; }
+.hero .btn--ghost { background: transparent; border-color: rgba(255, 255, 255, 0.5); color: #fff; }
+.hero .btn--ghost:hover { background: rgba(255, 255, 255, 0.12); }
+
+/* ===== Features (home) ===== */
+.features__inner {
+    max-width: var(--container);
+    margin: 0 auto;
+    padding: 3rem 1.5rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 1.25rem;
+}
+.feature-card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+}
+.feature-card__title { font-size: 1.1rem; margin-bottom: 0.5rem; }
+.feature-card__text { color: var(--color-muted); }
+
+/* ===== Cabecera de página interna ===== */
+.page-hero {
+    background: var(--color-surface);
+    border-bottom: 1px solid var(--color-border);
+}
+.page-hero__inner {
+    max-width: var(--container);
+    margin: 0 auto;
+    padding: 2.5rem 1.5rem;
+}
+.page-hero__title { font-size: 2rem; font-weight: 700; }
+.page-hero__subtitle { color: var(--color-muted); margin-top: 0.35rem; }
+
+/* ===== Grilla de items ===== */
+.items__inner {
+    max-width: var(--container);
+    margin: 0 auto;
+    padding: 2.5rem 1.5rem;
+}
+.cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 1.25rem;
+}
+.item-card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    padding: 1.25rem;
+}
+.item-card--inactivo { opacity: 0.7; }
+.item-card__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    margin-bottom: 0.6rem;
+}
+.item-card__name { font-size: 1.1rem; }
+.item-card__desc { color: var(--color-muted); }
+
+.empty-state {
+    color: var(--color-muted);
+    text-align: center;
+    padding: 3rem 1rem;
+}

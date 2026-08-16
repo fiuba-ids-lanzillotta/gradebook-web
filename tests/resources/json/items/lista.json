@@ -1,0 +1,14 @@
+[
+  {
+    "id": 1,
+    "nombre": "Teclado mecánico",
+    "descripcion": "Switches marrones, layout ES",
+    "activo": true
+  },
+  {
+    "id": 2,
+    "nombre": "Mouse inalámbrico",
+    "descripcion": null,
+    "activo": false
+  }
+]

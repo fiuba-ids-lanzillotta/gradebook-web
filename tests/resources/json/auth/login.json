@@ -1,0 +1,7 @@
+{
+  "token": "jwt-de-prueba",
+  "usuario": {
+    "usuario": "admin",
+    "rol": "admin"
+  }
+}

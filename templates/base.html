@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Gradebook{% endblock %}</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/common.css') }}">
+    {% if request.blueprint and 'admin' in request.blueprint.split('.') %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
+    {% else %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/site.css') }}">
+    {% endif %}
+    {% block head %}{% endblock %}
+</head>
+<body>
+    <header class="navbar">
+        <div class="navbar__inner">
+            <a href="{{ url_for('web.site.home.index') }}" class="navbar__brand">
+                <span class="navbar__brand-name">Gradebook</span>
+            </a>
+
+            {% block navbar_menu %}
+            <input type="checkbox" id="nav-toggle" class="navbar__toggle-cb">
+            <label for="nav-toggle" class="navbar__toggle" aria-label="Abrir menú">
+                <span></span><span></span><span></span>
+            </label>
+
+            <nav class="navbar__menu">
+                <a href="{{ url_for('web.site.home.index') }}"
+                   class="navbar__link {% if request.endpoint == 'web.site.home.index' %}navbar__link--active{% endif %}">Inicio</a>
+                <a href="{{ url_for('web.site.items.index') }}"
+                   class="navbar__link {% if request.endpoint == 'web.site.items.index' %}navbar__link--active{% endif %}">Items</a>
+                <a href="{{ url_for('web.admin.auth.login') }}"
+                   class="navbar__link navbar__link--cta">Admin</a>
+            </nav>
+            {% endblock %}
+        </div>
+    </header>
+
+    <main class="content">
+        {% block content %}{% endblock %}
+    </main>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}" defer></script>
+</body>
+</html>

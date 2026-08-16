@@ -1,0 +1,10 @@
+{
+  "errors": [
+    {
+      "code": "nombre.duplicated",
+      "message": "Nombre en uso",
+      "level": "error",
+      "description": "Ya existe un item con el nombre 'Teclado mecánico'"
+    }
+  ]
+}

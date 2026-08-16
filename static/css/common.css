@@ -1,0 +1,227 @@
+/* ============================================================
+   common.css - Estilos compartidos (base, navbar, layout, botones, modales)
+   Se carga en todas las páginas desde base.html
+   ============================================================ */
+
+:root {
+    --color-bg: #f4f4f7;
+    --color-surface: #ffffff;
+    --color-text: #1f2937;
+    --color-muted: #6b7280;
+    --color-border: #e5e7eb;
+    --color-primary: #4f46e5;
+    --color-primary-dark: #4338ca;
+    --color-danger: #dc2626;
+    --color-ok: #16a34a;
+    --radius: 12px;
+    --container: 1100px;
+    --font-base: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --font-code: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+    font-family: var(--font-base);
+    color: var(--color-text);
+    line-height: 1.5;
+    background: var(--color-bg);
+    font-size: 16px;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+code {
+    font-family: var(--font-code);
+    background: rgba(79, 70, 229, 0.08);
+    color: var(--color-primary-dark);
+    padding: 0.1em 0.35em;
+    border-radius: 6px;
+    font-size: 0.9em;
+}
+
+.content {
+    flex: 1;
+    width: 100%;
+}
+
+/* ===== Navbar ===== */
+.navbar {
+    background: var(--color-surface);
+    border-bottom: 1px solid var(--color-border);
+    position: sticky;
+    top: 0;
+    z-index: 20;
+}
+
+.navbar__inner {
+    max-width: var(--container);
+    margin: 0 auto;
+    padding: 0.9rem 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.navbar__brand {
+    text-decoration: none;
+    color: var(--color-text);
+    font-weight: 700;
+    font-size: 1.25rem;
+    letter-spacing: -0.02em;
+}
+
+.navbar__brand-name { color: var(--color-primary); }
+
+.navbar__menu {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.navbar__link {
+    text-decoration: none;
+    color: var(--color-muted);
+    padding: 0.45rem 0.75rem;
+    border-radius: 8px;
+    font-weight: 500;
+    transition: background 0.15s, color 0.15s;
+}
+
+.navbar__link:hover { color: var(--color-text); background: rgba(0, 0, 0, 0.04); }
+.navbar__link--active { color: var(--color-primary); }
+
+.navbar__link--cta {
+    color: #fff;
+    background: var(--color-primary);
+}
+.navbar__link--cta:hover { background: var(--color-primary-dark); color: #fff; }
+
+/* Menú responsive (hamburguesa) */
+.navbar__toggle-cb { display: none; }
+.navbar__toggle { display: none; }
+
+@media (max-width: 720px) {
+    .navbar__toggle {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        cursor: pointer;
+        padding: 0.4rem;
+    }
+    .navbar__toggle span {
+        width: 24px;
+        height: 2px;
+        background: var(--color-text);
+        border-radius: 2px;
+    }
+    .navbar__menu {
+        display: none;
+        position: absolute;
+        top: 100%;
+        right: 1rem;
+        flex-direction: column;
+        align-items: stretch;
+        background: var(--color-surface);
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius);
+        padding: 0.5rem;
+        min-width: 180px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+    }
+    .navbar__toggle-cb:checked ~ .navbar__menu { display: flex; }
+}
+
+/* ===== Botones ===== */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    padding: 0.6rem 1.1rem;
+    border: 1px solid transparent;
+    border-radius: 10px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+    background: transparent;
+    color: var(--color-text);
+}
+
+.btn--primary { background: var(--color-primary); color: #fff; }
+.btn--primary:hover { background: var(--color-primary-dark); }
+
+.btn--ghost { border-color: var(--color-border); color: var(--color-text); background: var(--color-surface); }
+.btn--ghost:hover { background: rgba(0, 0, 0, 0.04); }
+
+.btn--danger { background: var(--color-danger); color: #fff; }
+.btn--danger:hover { background: #b91c1c; }
+
+.btn--sm { padding: 0.35rem 0.7rem; font-size: 0.85rem; border-radius: 8px; }
+
+/* ===== Badges ===== */
+.badge {
+    display: inline-block;
+    padding: 0.15rem 0.6rem;
+    border-radius: 999px;
+    font-size: 0.78rem;
+    font-weight: 600;
+}
+.badge--activo { background: rgba(22, 163, 74, 0.12); color: var(--color-ok); }
+.badge--inactivo { background: rgba(107, 114, 128, 0.15); color: var(--color-muted); }
+
+/* ===== Modales ===== */
+.modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+}
+.modal.is-open { display: flex; }
+
+.modal__overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(17, 24, 39, 0.5);
+}
+
+.modal__box {
+    position: relative;
+    background: var(--color-surface);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    width: 100%;
+    max-width: 460px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
+}
+
+.modal__title { font-size: 1.2rem; margin-bottom: 1rem; }
+.modal__text { color: var(--color-muted); margin-bottom: 1.25rem; }
+
+.modal__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.6rem;
+    margin-top: 1rem;
+}
+
+/* ===== Página de error ===== */
+.error-page {
+    max-width: var(--container);
+    margin: 0 auto;
+    padding: 5rem 1.5rem;
+    display: flex;
+    justify-content: center;
+}
+.error-page__box { text-align: center; }
+.error-page__code { font-size: 4rem; font-weight: 800; color: var(--color-primary); }
+.error-page__title { font-size: 1.5rem; margin: 0.5rem 0 0.75rem; }
+.error-page__text { color: var(--color-muted); margin-bottom: 1.5rem; }

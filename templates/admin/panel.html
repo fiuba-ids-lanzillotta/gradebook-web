@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block title %}Panel · Gradebook{% endblock %}
+
+{% block navbar_menu %}
+    <a href="{{ url_for('web.admin.auth.logout') }}" class="navbar__link navbar__link--cta">Cerrar sesión</a>
+{% endblock %}
+
+{% block content %}
+<section class="admin">
+    <div class="admin-card admin-card--panel">
+        <h1 class="admin-card__title">Bienvenid@ al panel administrativo</h1>
+        <hr class="login__divider">
+        <div class="admin-actions">
+            <a href="{{ url_for('web.admin.items.index') }}" class="admin-tile">
+                <span class="admin-tile__label">Administrar items</span>
+                <span class="admin-tile__hint">Crear, editar y eliminar</span>
+            </a>
+        </div>
+    </div>
+</section>
+{% endblock %}

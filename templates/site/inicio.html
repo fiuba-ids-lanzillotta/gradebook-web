@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block title %}Inicio · Gradebook{% endblock %}
+
+{% block content %}
+    <section class="hero">
+        <div class="hero__inner">
+            <h1 class="hero__title">Gradebook</h1>
+            <p class="hero__subtitle">
+                Frontend base en Flask + Jinja que consume <code>gradebook-api</code>.
+                Usalo como punto de partida para tu propia aplicación web.
+            </p>
+            <div class="hero__actions">
+                <a href="{{ url_for('web.site.items.index') }}" class="btn btn--primary">Ver items</a>
+                <a href="{{ url_for('web.admin.auth.login') }}" class="btn btn--ghost">Panel de administración</a>
+            </div>
+        </div>
+    </section>
+
+    <section class="features">
+        <div class="features__inner">
+            <article class="feature-card">
+                <h3 class="feature-card__title">Páginas públicas</h3>
+                <p class="feature-card__text">Lecturas que degradan con gracia si la API no responde.</p>
+            </article>
+            <article class="feature-card">
+                <h3 class="feature-card__title">Panel de admin</h3>
+                <p class="feature-card__text">Login con JWT y CRUD del recurso de ejemplo <code>items</code>.</p>
+            </article>
+            <article class="feature-card">
+                <h3 class="feature-card__title">Arquitectura en capas</h3>
+                <p class="feature-card__text">Rutas (blueprints) → services (HTTP a la API). Sin base de datos propia.</p>
+            </article>
+        </div>
+    </section>
+{% endblock %}

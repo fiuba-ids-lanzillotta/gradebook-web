@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+
+{% block title %}Administrar items · Panel Gradebook{% endblock %}
+
+{% block navbar_menu %}
+    <a href="{{ url_for('web.admin.auth.logout') }}" class="navbar__link navbar__link--cta">Cerrar sesión</a>
+{% endblock %}
+
+{% block content %}
+<section class="admin">
+    <div class="admin-card admin-card--wide">
+        <div class="admin-card__top">
+            <a href="{{ url_for('web.admin.panel.index') }}" class="admin-back">← Volver al panel</a>
+            <h1 class="admin-card__heading">Administrar items</h1>
+        </div>
+        <hr class="login__divider">
+
+        {% if error %}
+        <p class="login__error">{{ error }}</p>
+        {% endif %}
+
+        <form class="item-form" method="POST" action="{{ url_for('web.admin.items.index') }}">
+            <h2 class="item-form__title">Agregar item</h2>
+            <div class="item-form__row">
+                <label class="field">
+                    <span>Nombre</span>
+                    <input type="text" name="nombre" placeholder="Nombre del item" required>
+                </label>
+                <label class="field field--grow">
+                    <span>Descripción</span>
+                    <input type="text" name="descripcion" placeholder="Descripción (opcional)">
+                </label>
+                <label class="field field--check">
+                    <input type="checkbox" name="activo" checked>
+                    <span>Activo</span>
+                </label>
+                <button type="submit" class="btn btn--primary">+ Agregar</button>
+            </div>
+        </form>
+
+        <div class="table">
+            <div class="table__head">
+                <span>Nombre</span>
+                <span>Descripción</span>
+                <span>Estado</span>
+                <span></span>
+            </div>
+            {% for item in items %}
+            <div class="table__row">
+                <span class="table__name">{{ item.nombre }}</span>
+                <span class="table__desc">{{ item.descripcion or '—' }}</span>
+                <span>
+                    <span class="badge {% if item.activo %}badge--activo{% else %}badge--inactivo{% endif %}">
+                        {{ 'Activo' if item.activo else 'Inactivo' }}
+                    </span>
+                </span>
+                <span class="table__actions">
+                    <button
+                        type="button"
+                        class="btn btn--sm js-edit-item"
+                        data-id="{{ item.id }}"
+                        data-nombre="{{ item.nombre }}"
+                        data-descripcion="{{ item.descripcion or '' }}"
+                        data-activo="{{ '1' if item.activo else '0' }}"
+                        data-edit-url="{{ url_for('web.admin.items.editar', item_id=item.id) }}"
+                    >Editar</button>
+                    <button
+                        type="button"
+                        class="btn btn--sm btn--danger js-delete-item"
+                        data-nombre="{{ item.nombre }}"
+                        data-delete-url="{{ url_for('web.admin.items.eliminar', item_id=item.id) }}"
+                    >Eliminar</button>
+                </span>
+            </div>
+            {% else %}
+            <div class="table__empty">No hay items todavía.</div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<div class="modal" id="edit-item-modal" aria-hidden="true">
+    <div class="modal__overlay" data-close></div>
+    <div class="modal__box" role="dialog" aria-modal="true" aria-labelledby="edit-title">
+        <h3 class="modal__title" id="edit-title">Editar item</h3>
+        <form class="item-form" id="edit-item-form" method="POST" action="#">
+            <label class="field">
+                <span>Nombre</span>
+                <input type="text" name="nombre" id="edit-nombre" required>
+            </label>
+            <label class="field">
+                <span>Descripción</span>
+                <input type="text" name="descripcion" id="edit-descripcion">
+            </label>
+            <label class="field field--check">
+                <input type="checkbox" name="activo" id="edit-activo">
+                <span>Activo</span>
+            </label>
+            <div class="modal__actions">
+                <button type="button" class="btn btn--ghost" data-close>Cancelar</button>
+                <button type="submit" class="btn btn--primary">Guardar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="modal" id="delete-item-modal" aria-hidden="true">
+    <div class="modal__overlay" data-close></div>
+    <div class="modal__box modal__box--confirm" role="dialog" aria-modal="true" aria-labelledby="delete-title">
+        <h3 class="modal__title" id="delete-title">Eliminar item</h3>
+        <p class="modal__text">
+            ¿Querés eliminar <strong id="delete-item-nombre"></strong>? Esta acción no se puede deshacer.
+        </p>
+        <form id="delete-item-form" method="POST" action="#">
+            <div class="modal__actions">
+                <button type="button" class="btn btn--ghost" data-close>Cancelar</button>
+                <button type="submit" class="btn btn--danger">Eliminar</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
