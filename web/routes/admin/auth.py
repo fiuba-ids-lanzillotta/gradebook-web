@@ -9,9 +9,12 @@ from functools import wraps
 from flask import Blueprint, render_template, request, redirect, url_for, session
 
 from web.services.auth import autenticar
+from web.constants import RECAPTCHA_SITE_KEY
 
 auth_bp = Blueprint('auth', __name__)
 
+def _captcha_token() -> str:
+    return request.form.get('g-recaptcha-response', '').strip()
 
 def admin_required(view):
     @wraps(view)
@@ -39,19 +42,20 @@ def login():
     error = None
 
     if request.method == 'POST':
-        usuario = request.form.get('usuario', '').strip()
+        email = request.form.get('email', '').strip()
         password = request.form.get('password', '')
-
-        resultado = autenticar(usuario, password)
-
+        resultado = autenticar(email, password, recaptcha_token=_captcha_token())
         if resultado['ok']:
             session['token'] = resultado['token']
             session['usuario'] = resultado['usuario']
             return redirect(url_for('web.admin.panel.index'))
-
         error = resultado['error']
 
-    return render_template('admin/login.html', error=error)
+    return render_template(
+        'admin/login.html',
+        error=error,
+        recaptcha_site_key=RECAPTCHA_SITE_KEY,
+    )
 
 
 @auth_bp.route('/logout')

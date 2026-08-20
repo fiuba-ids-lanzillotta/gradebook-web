@@ -7,7 +7,7 @@ from web.constants import API_BASE_URL, api_headers
 logger = logging.getLogger(__name__)
 
 
-def autenticar(usuario: str, password: str) -> dict:
+def autenticar(email: str, password: str, recaptcha_token: str = '') -> dict:
     """Autentica las credenciales contra la API.
 
     Retorna {'ok': True, 'token': str, 'usuario': dict} si son correctas,
@@ -16,7 +16,7 @@ def autenticar(usuario: str, password: str) -> dict:
     try:
         response = requests.post(
             f'{API_BASE_URL}/login',
-            json={'usuario': usuario, 'password': password},
+            json={'email': email, 'password': password, 'recaptcha_token': recaptcha_token,},
             headers=api_headers(),
             timeout=10,
         )

@@ -15,7 +15,8 @@
     --color-ok: #16a34a;
     --radius: 12px;
     --container: 1100px;
-    --font-base: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --font-base: "Afacad", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --font-brand: "Akatab", var(--font-base);
     --font-code: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
 }
 
@@ -46,6 +47,8 @@ code {
 .content {
     flex: 1;
     width: 100%;
+    display: flex;
+    flex-direction: column;
 }
 
 /* ===== Navbar ===== */
@@ -67,14 +70,26 @@ code {
 }
 
 .navbar__brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
     text-decoration: none;
-    color: var(--color-text);
-    font-weight: 700;
-    font-size: 1.25rem;
-    letter-spacing: -0.02em;
+    color: inherit;
+    flex-shrink: 0;
 }
-
-.navbar__brand-name { color: var(--color-primary); }
+.navbar__logo { width: 45px; height: 44px; object-fit: contain; }
+.navbar__brand-text { display: flex; flex-direction: column; line-height: 1.1; }
+.navbar__brand-name {
+    font-family: var(--font-brand, inherit);
+    font-weight: 700;
+    font-size: 18px;
+    color: #1f2937;
+}
+.navbar__brand-sub {
+    font-family: var(--font-brand, inherit);
+    font-size: 10px;
+    color: #6b7280;
+}
 
 .navbar__menu {
     display: flex;

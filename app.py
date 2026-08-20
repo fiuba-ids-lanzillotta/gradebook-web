@@ -3,6 +3,7 @@ import os
 from dotenv import load_dotenv
 from flask import Flask, render_template
 from web.routes import web_bp
+from web.constants import RECAPTCHA_SITE_KEY
 
 load_dotenv()
 
@@ -22,6 +23,9 @@ app.secret_key = os.getenv('SECRET_KEY')
 
 app.register_blueprint(web_bp)
 
+@app.context_processor
+def inyectar_recaptcha():
+    return {'recaptcha_site_key': RECAPTCHA_SITE_KEY}
 
 @app.errorhandler(404)
 def page_not_found(error):

@@ -19,3 +19,6 @@ def api_headers(extra: dict | None = None) -> dict:
         headers['X-API-Key'] = API_KEY
 
     return headers
+
+RECAPTCHA_SITE_KEY = os.getenv('RECAPTCHA_SITE_KEY', '').strip()
+RECAPTCHA_SECRET_KEY = os.getenv('RECAPTCHA_SECRET_KEY', '').strip()
