@@ -20,5 +20,7 @@ def api_headers(extra: dict | None = None) -> dict:
 
     return headers
 
+# Site key PÚBLICA de reCAPTCHA v2. Se renderiza en el widget del login. Si está
+# vacía, el login no muestra el captcha. El secret NO va en el frontend: la
+# verificación server-side la hace gradebook-api con su RECAPTCHA_SECRET.
 RECAPTCHA_SITE_KEY = os.getenv('RECAPTCHA_SITE_KEY', '').strip()
-RECAPTCHA_SECRET_KEY = os.getenv('RECAPTCHA_SECRET_KEY', '').strip()
