@@ -61,3 +61,64 @@ def login():
 @auth_bp.route('/logout')
 def logout():
     return redirigir_a_login_sin_sesion()
+
+MENSAJE_RECUPERAR = (
+    'Si el correo está registrado, vas a recibir un enlace '
+    'para restablecer la contraseña.'
+)
+MENSAJE_CAMBIO_PENDIENTE = (
+    'El cambio de contraseña todavía no está disponible. '
+    'Cuando la API exponga el reset, este formulario lo va a completar.'
+)
+
+
+@auth_bp.route('/recuperar', methods=['GET', 'POST'])
+def recuperar():
+    error = None
+    ok = None
+
+    if request.method == 'POST':
+        email = request.form.get('email', '').strip()
+        if not email:
+            error = 'Ingresá un correo electrónico.'
+        else:
+            # Misma respuesta siempre: no revelar si el mail existe.
+            # Cuando exista POST /password-reset/solicitar, llamarlo acá
+            # y seguir mostrando MENSAJE_RECUPERAR.
+            ok = MENSAJE_RECUPERAR
+
+    return render_template('admin/recuperar.html', error=error, ok=ok)
+
+
+@auth_bp.route('/cambiar-contrasena', methods=['GET', 'POST'])
+def cambiar_contrasena():
+    token = (request.values.get('token') or '').strip()
+    error = None
+    ok = None
+
+    if not token:
+        error = 'El enlace no es válido o expiró. Solicitá uno nuevo.'
+        return render_template(
+            'admin/cambiar_contrasena.html',
+            token='',
+            error=error,
+            ok=ok,
+        )
+
+    if request.method == 'POST':
+        password = request.form.get('password', '')
+        confirm = request.form.get('password_confirm', '')
+        if not password or not confirm:
+            error = 'Completá ambos campos.'
+        elif password != confirm:
+            error = 'Las contraseñas no coinciden.'
+        else:
+            # Acá irá POST /password-reset/confirmar {token, password}.
+            ok = MENSAJE_CAMBIO_PENDIENTE
+
+    return render_template(
+        'admin/cambiar_contrasena.html',
+        token=token,
+        error=error,
+        ok=ok,
+    )

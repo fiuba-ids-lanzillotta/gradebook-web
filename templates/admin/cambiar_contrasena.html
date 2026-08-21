@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block navbar_menu %}{% endblock %}
+
+{% block title %}Cambiar contraseña · Gradebook{% endblock %}
+
+{% block content %}
+<section class="login">
+    <div class="login__card">
+        <h1 class="login__title">Cambiá tu contraseña</h1>
+        <hr class="login__divider">
+
+        <form class="login__form" method="POST" action="{{ url_for('web.admin.auth.cambiar_contrasena') }}">
+            {% if error %}
+            <p class="login__error">{{ error }}</p>
+            {% endif %}
+            {% if ok %}
+            <p class="login__ok">{{ ok }}</p>
+            {% endif %}
+
+            <input type="hidden" name="token" value="{{ token }}">
+
+            {% if token and not ok %}
+            <label class="login__label" for="password">Contraseña nueva</label>
+            <div class="login__field">
+                <input
+                    type="password"
+                    id="password"
+                    name="password"
+                    class="login__input"
+                    placeholder="Ingrese contraseña"
+                    autocomplete="new-password"
+                    required
+                >
+                <button type="button" class="login__toggle-pass" aria-label="Mostrar contraseña">
+                    <img src="{{ url_for('static', filename='img/eye.svg') }}" alt="" class="login__icon login__eye--open">
+                    <img src="{{ url_for('static', filename='img/eye_closed.svg') }}" alt="" class="login__icon login__eye--shut" hidden>
+                </button>
+            </div>
+
+            <label class="login__label" for="password_confirm">Confirma contraseña nueva</label>
+            <div class="login__field">
+                <input
+                    type="password"
+                    id="password_confirm"
+                    name="password_confirm"
+                    class="login__input"
+                    placeholder="Ingrese su contraseña"
+                    autocomplete="new-password"
+                    required
+                >
+                <button type="button" class="login__toggle-pass" aria-label="Mostrar contraseña">
+                    <img src="{{ url_for('static', filename='img/eye.svg') }}" alt="" class="login__icon login__eye--open">
+                    <img src="{{ url_for('static', filename='img/eye_closed.svg') }}" alt="" class="login__icon login__eye--shut" hidden>
+                </button>
+            </div>
+
+            <button type="submit" class="login__submit">
+                Cambiar contraseña <span class="login__arrow">→</span>
+            </button>
+            {% endif %}
+        </form>
+    </div>
+</section>
+{% endblock %}

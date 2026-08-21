@@ -57,7 +57,7 @@
                 Ingresar <span class="login__arrow">→</span>
             </button>
 
-            <a class="login__forgot" href="#">¿Olvidaste la contraseña o el nombre de usuario?</a>
+            <a class="login__forgot" href="{{ url_for('web.admin.auth.recuperar') }}">¿Olvidaste la contraseña?</a>
         </form>
     </div>
 </section>

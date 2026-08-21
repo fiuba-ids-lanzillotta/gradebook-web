@@ -60,13 +60,14 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // --- Mostrar / ocultar contraseña en el login ---
-    const password = document.getElementById('password');
-    const togglePass = document.getElementById('toggle-password');
+    document.querySelectorAll('.login__toggle-pass').forEach((togglePass) => {
+        const field = togglePass.closest('.login__field');
+        const input = field ? field.querySelector('input') : null;
+        if (!input) return;
 
-    if (password && togglePass) {
         togglePass.addEventListener('click', () => {
-            const visible = password.type === 'text';
-            password.type = visible ? 'password' : 'text';
+            const visible = input.type === 'text';
+            input.type = visible ? 'password' : 'text';
             togglePass.setAttribute('aria-label', visible ? 'Mostrar contraseña' : 'Ocultar contraseña');
 
             const eyeOpen = togglePass.querySelector('.login__eye--open');
@@ -74,5 +75,5 @@ document.addEventListener('DOMContentLoaded', function () {
             if (eyeOpen) eyeOpen.hidden = !visible;
             if (eyeShut) eyeShut.hidden = visible;
         });
-    }
+    });
 });

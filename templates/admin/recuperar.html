@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block navbar_menu %}{% endblock %}
+
+{% block title %}Recuperar contraseña · Gradebook{% endblock %}
+
+{% block content %}
+<section class="login">
+    <div class="login__card">
+        <h1 class="login__title">Recuperación contraseña</h1>
+        <hr class="login__divider">
+
+        <form class="login__form" method="POST" action="{{ url_for('web.admin.auth.recuperar') }}">
+            {% if error %}
+            <p class="login__error">{{ error }}</p>
+            {% endif %}
+            {% if ok %}
+            <p class="login__ok">{{ ok }}</p>
+            {% endif %}
+
+            <label class="login__label" for="email">Correo electrónico</label>
+            <div class="login__field">
+                <input
+                    type="email"
+                    id="email"
+                    name="email"
+                    class="login__input"
+                    placeholder="Ingrese correo electrónico"
+                    autocomplete="email"
+                    required
+                    {% if ok %}disabled{% endif %}
+                >
+            </div>
+
+            {% if not ok %}
+            <button type="submit" class="login__submit">
+                Envía correo <span class="login__arrow">→</span>
+            </button>
+            {% endif %}
+        </form>
+    </div>
+</section>
+{% endblock %}
