@@ -38,3 +38,37 @@ def test_autenticar_error_servidor(monkeypatch, respuesta_falsa):
     resultado = auth.autenticar('admin', 'secreto')
 
     assert resultado['ok'] is False and '500' in resultado['error']
+
+
+# --- recuperación de contraseña ---
+
+def test_solicitar_recuperacion_ok(monkeypatch, respuesta_falsa):
+    monkeypatch.setattr(requests, 'post', lambda *args, **kwargs: respuesta_falsa(200, {'mensaje': 'ok'}))
+
+    assert auth.solicitar_recuperacion('a@fi.uba.ar') == {'ok': True}
+
+
+def test_solicitar_recuperacion_sin_conexion(monkeypatch):
+    def _sin_conexion(*args, **kwargs):
+        raise requests.exceptions.ConnectionError()
+
+    monkeypatch.setattr(requests, 'post', _sin_conexion)
+
+    resultado = auth.solicitar_recuperacion('a@fi.uba.ar')
+
+    assert resultado['ok'] is False
+
+
+def test_confirmar_recuperacion_ok(monkeypatch, respuesta_falsa):
+    monkeypatch.setattr(requests, 'post', lambda *args, **kwargs: respuesta_falsa(200, {'mensaje': 'ok'}))
+
+    assert auth.confirmar_recuperacion('token', 'nuevaClave1') == {'ok': True}
+
+
+def test_confirmar_recuperacion_token_invalido(monkeypatch, respuesta_falsa):
+    cuerpo = {'errors': [{'code': 'reset.token.invalido'}]}
+    monkeypatch.setattr(requests, 'post', lambda *args, **kwargs: respuesta_falsa(400, cuerpo))
+
+    resultado = auth.confirmar_recuperacion('malo', 'nuevaClave1')
+
+    assert resultado['ok'] is False and 'enlace' in resultado['error'].lower()

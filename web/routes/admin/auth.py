@@ -1,7 +1,7 @@
 """Autenticación: login, logout y reexport de los decoradores."""
 from flask import Blueprint, render_template, request, redirect, session, url_for
 
-from web.services.auth import autenticar
+from web.services.auth import autenticar, solicitar_recuperacion, confirmar_recuperacion
 from web.constants import RECAPTCHA_SITE_KEY
 from web.auth_sesion import (
     admin_required,
@@ -48,10 +48,9 @@ MENSAJE_RECUPERAR = (
     'Si el correo está registrado, vas a recibir un enlace '
     'para restablecer la contraseña.'
 )
-MENSAJE_CAMBIO_PENDIENTE = (
-    'El cambio de contraseña todavía no está disponible. '
-    'Cuando la API exponga el reset, este formulario lo va a completar.'
-)
+MENSAJE_CAMBIO_OK = 'Tu contraseña se actualizó. Ya podés iniciar sesión.'
+
+
 @auth_bp.route('/recuperar', methods=['GET', 'POST'])
 def recuperar():
     error = None
@@ -61,11 +60,16 @@ def recuperar():
         if not email:
             error = 'Ingresá un correo electrónico.'
         else:
-            # Misma respuesta siempre: no revelar si el mail existe.
-            # Cuando exista POST /password-reset/solicitar, llamarlo acá
-            # y seguir mostrando MENSAJE_RECUPERAR.
-            ok = MENSAJE_RECUPERAR
+            resultado = solicitar_recuperacion(email)
+            # Misma respuesta siempre (no revela si el mail existe); sólo un
+            # error de conexión rompe la uniformidad.
+            if resultado['ok']:
+                ok = MENSAJE_RECUPERAR
+            else:
+                error = resultado['error']
     return render_template('admin/recuperar.html', error=error, ok=ok)
+
+
 @auth_bp.route('/cambiar-contrasena', methods=['GET', 'POST'])
 def cambiar_contrasena():
     token = (request.values.get('token') or '').strip()
@@ -87,8 +91,11 @@ def cambiar_contrasena():
         elif password != confirm:
             error = 'Las contraseñas no coinciden.'
         else:
-            # Acá irá POST /password-reset/confirmar {token, password}.
-            ok = MENSAJE_CAMBIO_PENDIENTE
+            resultado = confirmar_recuperacion(token, password)
+            if resultado['ok']:
+                ok = MENSAJE_CAMBIO_OK
+            else:
+                error = resultado['error']
     return render_template(
         'admin/cambiar_contrasena.html',
         token=token,

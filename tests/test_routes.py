@@ -77,3 +77,43 @@ def test_login_fallido_muestra_pagina(client, monkeypatch, respuesta_falsa):
     respuesta = client.post('/admin/login', data={'usuario': 'admin', 'password': 'mala'})
 
     assert respuesta.status_code == 200
+
+
+# --- recuperación de contraseña (rutas) ---
+
+def test_recuperar_get_ok(client):
+    respuesta = client.get('/admin/recuperar')
+
+    assert respuesta.status_code == 200
+
+
+def test_recuperar_post_muestra_mensaje_uniforme(client, monkeypatch, respuesta_falsa):
+    monkeypatch.setattr(requests, 'post', lambda *args, **kwargs: respuesta_falsa(200, {'mensaje': 'ok'}))
+
+    respuesta = client.post('/admin/recuperar', data={'email': 'a@fi.uba.ar'})
+
+    assert respuesta.status_code == 200
+
+
+def test_cambiar_contrasena_sin_token_muestra_error(client):
+    respuesta = client.get('/admin/cambiar-contrasena')
+
+    assert respuesta.status_code == 200
+    assert 'enlace' in respuesta.get_data(as_text=True).lower()
+
+
+def test_cambiar_contrasena_post_ok(client, monkeypatch, respuesta_falsa):
+    monkeypatch.setattr(requests, 'post', lambda *args, **kwargs: respuesta_falsa(200, {'mensaje': 'ok'}))
+
+    respuesta = client.post('/admin/cambiar-contrasena',
+                            data={'token': 't', 'password': 'nuevaClave1', 'password_confirm': 'nuevaClave1'})
+
+    assert respuesta.status_code == 200
+
+
+def test_cambiar_contrasena_passwords_no_coinciden(client):
+    respuesta = client.post('/admin/cambiar-contrasena',
+                            data={'token': 't', 'password': 'a', 'password_confirm': 'b'})
+
+    assert respuesta.status_code == 200
+    assert 'coinciden' in respuesta.get_data(as_text=True).lower()
