@@ -1,43 +1,25 @@
-"""Autenticación del panel de administración: login, logout y el
-decorador admin_required que protege las secciones internas.
-
-El login delega la verificación de credenciales en la API (gradebook-api),
-que devuelve un JWT. Ese token se guarda en la sesión y se usará para autorizar
-las operaciones de administración contra la API.
-"""
-from functools import wraps
-from flask import Blueprint, render_template, request, redirect, url_for, session
+"""Autenticación: login, logout y reexport de los decoradores."""
+from flask import Blueprint, render_template, request, redirect, session, url_for
 
 from web.services.auth import autenticar
 from web.constants import RECAPTCHA_SITE_KEY
+from web.auth_sesion import (
+    admin_required,
+    redirigir_a_login_sin_sesion,
+    url_post_login,
+)
 
 auth_bp = Blueprint('auth', __name__)
 
+
 def _captcha_token() -> str:
     return request.form.get('g-recaptcha-response', '').strip()
-
-def admin_required(view):
-    @wraps(view)
-    def wrapped(*args, **kwargs):
-        if not session.get('token'):
-            return redirect(url_for('web.admin.auth.login'))
-
-        return view(*args, **kwargs)
-    return wrapped
-
-
-def redirigir_a_login_sin_sesion():
-    """Limpia la sesión y redirige al login (p. ej. cuando la API responde 401/403)."""
-    session.pop('token', None)
-    session.pop('usuario', None)
-
-    return redirect(url_for('web.admin.auth.login'))
 
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
     if session.get('token'):
-        return redirect(url_for('web.admin.panel.index'))
+        return redirect(url_post_login())
 
     error = None
 
@@ -48,7 +30,7 @@ def login():
         if resultado['ok']:
             session['token'] = resultado['token']
             session['usuario'] = resultado['usuario']
-            return redirect(url_for('web.admin.panel.index'))
+            return redirect(url_post_login())
         error = resultado['error']
 
     return render_template(
@@ -70,13 +52,10 @@ MENSAJE_CAMBIO_PENDIENTE = (
     'El cambio de contraseña todavía no está disponible. '
     'Cuando la API exponga el reset, este formulario lo va a completar.'
 )
-
-
 @auth_bp.route('/recuperar', methods=['GET', 'POST'])
 def recuperar():
     error = None
     ok = None
-
     if request.method == 'POST':
         email = request.form.get('email', '').strip()
         if not email:
@@ -86,16 +65,12 @@ def recuperar():
             # Cuando exista POST /password-reset/solicitar, llamarlo acá
             # y seguir mostrando MENSAJE_RECUPERAR.
             ok = MENSAJE_RECUPERAR
-
     return render_template('admin/recuperar.html', error=error, ok=ok)
-
-
 @auth_bp.route('/cambiar-contrasena', methods=['GET', 'POST'])
 def cambiar_contrasena():
     token = (request.values.get('token') or '').strip()
     error = None
     ok = None
-
     if not token:
         error = 'El enlace no es válido o expiró. Solicitá uno nuevo.'
         return render_template(
@@ -104,7 +79,6 @@ def cambiar_contrasena():
             error=error,
             ok=ok,
         )
-
     if request.method == 'POST':
         password = request.form.get('password', '')
         confirm = request.form.get('password_confirm', '')
@@ -115,7 +89,6 @@ def cambiar_contrasena():
         else:
             # Acá irá POST /password-reset/confirmar {token, password}.
             ok = MENSAJE_CAMBIO_PENDIENTE
-
     return render_template(
         'admin/cambiar_contrasena.html',
         token=token,

@@ -1,7 +1,9 @@
 {
   "token": "jwt-de-prueba",
   "usuario": {
-    "usuario": "admin",
-    "rol": "admin"
+    "id": 1,
+    "tipo": "docente",
+    "email": "bruno@fi.uba.ar",
+    "rol": "super_admin"
   }
 }

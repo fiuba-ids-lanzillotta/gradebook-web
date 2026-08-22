@@ -1,0 +1,9 @@
+{
+  "token": "jwt-de-prueba-alumno",
+  "usuario": {
+    "id": 2,
+    "tipo": "estudiante",
+    "email": "ian@fi.uba.ar",
+    "rol": "usuario"
+  }
+}

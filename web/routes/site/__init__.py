@@ -1,4 +1,4 @@
-"""Blueprint padre para la zona pública del sitio (sin login).
+"""Blueprint padre para la zona estudiante del sitio.
 
 Anida sub-blueprints definidos en otros módulos para mantener cada
 sección en su propio archivo.

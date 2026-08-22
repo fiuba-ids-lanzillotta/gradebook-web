@@ -38,8 +38,14 @@
                    class="navbar__link {% if request.endpoint == 'web.site.home.index' %}navbar__link--active{% endif %}">Inicio</a>
                 <a href="{{ url_for('web.site.items.index') }}"
                    class="navbar__link {% if request.endpoint == 'web.site.items.index' %}navbar__link--active{% endif %}">Items</a>
-                <a href="{{ url_for('web.admin.auth.login') }}"
+                {% if session.get('usuario', {}).get('tipo') == 'docente' %}
+                <a href="{{ url_for('web.admin.panel.index') }}"
                    class="navbar__link navbar__link--cta">Admin</a>
+                {% endif %}
+                {% if session.get('token') %}
+                <a href="{{ url_for('web.admin.auth.logout') }}"
+                   class="navbar__link">Cerrar sesión</a>
+                {% endif %}
             </nav>
             {% endblock %}
         </div>
