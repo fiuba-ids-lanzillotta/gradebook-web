@@ -21,6 +21,8 @@ def es_docente() -> bool:
 def es_estudiante() -> bool:
     return tipo_usuario() == TIPO_ESTUDIANTE
 
+def es_super_admin() -> bool:
+    return usuario_sesion().get('rol') == 'super_admin'
 
 def url_login() -> str:
     return url_for('web.admin.auth.login')
@@ -35,6 +37,7 @@ def url_post_login() -> str:
 def redirigir_a_login_sin_sesion():
     session.pop('token', None)
     session.pop('usuario', None)
+    session.pop('nombre_completo', None)
     return redirect(url_login())
 
 

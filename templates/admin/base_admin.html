@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Panel · Gradebook{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/common.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Afacad:wght@400;500;600;700&family=Akatab:wght@400;500;700&display=swap" rel="stylesheet">
+    {% block head %}{% endblock %}
+</head>
+<body class="admin-body">
+    <div class="admin-shell">
+        <aside class="admin-sidebar">
+            <a href="{{ url_for('web.admin.panel.index') }}" class="admin-sidebar__brand">
+                <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo Lanzillotta" class="admin-sidebar__logo">
+                <span class="admin-sidebar__brand-text">
+                    <span class="admin-sidebar__name">Lanzillotta</span>
+                    <span class="admin-sidebar__sub">Intro. Desarrollo de Software</span>
+                </span>
+            </a>
+
+            <nav class="admin-sidebar__nav" aria-label="Panel docente">
+                {% for clave, etiqueta, icono, activa in solapas %}
+                    {% if clave != 'docentes' or es_super_admin %}
+                    <a
+                        href="{% if activa %}{{ url_for('web.admin.panel.index') }}{% else %}#{% endif %}"
+                        class="admin-sidebar__link {% if activa %}admin-sidebar__link--active{% endif %} {% if not activa %}admin-sidebar__link--soon{% endif %}"
+                    >
+                        <img src="{{ url_for('static', filename='img/' + icono) }}" alt="" class="admin-sidebar__icon">
+                        {{ etiqueta }}
+                    </a>
+                    {% endif %}
+                {% endfor %}
+            </nav>
+
+            <div class="admin-sidebar__footer">
+                <p class="admin-sidebar__user">{{ nombre_docente }}</p>
+                <a href="{{ url_for('web.admin.auth.logout') }}" class="admin-sidebar__logout">Cerrar sesión</a>
+            </div>
+        </aside>
+
+        <div class="admin-main">
+            {% block content %}{% endblock %}
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}" defer></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

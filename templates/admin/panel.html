@@ -1,22 +1,234 @@
-{% extends "base.html" %}
+{% extends "admin/base_admin.html" %}
 
-{% block title %}Panel · Gradebook{% endblock %}
-
-{% block navbar_menu %}
-    <a href="{{ url_for('web.admin.auth.logout') }}" class="navbar__link navbar__link--cta">Cerrar sesión</a>
-{% endblock %}
+{% block title %}Listado alumnos · Gradebook{% endblock %}
 
 {% block content %}
-<section class="admin">
-    <div class="admin-card admin-card--panel">
-        <h1 class="admin-card__title">Bienvenid@ al panel administrativo</h1>
-        <hr class="login__divider">
-        <div class="admin-actions">
-            <a href="{{ url_for('web.admin.items.index') }}" class="admin-tile">
-                <span class="admin-tile__label">Administrar items</span>
-                <span class="admin-tile__hint">Crear, editar y eliminar</span>
-            </a>
+<section class="listado">
+    <div class="listado__card">
+        <h1 class="listado__title">Listado alumnos</h1>
+        <p class="listado__cursada">Cuatrimestre {{ cursada_cuatrimestre }}C {{ cursada_anio }}</p>
+
+        {% for categoria, mensaje in get_flashed_messages(with_categories=True) %}
+        <p class="listado__flash listado__flash--{{ categoria }}">{{ mensaje }}</p>
+        {% endfor %}
+        {% if error %}
+        <p class="listado__flash listado__flash--error">{{ error }}</p>
+        {% endif %}
+
+        <div class="listado__csv">
+            <a href="{{ url_for('web.admin.panel.descargar_csv') }}" class="btn-outline">Descargar actual</a>
+
+            <form class="listado__upload" method="POST" action="{{ url_for('web.admin.panel.publicar_csv') }}" enctype="multipart/form-data">
+                <label class="listado__file">
+                    <img src="{{ url_for('static', filename='img/cap.svg') }}" alt="" class="listado__cap">
+                    <span class="listado__file-name" id="csv-nombre">Subir archivo csv</span>
+                    <input type="file" name="archivo" accept=".csv,text/csv" required id="csv-input">
+                </label>
+                <button type="submit" class="btn-solid">Publicar csv</button>
+            </form>
         </div>
+        <p class="listado__hint">
+            Formato SIU: columnas <strong>Legajo</strong>, <strong>Alumno</strong> (Apellido, Nombre)
+            y <strong>Email</strong>, separadas por <code>;</code>.
+            Al publicar, los alumnos se inscriben en el cuatrimestre vigente.
+            No se pisan cuatrimestres anteriores: quien ya cursó queda como recursante
+            y quien ya está inscripto en este cuatrimestre se omite.
+        </p>
+
+        <form class="listado__alta" method="POST" action="{{ url_for('web.admin.panel.agregar') }}">
+            <h2 class="listado__alta-title">Agregar Alumno</h2>
+            <div class="listado__alta-grid">
+                <label>Nombre
+                    <input type="text" name="nombre" placeholder="nombre" required>
+                </label>
+                <label>Apellido
+                    <input type="text" name="apellido" placeholder="apellido" required>
+                </label>
+                <label>Padrón
+                    <input type="text" name="padron" placeholder="padrón" required inputmode="numeric" pattern="[0-9]+" title="Solo números" autocomplete="off">
+                </label>
+                <label>Correo electrónico
+                    <input type="email" name="email" placeholder="correo electrónico" required>
+                </label>
+                <button type="submit" class="btn-outline listado__alta-btn">+ Agregar</button>
+            </div>
+        </form>
+
+        <form class="listado__buscar" method="GET" action="{{ url_for('web.admin.panel.index') }}">
+            <input type="search" id="q" name="q" value="{{ q }}" placeholder="Buscar" aria-label="Buscar">
+            <button type="submit" class="btn-outline">Buscar</button>
+        </form>
+
+        {% if estudiantes %}
+        <div class="listado__tabla-wrap">
+            <table class="listado__tabla">
+                <thead>
+                    <tr>
+                        <th>Apellido, Nombre</th>
+                        <th>Padrón</th>
+                        <th>Correo</th>
+                        <th>Estado</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for alumno in estudiantes %}
+                    {% set estado = alumno.estado or 'cursando' %}
+                    <tr>
+                        <td data-label="Apellido, Nombre">{{ alumno.apellido }}, {{ alumno.nombre }}</td>
+                        <td data-label="Padrón">{{ alumno.padron }}</td>
+                        <td data-label="Correo">{{ alumno.email }}</td>
+                        <td data-label="Estado">{{ estado_etiqueta.get(estado, estado) }}</td>
+                        <td class="listado__acciones">
+
+                            {% if alumno.motivos_baja %}
+                            <button
+                                type="button"
+                                class="listado__icon-btn js-motivos"
+                                aria-label="Ver razones de baja"
+                                data-motivos='{{ alumno.motivos_baja | tojson }}'
+                            >
+                                <img src="{{ url_for('static', filename='img/warning.svg') }}" alt="">
+                            </button>
+                            {% endif %}
+
+                            <a
+                                class="listado__icon-btn"
+                                href="{{ url_for('web.admin.panel.perfil', estudiante_id=alumno.id) }}"
+                                aria-label="Ver perfil"
+                            >
+                                <img src="{{ url_for('static', filename='img/eye.svg') }}" alt="">
+                            </a>
+                            <button
+                                type="button"
+                                class="listado__icon-btn js-editar"
+                                aria-label="Editar alumno"
+                                data-id="{{ alumno.id }}"
+                                data-nombre="{{ alumno.nombre }}"
+                                data-apellido="{{ alumno.apellido }}"
+                                data-padron="{{ alumno.padron }}"
+                                data-email="{{ alumno.email }}"
+                                data-url="{{ url_for('web.admin.panel.editar', estudiante_id=alumno.id) }}"
+                            >
+                                <img src="{{ url_for('static', filename='img/edit.svg') }}" alt="">
+                            </button>
+
+                            {% if estado == 'cursando' %}
+                            <button
+                                type="button"
+                                class="btn-danger js-abandonar"
+                                data-nombre="{{ alumno.nombre }}"
+                                data-apellido="{{ alumno.apellido }}"
+                                data-padron="{{ alumno.padron }}"
+                                data-url="{{ url_for('web.admin.panel.abandonar', estudiante_id=alumno.id) }}"
+                            >Abandonar</button>
+                            <button
+                                type="button"
+                                class="btn-solid js-baja"
+                                data-nombre="{{ alumno.nombre }}"
+                                data-apellido="{{ alumno.apellido }}"
+                                data-padron="{{ alumno.padron }}"
+                                data-url="{{ url_for('web.admin.panel.dar_de_baja', estudiante_id=alumno.id) }}"
+                            >Dar de baja</button>
+                            {% else %}
+                            <form method="POST" action="{{ url_for('web.admin.panel.dar_de_alta', estudiante_id=alumno.id) }}">
+                                <button
+                                    type="submit"
+                                    class="btn-alta {% if es_super_admin %}btn-alta--ok{% else %}btn-alta--off{% endif %}"
+                                    {% if not es_super_admin %}disabled{% endif %}
+                                >Dar de alta</button>
+                            </form>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if paginacion.total > 1 %}
+        <nav class="listado__paginas" aria-label="Paginación">
+            {% for numero in range(1, paginacion.total + 1) %}
+            <a
+                class="listado__pagina {% if numero == paginacion.actual %}is-current{% endif %}"
+                href="{{ url_for('web.admin.panel.index', q=q, _offset=(numero - 1) * paginacion.limit, _limit=paginacion.limit) }}"
+            >{{ numero }}</a>
+            {% endfor %}
+            {% if paginacion.actual < paginacion.total %}
+            <a
+                class="listado__pagina"
+                href="{{ url_for('web.admin.panel.index', q=q, _offset=paginacion.offset + paginacion.limit, _limit=paginacion.limit) }}"
+            >›</a>
+            {% endif %}
+        </nav>
+        {% endif %}
+
+        {% else %}
+        <p class="listado__vacio">No hay alumnos para mostrar en este cuatrimestre.</p>
+        {% endif %}
     </div>
 </section>
+
+<div class="modal" id="modal-editar" aria-hidden="true">
+    <div class="modal__overlay" data-close></div>
+    <div class="modal__box modal__box--form" role="dialog" aria-labelledby="editar-titulo">
+        <h2 id="editar-titulo" class="modal__title">{Nombre} {Apellido} {Padrón}</h2>
+        <form method="POST" id="form-editar">
+            <input type="hidden" name="padron" id="editar-padron">
+            <label class="modal__field">Nombre
+                <input type="text" name="nombre" id="editar-nombre" required>
+            </label>
+            <label class="modal__field">Apellido
+                <input type="text" name="apellido" id="editar-apellido" required>
+            </label>
+            <label class="modal__field">Correo electrónico
+                <input type="email" name="email" id="editar-email" required>
+            </label>
+            <div class="modal__actions">
+                <button type="button" class="btn-cancel" data-close>Cancelar</button>
+                <button type="submit" class="btn-confirm">Confirmar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="modal" id="modal-abandonar" aria-hidden="true">
+    <div class="modal__overlay" data-close></div>
+    <div class="modal__box" role="dialog">
+        <p class="modal__text" id="abandonar-texto"></p>
+        <form method="POST" id="form-abandonar">
+            <div class="modal__actions">
+                <button type="button" class="btn-cancel" data-close>Cancelar</button>
+                <button type="submit" class="btn-danger-soft">Confirmar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="modal" id="modal-baja" aria-hidden="true">
+    <div class="modal__overlay" data-close></div>
+    <div class="modal__box" role="dialog">
+        <p class="modal__text" id="baja-texto"></p>
+        <form method="POST" id="form-baja">
+            <label class="modal__field">Razón
+                <input type="text" name="motivo" placeholder="Ingrese razón" required>
+            </label>
+            <div class="modal__actions">
+                <button type="button" class="btn-cancel" data-close>Cancelar</button>
+                <button type="submit" class="btn-danger-soft">Confirmar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="modal" id="modal-motivos" aria-hidden="true">
+    <div class="modal__overlay" data-close></div>
+    <div class="modal__box" role="dialog" aria-labelledby="motivos-titulo">
+        <h2 id="motivos-titulo" class="modal__title">Razones de baja</h2>
+        <ul class="modal__lista" id="motivos-lista"></ul>
+        <div class="modal__actions">
+            <button type="button" class="btn-cancel" data-close>Cerrar</button>
+        </div>
+    </div>
+</div>
 {% endblock %}

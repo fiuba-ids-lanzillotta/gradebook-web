@@ -24,3 +24,9 @@ def api_headers(extra: dict | None = None) -> dict:
 # vacía, el login no muestra el captcha. El secret NO va en el frontend: la
 # verificación server-side la hace gradebook-api con su RECAPTCHA_SECRET.
 RECAPTCHA_SITE_KEY = os.getenv('RECAPTCHA_SITE_KEY', '').strip()
+
+# Cursada que muestra el listado. Hardcode hasta GET /cursadas/vigente.
+CURSADA_ANIO = '2026'
+CURSADA_CUATRIMESTRE = '2'
+
+ROL_SUPER_ADMIN = 'super_admin'
