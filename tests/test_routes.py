@@ -11,15 +11,32 @@ def client():
     return flask_app.test_client()
 
 
-# --- páginas públicas (services vía requests, mockeado) ---
+# --- zona de estudiante (login_required; services vía requests, mockeado) ---
+
+def _sesion_estudiante(client):
+    """Simula un estudiante logueado (la zona del sitio exige sesión)."""
+    with client.session_transaction() as sesion:
+        sesion['token'] = 'token-estudiante'
+        sesion['usuario'] = {'id': 1, 'tipo': 'estudiante', 'email': 'a@fi.uba.ar', 'rol': 'usuario'}
+
+
+def test_pagina_inicio_sin_sesion_redirige_a_login(client):
+    respuesta = client.get('/')
+
+    assert respuesta.status_code == 302
+    assert '/admin/login' in respuesta.headers['Location']
+
 
 def test_pagina_inicio_ok(client):
+    _sesion_estudiante(client)
+
     respuesta = client.get('/')
 
     assert respuesta.status_code == 200
 
 
 def test_pagina_items_ok(client, monkeypatch, respuesta_falsa, cargar_json):
+    _sesion_estudiante(client)
     lista = cargar_json('json/items/lista.json')
     monkeypatch.setattr(requests, 'get', lambda *args, **kwargs: respuesta_falsa(200, lista))
 
@@ -29,6 +46,8 @@ def test_pagina_items_ok(client, monkeypatch, respuesta_falsa, cargar_json):
 
 
 def test_pagina_items_degrada_si_api_cae(client, monkeypatch):
+    _sesion_estudiante(client)
+
     def _sin_conexion(*args, **kwargs):
         raise requests.exceptions.ConnectionError()
 

@@ -25,7 +25,11 @@ def api_headers(extra: dict | None = None) -> dict:
 # verificación server-side la hace gradebook-api con su RECAPTCHA_SECRET.
 RECAPTCHA_SITE_KEY = os.getenv('RECAPTCHA_SITE_KEY', '').strip()
 
-# Cursada que muestra el listado. Hardcode hasta GET /cursadas/vigente.
+# Código de la materia de la cátedra. Se usa para resolver la cursada vigente
+# contra la API (GET /cursadas?codigo=MATERIA_CODIGO).
+MATERIA_CODIGO = 'TB022'
+
+# Año/cuatrimestre de respaldo si la API no devuelve una cursada vigente.
 CURSADA_ANIO = '2026'
 CURSADA_CUATRIMESTRE = '2'
 

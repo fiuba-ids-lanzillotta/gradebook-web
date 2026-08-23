@@ -7,6 +7,7 @@ from urllib.parse import parse_qs, urlparse
 import requests
 
 from web.constants import API_BASE_URL, CURSADA_ANIO, CURSADA_CUATRIMESTRE, api_headers
+from web.services.cursos import obtener_cursada_vigente
 from web.services.respuestas_api import mensaje_error_api, respuesta_no_autorizada
 
 logger = logging.getLogger(__name__)
@@ -40,14 +41,34 @@ def interpretar_busqueda(q: str) -> dict:
 
 
 def listar_de_cursada(token: str, q: str = '', offset: int = 0, limit: int = 10) -> dict:
-    """Lista alumnos de la cursada hardcodeada, con búsqueda y paginado (API)."""
-    return _pedir_pagina(token, interpretar_busqueda(q), offset, limit)
+    """Lista alumnos de la cursada vigente (código MATERIA_CODIGO), con búsqueda y paginado.
+
+    Resuelve año/cuatrimestre desde la cursada vigente que expone la API; si no hay,
+    usa el respaldo CURSADA_ANIO/CURSADA_CUATRIMESTRE.
+    """
+    anio, cuatrimestre = _anio_cuatri_vigentes(token)
+
+    resultado = _pedir_pagina(token, interpretar_busqueda(q), offset, limit, anio, cuatrimestre)
+    resultado['anio'] = anio
+    resultado['cuatrimestre'] = cuatrimestre
+
+    return resultado
 
 
-def _pedir_pagina(token: str, filtros: dict, offset: int, limit: int) -> dict:
+def _anio_cuatri_vigentes(token: str) -> tuple:
+    """Año/cuatrimestre de la cursada vigente (o el respaldo de constants)."""
+    cursada = obtener_cursada_vigente(token)
+
+    if cursada:
+        return cursada.get('anio'), cursada.get('cuatrimestre')
+
+    return CURSADA_ANIO, CURSADA_CUATRIMESTRE
+
+
+def _pedir_pagina(token: str, filtros: dict, offset: int, limit: int, anio, cuatrimestre) -> dict:
     params = {
-        'anio': CURSADA_ANIO,
-        'cuatrimestre': CURSADA_CUATRIMESTRE,
+        'anio': anio,
+        'cuatrimestre': cuatrimestre,
         '_offset': offset,
         '_limit': limit,
     }

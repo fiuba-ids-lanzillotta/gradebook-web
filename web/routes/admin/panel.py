@@ -84,8 +84,8 @@ def _contexto_listado(listado: dict, error=None, ok=None):
         'nombre_docente': _nombre_docente(),
         'solapas': SOLAPAS,
         'estado_etiqueta': ESTADO_ETIQUETA,
-        'cursada_anio': CURSADA_ANIO,
-        'cursada_cuatrimestre': CURSADA_CUATRIMESTRE,
+        'cursada_anio': listado.get('anio', CURSADA_ANIO),
+        'cursada_cuatrimestre': listado.get('cuatrimestre', CURSADA_CUATRIMESTRE),
     }
 
 
