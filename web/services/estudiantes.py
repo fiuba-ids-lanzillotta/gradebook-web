@@ -12,27 +12,19 @@ from web.services.respuestas_api import mensaje_error_api, respuesta_no_autoriza
 logger = logging.getLogger(__name__)
 
 CSV_HEADER = ['Legajo', 'Alumno', 'Email']
-LIMITE_BUSQUEDA_AMPLIA = 500
 
 
 def interpretar_busqueda(q: str) -> dict:
-    """Traduce el buscador único a filtros de la API.
+    """Traduce el buscador único a los params de la API (una sola llamada).
 
-    - Solo dígitos → padron
-    - Contiene @ → email
-    - 'Apellido, Nombre' → apellido + nombre
-    - Letras → marca nombre_completo (unión nombre OR apellido)
+    - 'Apellido, Nombre'  → apellido + nombre (búsqueda precisa por campo, AND)
+    - Cualquier otra cosa → q (la API hace el OR: numérico → padrón/email,
+      alfabético → nombre/apellido/email)
+    - Vacío               → {} (sin búsqueda)
     """
     consulta = (q or '').strip()
     if not consulta:
         return {}
-
-    if '@' in consulta:
-        return {'email': consulta}
-
-    compacto = consulta.replace(' ', '')
-    if compacto.isdigit():
-        return {'padron': consulta}
 
     if ',' in consulta:
         apellido, nombre = consulta.split(',', 1)
@@ -41,21 +33,15 @@ def interpretar_busqueda(q: str) -> dict:
             filtros['apellido'] = apellido.strip()
         if nombre.strip():
             filtros['nombre'] = nombre.strip()
-        return filtros
+        if filtros:
+            return filtros
 
-    return {'nombre_completo': consulta}
+    return {'q': consulta}
 
 
 def listar_de_cursada(token: str, q: str = '', offset: int = 0, limit: int = 10) -> dict:
-    """Lista alumnos de la cursada hardcodeada, con búsqueda y paginado."""
-    filtros = interpretar_busqueda(q)
-
-    if filtros.get('nombre_completo'):
-        return _listar_por_nombre_completo(
-            token, filtros['nombre_completo'], offset, limit
-        )
-
-    return _pedir_pagina(token, filtros, offset, limit)
+    """Lista alumnos de la cursada hardcodeada, con búsqueda y paginado (API)."""
+    return _pedir_pagina(token, interpretar_busqueda(q), offset, limit)
 
 
 def _pedir_pagina(token: str, filtros: dict, offset: int, limit: int) -> dict:
@@ -65,7 +51,7 @@ def _pedir_pagina(token: str, filtros: dict, offset: int, limit: int) -> dict:
         '_offset': offset,
         '_limit': limit,
     }
-    for clave in ('nombre', 'apellido', 'padron', 'email'):
+    for clave in ('q', 'nombre', 'apellido', 'padron', 'email'):
         if filtros.get(clave):
             params[clave] = filtros[clave]
 
@@ -101,54 +87,6 @@ def _pedir_pagina(token: str, filtros: dict, offset: int, limit: int) -> dict:
         'offset': offset,
         'limit': limit,
     }
-
-
-def _listar_por_nombre_completo(token: str, consulta: str, offset: int, limit: int) -> dict:
-    """Une ilike de nombre y de apellido (la API solo AND por campo)."""
-    por_apellido = _pedir_pagina(
-        token, {'apellido': consulta}, 0, LIMITE_BUSQUEDA_AMPLIA
-    )
-    if not por_apellido.get('ok'):
-        return por_apellido
-
-    por_nombre = _pedir_pagina(
-        token, {'nombre': consulta}, 0, LIMITE_BUSQUEDA_AMPLIA
-    )
-    if not por_nombre.get('ok'):
-        return por_nombre
-
-    vistos = {}
-    for estudiante in por_apellido['estudiantes'] + por_nombre['estudiantes']:
-        vistos[estudiante['id']] = estudiante
-
-    ordenados = sorted(
-        vistos.values(),
-        key=lambda est: ((est.get('apellido') or ''), (est.get('nombre') or '')),
-    )
-    pagina = ordenados[offset: offset + limit]
-    total = len(ordenados)
-    links = _links_locales(offset, limit, total)
-
-    return {
-        'ok': True,
-        'estudiantes': pagina,
-        'links': links,
-        'offset': offset,
-        'limit': limit,
-    }
-
-
-def _links_locales(offset: int, limit: int, total: int) -> dict:
-    """Arma _links compatibles cuando paginamos en el web (búsqueda por nombre)."""
-    links = {'_first': {'_offset': 0}}
-    if offset > 0:
-        links['_prev'] = {'_offset': max(offset - limit, 0)}
-    if offset + limit < total:
-        links['_next'] = {'_offset': offset + limit}
-    ultimo = 0 if total == 0 else ((total - 1) // limit) * limit
-    if offset < ultimo:
-        links['_last'] = {'_offset': ultimo}
-    return links
 
 
 def paginas_desde_links(links: dict, offset: int, limit: int) -> dict:
