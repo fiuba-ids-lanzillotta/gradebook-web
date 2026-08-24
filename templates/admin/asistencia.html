@@ -1,0 +1,94 @@
+{% extends "admin/base_admin.html" %}
+
+{% block title %}Asistencia · Gradebook{% endblock %}
+
+{% block content %}
+<section class="asistencia">
+    <div class="asistencia__card">
+        <form method="POST" action="{{ url_for('web.admin.asistencia.tomar') }}" class="asistencia__tomar-form">
+            <button type="button" class="btn-solid asistencia__tomar js-tomar">Tomar asistencia</button>
+        </form>
+
+        <h1 class="asistencia__title">Asistencia</h1>
+
+        {% for categoria, mensaje in get_flashed_messages(with_categories=True) %}
+        <p class="listado__flash listado__flash--{{ categoria }}">{{ mensaje }}</p>
+        {% endfor %}
+
+        <div class="asistencia__scanner" id="scanner-viewport">
+            <div class="asistencia__frame">
+                <div class="asistencia__corners" aria-hidden="true">
+                    <span class="asistencia__corner asistencia__corner--tl"></span>
+                    <span class="asistencia__corner asistencia__corner--tr"></span>
+                    <span class="asistencia__corner asistencia__corner--bl"></span>
+                    <span class="asistencia__corner asistencia__corner--br"></span>
+                </div>
+                <div id="scanner-placeholder" class="asistencia__placeholder">
+                    <span class="asistencia__cam-icon" aria-hidden="true">📷</span>
+                </div>
+                <div id="qr-reader"></div>
+            </div>
+        </div>
+
+        <button type="button" id="btn-activar-camara" class="btn-solid asistencia__btn">
+            Activar cámara del dispositivo
+        </button>
+        <button type="button" id="btn-detener-camara" class="btn-outline asistencia__btn asistencia__btn--detener">
+            Detener cámara
+        </button>
+
+        <p class="asistencia__divider">-o buscá manualmente-</p>
+
+        <form
+            id="form-marcar"
+            class="asistencia__form"
+            method="POST"
+            action="{{ url_for('web.admin.asistencia.marcar') }}"
+            data-marcar-url="{{ url_for('web.admin.asistencia.marcar') }}"
+        >
+            <input
+                type="text"
+                name="codigo"
+                id="codigo-manual"
+                class="asistencia__input"
+                placeholder="Código del QR"
+                autocomplete="off"
+                spellcheck="false"
+            >
+            <input
+                type="text"
+                name="padron"
+                id="padron-manual"
+                class="asistencia__input"
+                placeholder="Padrón"
+                inputmode="numeric"
+                pattern="[0-9]*"
+                autocomplete="off"
+            >
+            <button type="submit" id="btn-confirmar" class="btn-solid asistencia__btn">Confirmar asistencia</button>
+        </form>
+
+        <p id="resultado-asistencia" class="asistencia__resultado" role="status" aria-live="polite"></p>
+    </div>
+</section>
+
+<div class="modal" id="modal-tomar" aria-hidden="true">
+    <div class="modal__overlay" data-close></div>
+    <div class="modal__box" role="dialog">
+        <p class="modal__text">
+            ¿Avisar a los alumnos de la cursada vigente? Se manda un mail a cada correo del listado (sin QR todavía).
+        </p>
+        <form method="POST" action="{{ url_for('web.admin.asistencia.tomar') }}">
+            <div class="modal__actions">
+                <button type="button" class="btn-cancel" data-close>Cancelar</button>
+                <button type="submit" class="btn-confirm">Confirmar</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script src="{{ url_for('static', filename='js/asistencia.js') }}"></script>
+{% endblock %}

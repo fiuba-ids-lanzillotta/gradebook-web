@@ -3,6 +3,7 @@ import os
 from dotenv import load_dotenv
 from flask import Flask, render_template
 from web.routes import web_bp
+from web.mail import configurar_mail
 from web.constants import RECAPTCHA_SITE_KEY
 
 load_dotenv()
@@ -20,6 +21,8 @@ app = Flask(__name__,
 
 app.json.sort_keys = False
 app.secret_key = os.getenv('SECRET_KEY')
+
+configurar_mail(app)
 
 app.register_blueprint(web_bp)
 

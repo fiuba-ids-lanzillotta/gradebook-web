@@ -24,14 +24,14 @@ ESTADO_ETIQUETA = {
 }
 
 SOLAPAS = (
-    ('listado', 'Listado alumnos', 'nav-listado.svg', True),
-    ('dashboards', 'Dashboards', 'nav-dashboards.svg', False),
-    ('asistencia', 'Asistencia', 'nav-asistencia.svg', False),
-    ('categorias', 'Categorías', 'nav-categorias.svg', False),
-    ('registros', 'Registros', 'nav-registros.svg', False),
-    ('docentes', 'Docentes', 'nav-docentes.svg', False),
-    ('entregas', 'Entregas', 'nav-entregas.svg', False),
-    ('vista', 'Vista general', 'nav-vista.svg', False),
+    ('listado', 'Listado alumnos', 'nav-listado.svg'),
+    ('dashboards', 'Dashboards', 'nav-dashboards.svg'),
+    ('asistencia', 'Asistencia', 'nav-asistencia.svg'),
+    ('categorias', 'Categorías', 'nav-categorias.svg'),
+    ('registros', 'Registros', 'nav-registros.svg'),
+    ('docentes', 'Docentes', 'nav-docentes.svg'),
+    ('entregas', 'Entregas', 'nav-entregas.svg'),
+    ('vista', 'Vista general', 'nav-vista.svg'),
 )
 
 
@@ -67,9 +67,19 @@ def _nombre_docente() -> str:
 
     return usuario.get('email') or ''
 
+def contexto_admin(solapa_activa: str) -> dict:
+    return {
+        'es_super_admin': es_super_admin(),
+        'nombre_docente': _nombre_docente(),
+        'solapas': [
+            (clave, etiqueta, icono, clave == solapa_activa)
+            for clave, etiqueta, icono in SOLAPAS
+        ],
+    }
 
 def _contexto_listado(listado: dict, error=None, ok=None):
-    return {
+    contexto = contexto_admin('listado')
+    contexto.update({
         'estudiantes': listado.get('estudiantes') or [],
         'links': listado.get('links') or {},
         'paginacion': servicio.paginas_desde_links(
@@ -80,14 +90,11 @@ def _contexto_listado(listado: dict, error=None, ok=None):
         'q': request.args.get('q', '').strip(),
         'error': error or listado.get('error'),
         'ok': ok,
-        'es_super_admin': es_super_admin(),
-        'nombre_docente': _nombre_docente(),
-        'solapas': SOLAPAS,
         'estado_etiqueta': ESTADO_ETIQUETA,
         'cursada_anio': listado.get('anio', CURSADA_ANIO),
         'cursada_cuatrimestre': listado.get('cuatrimestre', CURSADA_CUATRIMESTRE),
-    }
-
+    })
+    return contexto
 
 @panel_bp.route('/')
 @admin_required

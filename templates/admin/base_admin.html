@@ -13,7 +13,7 @@
 </head>
 <body class="admin-body">
     <div class="admin-shell">
-        <aside class="admin-sidebar">
+        <aside class="admin-sidebar" id="admin-sidebar">
             <a href="{{ url_for('web.admin.panel.index') }}" class="admin-sidebar__brand">
                 <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo Lanzillotta" class="admin-sidebar__logo">
                 <span class="admin-sidebar__brand-text">
@@ -26,8 +26,8 @@
                 {% for clave, etiqueta, icono, activa in solapas %}
                     {% if clave != 'docentes' or es_super_admin %}
                     <a
-                        href="{% if activa %}{{ url_for('web.admin.panel.index') }}{% else %}#{% endif %}"
-                        class="admin-sidebar__link {% if activa %}admin-sidebar__link--active{% endif %} {% if not activa %}admin-sidebar__link--soon{% endif %}"
+                        href="{% if clave == 'listado' %}{{ url_for('web.admin.panel.index') }}{% elif clave == 'asistencia' %}{{ url_for('web.admin.asistencia.index') }}{% else %}#{% endif %}"
+                        class="admin-sidebar__link {% if activa %}admin-sidebar__link--active{% endif %} {% if clave not in ('listado', 'asistencia') %}admin-sidebar__link--soon{% endif %}"
                     >
                         <img src="{{ url_for('static', filename='img/' + icono) }}" alt="" class="admin-sidebar__icon">
                         {{ etiqueta }}
