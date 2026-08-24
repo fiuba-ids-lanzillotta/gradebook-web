@@ -13,6 +13,13 @@
 </head>
 <body class="admin-body">
     <div class="admin-shell">
+        <header class="admin-topbar">
+            <button type="button" class="admin-topbar__toggle" id="admin-menu-toggle" aria-expanded="false" aria-controls="admin-sidebar">
+                Menú
+            </button>
+            <span class="admin-topbar__title">Lanzillotta</span>
+        </header>
+        <div class="admin-sidebar-overlay" id="admin-sidebar-overlay" hidden></div>
         <aside class="admin-sidebar" id="admin-sidebar">
             <a href="{{ url_for('web.admin.panel.index') }}" class="admin-sidebar__brand">
                 <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo Lanzillotta" class="admin-sidebar__logo">

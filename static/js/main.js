@@ -166,6 +166,40 @@ document.addEventListener('DOMContentLoaded', function () {
         document.querySelectorAll('.modal.is-open').forEach((modal) => cerrarModal(modal));
     });
 
+    const sidebar = document.getElementById('admin-sidebar');
+    const overlay = document.getElementById('admin-sidebar-overlay');
+    const toggle = document.getElementById('admin-menu-toggle');
+    const cerrarMenu = () => {
+        if (!sidebar) return;
+        sidebar.classList.remove('is-open');
+        if (overlay) {
+            overlay.hidden = true;
+            overlay.classList.remove('is-visible');
+        }
+        if (toggle) toggle.setAttribute('aria-expanded', 'false');
+        document.body.classList.remove('admin-menu-open');
+    };
+    const abrirMenu = () => {
+        if (!sidebar) return;
+        sidebar.classList.add('is-open');
+        if (overlay) {
+            overlay.hidden = false;
+            overlay.classList.add('is-visible');
+        }
+        if (toggle) toggle.setAttribute('aria-expanded', 'true');
+        document.body.classList.add('admin-menu-open');
+    };
+    if (toggle && sidebar) {
+        toggle.addEventListener('click', () => {
+            if (sidebar.classList.contains('is-open')) cerrarMenu();
+            else abrirMenu();
+        });
+    }
+    if (overlay) overlay.addEventListener('click', cerrarMenu);
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') cerrarMenu();
+    });
+
     document.querySelectorAll('.login__toggle-pass').forEach((togglePass) => {
         const field = togglePass.closest('.login__field');
         const input = field ? field.querySelector('input') : null;

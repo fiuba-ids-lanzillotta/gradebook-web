@@ -425,6 +425,9 @@ html:has(.admin-body),
     .listado__acciones { justify-content: flex-start; }
 }
 
+.admin-topbar { display: none; }
+.admin-sidebar-overlay { display: none; }
+
 .asistencia { max-width: 560px; margin: 0 auto; }
 .asistencia__card {
     position: relative;
@@ -552,6 +555,13 @@ html:has(.admin-body),
         overflow-y: auto;
     }
     .admin-sidebar.is-open { transform: translateX(0); }
+    .admin-sidebar__nav {
+        display: flex;
+        flex-direction: column;
+        flex-wrap: nowrap;
+        gap: 4px;
+    }
+    .admin-sidebar__link { width: 100%; }
     .admin-sidebar-overlay {
         display: block;
         position: fixed;
