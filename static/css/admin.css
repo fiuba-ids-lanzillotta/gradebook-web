@@ -177,11 +177,31 @@ html:has(.admin-body),
     width: 250px;
     flex-shrink: 0;
     align-self: stretch;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    min-height: 100vh;
     background: #ffffff;
     padding: 20px 16px;
     display: flex;
     flex-direction: column;
+    justify-content: space-between;
     gap: 20px;
+    overflow: hidden;
+}
+.admin-sidebar__top {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+}
+.admin-sidebar__footer {
+    margin-top: auto;
+    padding-top: 16px;
+    border-top: 1px solid #e5e7eb;
+    flex: 0 0 auto;
 }
 .admin-sidebar__brand {
     display: flex;
@@ -522,25 +542,76 @@ html:has(.admin-body),
     .admin-topbar {
         display: flex;
         align-items: center;
+        justify-content: space-between;
         gap: 12px;
         position: sticky;
         top: 0;
         z-index: 30;
         background: #ffffff;
-        padding: 10px 12px;
+        padding: 8px 12px;
         box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
     }
-    .admin-topbar__toggle {
-        border: 1px solid #3d6488;
-        background: #fff;
-        color: #3d6488;
-        border-radius: 8px;
-        padding: 8px 12px;
-        font: inherit;
-        font-weight: 700;
-        cursor: pointer;
+    .admin-topbar__brand {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        min-width: 0;
+        text-decoration: none;
+        color: inherit;
     }
-    .admin-topbar__title { font-weight: 700; color: #1f2937; }
+    .admin-topbar__logo {
+        width: 36px;
+        height: 36px;
+        object-fit: contain;
+        flex-shrink: 0;
+    }
+    .admin-topbar__brand-text {
+        display: flex;
+        flex-direction: column;
+        line-height: 1.15;
+        min-width: 0;
+    }
+    .admin-topbar__name {
+        font-family: var(--font-brand);
+        font-weight: 700;
+        font-size: 16px;
+        color: #1f2937;
+    }
+    .admin-topbar__sub {
+        font-size: 11px;
+        color: #6b7280;
+    }
+    .admin-topbar__toggle {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 44px;
+        height: 44px;
+        padding: 0;
+        border: none;
+        background: transparent;
+        cursor: pointer;
+        border-radius: 8px;
+    }
+    .admin-topbar__toggle:hover { background: #e8f4fb; }
+    .admin-topbar__burger,
+    .admin-topbar__burger::before,
+    .admin-topbar__burger::after {
+        display: block;
+        width: 22px;
+        height: 2px;
+        background: #3d6488;
+        border-radius: 1px;
+    }
+    .admin-topbar__burger { position: relative; }
+    .admin-topbar__burger::before,
+    .admin-topbar__burger::after {
+        content: "";
+        position: absolute;
+        left: 0;
+    }
+    .admin-topbar__burger::before { top: -7px; }
+    .admin-topbar__burger::after { top: 7px; }
     .admin-shell { flex-direction: column; }
     .admin-sidebar {
         position: fixed;
