@@ -28,6 +28,8 @@ def autenticar(email: str, password: str, recaptcha_token: str = '') -> dict:
         if response.status_code == 401:
             return {'ok': False, 'error': 'Usuario o contraseña incorrectos.'}
 
+        logger.warning(f"Login: la API respondió HTTP {response.status_code}: {response.text}")
+
         return {'ok': False, 'error': f'Error del servidor (HTTP {response.status_code}).'}
 
     except requests.exceptions.ConnectionError:

@@ -36,6 +36,7 @@ def respuesta_falsa():
             status_code=status_code,
             json=lambda: json_data,
             content=content,
+            text=content.decode('utf-8', 'replace') if isinstance(content, bytes) else str(content),
             headers=headers or {},
         )
 
