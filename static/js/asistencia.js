@@ -1,8 +1,10 @@
 document.addEventListener('DOMContentLoaded', function () {
+    const app = document.getElementById('asistencia-app');
     const form = document.getElementById('form-marcar');
-    if (!form) return;
+    if (!app || !form) return;
 
     const els = {
+        app,
         form,
         qrReader: document.getElementById('qr-reader'),
         placeholder: document.getElementById('scanner-placeholder'),
@@ -12,14 +14,25 @@ document.addEventListener('DOMContentLoaded', function () {
         inputPadron: document.getElementById('padron-manual'),
         btnConfirmar: document.getElementById('btn-confirmar'),
         resultado: document.getElementById('resultado-asistencia'),
-        marcarUrl: form.dataset.marcarUrl,
+        progreso: document.getElementById('progreso-envio'),
+        progresoBar: document.getElementById('progreso-envio-bar'),
+        progresoTexto: document.getElementById('progreso-envio-texto'),
+        btnTomar: document.querySelector('.js-tomar'),
+        btnConfirmarTomar: document.getElementById('btn-confirmar-tomar'),
+        modalTomar: document.getElementById('modal-tomar'),
     };
 
+    let claseId = (app.dataset.claseId || '').trim();
     let html5QrCode = null;
     let camaraActiva = false;
     let enviando = false;
+    let tomando = false;
     let ultimoCodigo = '';
     let ultimoAt = 0;
+
+    function urlConClase(tpl, id) {
+        return tpl.replace('/0/', '/' + id + '/');
+    }
 
     function mostrarResultado(tipo, texto) {
         if (!els.resultado) return;
@@ -34,13 +47,113 @@ document.addEventListener('DOMContentLoaded', function () {
         return trimmed;
     }
 
+    function pintarProgreso(enviados, total, conError) {
+        if (!els.progreso) return;
+        els.progreso.hidden = false;
+        const tope = total || 0;
+        const pct = tope ? Math.min(100, Math.round((enviados / tope) * 100)) : 0;
+        if (els.progresoBar) els.progresoBar.style.width = pct + '%';
+        let texto = tope ? ('Enviando mails: ' + enviados + ' / ' + tope) : 'Enviando mails…';
+        if (conError) texto += ' · ' + conError + ' con error';
+        if (els.progresoTexto) els.progresoTexto.textContent = texto;
+    }
+
+    function ocultarProgreso() {
+        if (!els.progreso) return;
+        els.progreso.hidden = true;
+        if (els.progresoBar) els.progresoBar.style.width = '0';
+    }
+
+    function setTomando(activo) {
+        tomando = activo;
+        if (!els.btnTomar) return;
+        els.btnTomar.disabled = activo;
+        els.btnTomar.setAttribute('aria-busy', activo ? 'true' : 'false');
+        els.btnTomar.textContent = activo ? 'Enviando…' : 'Tomar asistencia';
+    }
+
+    async function postJson(url, cuerpo) {
+        const respuesta = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                Accept: 'application/json',
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(cuerpo || {}),
+        });
+        if (respuesta.status === 401) {
+            window.location.href = '/admin/login';
+            throw new Error('sesion');
+        }
+        const datos = await respuesta.json().catch(() => ({}));
+        return { http: respuesta.status, datos };
+    }
+
+    async function tomarAsistencia() {
+        if (tomando) return;
+        setTomando(true);
+        ocultarProgreso();
+
+        try {
+            const creado = await postJson(app.dataset.urlClases, {});
+            if (!creado.datos.ok) {
+                ocultarProgreso();
+                mostrarResultado('error', creado.datos.error || 'No se pudo crear la toma de hoy.');
+                return;
+            }
+            claseId = String(creado.datos.clase_id || (creado.datos.clase && creado.datos.clase.id) || '');
+            app.dataset.claseId = claseId;
+            if (!claseId) {
+                ocultarProgreso();
+                mostrarResultado('error', 'La API no devolvió el id de la clase.');
+                return;
+            }
+
+            pintarProgreso(0, creado.datos.total_estudiantes || 0, 0);
+            let estado;
+            do {
+                const lote = await postJson(urlConClase(app.dataset.urlEnviarTpl, claseId), {});
+                if (!lote.datos.ok) {
+                    ocultarProgreso();
+                    mostrarResultado('error', lote.datos.error || 'Falló el envío de un lote.');
+                    return;
+                }
+                estado = lote.datos;
+                pintarProgreso(estado.enviados || 0, estado.total || 0, estado.con_error || 0);
+            } while (!estado.completo);
+
+            const extra = estado.con_error
+                ? ' · ' + estado.con_error + ' no se pudieron enviar (reintentá Tomar asistencia).'
+                : '';
+            mostrarResultado('ok', 'Listo: ' + (estado.enviados || 0) + '/' + (estado.total || 0) + ' mails.' + extra);
+            if (els.progresoTexto) {
+                els.progresoTexto.textContent = 'Envío completo: ' + (estado.enviados || 0) + '/' + (estado.total || 0);
+            }
+        } catch (error) {
+            if (error && error.message === 'sesion') return;
+            ocultarProgreso();
+            mostrarResultado('error', 'No se pudo tomar asistencia. Revisá la conexión.');
+        } finally {
+            setTomando(false);
+        }
+    }
+
     async function marcarAsistencia({ codigo, padron, origen }) {
+        if (!claseId) {
+            mostrarResultado('error', 'Primero tomá asistencia de hoy (botón de arriba).');
+            return;
+        }
         const ahora = Date.now();
         const codigoNorm = extraerCodigo(codigo);
         if (origen === 'scan' && codigoNorm && codigoNorm === ultimoCodigo && ahora - ultimoAt < 2500) {
             return;
         }
         if (enviando) return;
+        if (codigoNorm && padron) {
+            mostrarResultado('error', 'Ingresá el código del QR o el padrón, no los dos.');
+            return;
+        }
         if (!codigoNorm && !padron) {
             mostrarResultado('error', 'Ingresá el código del QR o el padrón.');
             return;
@@ -51,36 +164,25 @@ document.addEventListener('DOMContentLoaded', function () {
         ultimoAt = ahora;
         if (els.btnConfirmar) els.btnConfirmar.disabled = true;
 
+        const cuerpo = {};
+        if (padron) {
+            cuerpo.padron = padron;
+        } else {
+            cuerpo.codigo = codigoNorm;
+            if (origen === 'form') cuerpo.manual = true;
+        }
+
         try {
-            const cuerpo = new URLSearchParams();
-            if (codigoNorm) cuerpo.set('codigo', codigoNorm);
-            if (padron) cuerpo.set('padron', padron);
-
-            const respuesta = await fetch(els.marcarUrl, {
-                method: 'POST',
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    Accept: 'application/json',
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                },
-                body: cuerpo.toString(),
-            });
-
-            if (respuesta.status === 401) {
-                window.location.href = '/admin/login';
-                return;
-            }
-
-            const datos = await respuesta.json().catch(() => ({}));
-
+            const { datos } = await postJson(urlConClase(app.dataset.urlMarcarTpl, claseId), cuerpo);
             if (datos.ok) {
-                mostrarResultado('info', datos.mensaje || 'Leído. Todavía no se guarda en la base.');
+                mostrarResultado('ok', datos.mensaje || 'Presente.');
                 els.inputCodigo.value = '';
                 els.inputPadron.value = '';
             } else {
-                mostrarResultado('error', datos.error || 'No se pudo leer el código o el padrón.');
+                mostrarResultado('error', datos.error || 'Código o padrón inválido para la clase de hoy.');
             }
         } catch (error) {
+            if (error && error.message === 'sesion') return;
             mostrarResultado('error', 'No se pudo confirmar. Revisá la conexión.');
         } finally {
             enviando = false;
@@ -170,7 +272,7 @@ document.addEventListener('DOMContentLoaded', function () {
         try {
             await iniciarConPreferencias();
             camaraActiva = true;
-            mostrarResultado('info', 'Apuntá al código. Al leerlo se completa el campo (todavía no se guarda).');
+            mostrarResultado('info', 'Cámara activa. Apuntá al QR; sigue prendida entre alumnos. Detener cámara la apaga.');
         } catch (err) {
             await resetVista();
             mostrarResultado('error', mensajeErrorCamara(err));
@@ -197,18 +299,26 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
-    const modalTomar = document.getElementById('modal-tomar');
-    const abrirTomar = document.querySelector('.js-tomar');
-    if (modalTomar && abrirTomar) {
-        abrirTomar.addEventListener('click', () => {
-            modalTomar.classList.add('is-open');
-            modalTomar.setAttribute('aria-hidden', 'false');
+    if (els.modalTomar && els.btnTomar) {
+        els.btnTomar.addEventListener('click', () => {
+            if (tomando || els.btnTomar.disabled) return;
+            els.modalTomar.classList.add('is-open');
+            els.modalTomar.setAttribute('aria-hidden', 'false');
         });
-        modalTomar.querySelectorAll('[data-close]').forEach((el) => {
+        els.modalTomar.querySelectorAll('[data-close]').forEach((el) => {
             el.addEventListener('click', () => {
-                modalTomar.classList.remove('is-open');
-                modalTomar.setAttribute('aria-hidden', 'true');
+                els.modalTomar.classList.remove('is-open');
+                els.modalTomar.setAttribute('aria-hidden', 'true');
             });
+        });
+    }
+    if (els.btnConfirmarTomar) {
+        els.btnConfirmarTomar.addEventListener('click', () => {
+            if (els.modalTomar) {
+                els.modalTomar.classList.remove('is-open');
+                els.modalTomar.setAttribute('aria-hidden', 'true');
+            }
+            tomarAsistencia();
         });
     }
 });
