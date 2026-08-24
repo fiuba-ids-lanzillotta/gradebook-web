@@ -1,59 +1,104 @@
-"""Autenticación del panel de administración: login, logout y el
-decorador admin_required que protege las secciones internas.
+"""Autenticación: login, logout y reexport de los decoradores."""
+from flask import Blueprint, render_template, request, redirect, session, url_for
 
-El login delega la verificación de credenciales en la API (gradebook-api),
-que devuelve un JWT. Ese token se guarda en la sesión y se usará para autorizar
-las operaciones de administración contra la API.
-"""
-from functools import wraps
-from flask import Blueprint, render_template, request, redirect, url_for, session
-
-from web.services.auth import autenticar
+from web.services.auth import autenticar, solicitar_recuperacion, confirmar_recuperacion
+from web.constants import RECAPTCHA_SITE_KEY
+from web.auth_sesion import (
+    admin_required,
+    redirigir_a_login_sin_sesion,
+    url_post_login,
+)
 
 auth_bp = Blueprint('auth', __name__)
 
 
-def admin_required(view):
-    @wraps(view)
-    def wrapped(*args, **kwargs):
-        if not session.get('token'):
-            return redirect(url_for('web.admin.auth.login'))
-
-        return view(*args, **kwargs)
-    return wrapped
-
-
-def redirigir_a_login_sin_sesion():
-    """Limpia la sesión y redirige al login (p. ej. cuando la API responde 401/403)."""
-    session.pop('token', None)
-    session.pop('usuario', None)
-
-    return redirect(url_for('web.admin.auth.login'))
+def _captcha_token() -> str:
+    return request.form.get('g-recaptcha-response', '').strip()
 
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
     if session.get('token'):
-        return redirect(url_for('web.admin.panel.index'))
+        return redirect(url_post_login())
 
     error = None
 
     if request.method == 'POST':
-        usuario = request.form.get('usuario', '').strip()
+        email = request.form.get('email', '').strip()
         password = request.form.get('password', '')
-
-        resultado = autenticar(usuario, password)
-
+        resultado = autenticar(email, password, recaptcha_token=_captcha_token())
         if resultado['ok']:
             session['token'] = resultado['token']
             session['usuario'] = resultado['usuario']
-            return redirect(url_for('web.admin.panel.index'))
-
+            return redirect(url_post_login())
         error = resultado['error']
 
-    return render_template('admin/login.html', error=error)
+    return render_template(
+        'admin/login.html',
+        error=error,
+        recaptcha_site_key=RECAPTCHA_SITE_KEY,
+    )
 
 
 @auth_bp.route('/logout')
 def logout():
     return redirigir_a_login_sin_sesion()
+
+MENSAJE_RECUPERAR = (
+    'Si el correo está registrado, vas a recibir un enlace '
+    'para restablecer la contraseña.'
+)
+MENSAJE_CAMBIO_OK = 'Tu contraseña se actualizó. Ya podés iniciar sesión.'
+
+
+@auth_bp.route('/recuperar', methods=['GET', 'POST'])
+def recuperar():
+    error = None
+    ok = None
+    if request.method == 'POST':
+        email = request.form.get('email', '').strip()
+        if not email:
+            error = 'Ingresá un correo electrónico.'
+        else:
+            resultado = solicitar_recuperacion(email)
+            # Misma respuesta siempre (no revela si el mail existe); sólo un
+            # error de conexión rompe la uniformidad.
+            if resultado['ok']:
+                ok = MENSAJE_RECUPERAR
+            else:
+                error = resultado['error']
+    return render_template('admin/recuperar.html', error=error, ok=ok)
+
+
+@auth_bp.route('/cambiar-contrasena', methods=['GET', 'POST'])
+def cambiar_contrasena():
+    token = (request.values.get('token') or '').strip()
+    error = None
+    ok = None
+    if not token:
+        error = 'El enlace no es válido o expiró. Solicitá uno nuevo.'
+        return render_template(
+            'admin/cambiar_contrasena.html',
+            token='',
+            error=error,
+            ok=ok,
+        )
+    if request.method == 'POST':
+        password = request.form.get('password', '')
+        confirm = request.form.get('password_confirm', '')
+        if not password or not confirm:
+            error = 'Completá ambos campos.'
+        elif password != confirm:
+            error = 'Las contraseñas no coinciden.'
+        else:
+            resultado = confirmar_recuperacion(token, password)
+            if resultado['ok']:
+                ok = MENSAJE_CAMBIO_OK
+            else:
+                error = resultado['error']
+    return render_template(
+        'admin/cambiar_contrasena.html',
+        token=token,
+        error=error,
+        ok=ok,
+    )

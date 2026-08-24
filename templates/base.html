@@ -6,6 +6,9 @@
     <title>{% block title %}Gradebook{% endblock %}</title>
 
     <link rel="stylesheet" href="{{ url_for('static', filename='css/common.css') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Afacad:wght@400;500;600;700&family=Akatab:wght@400;500;700&display=swap" rel="stylesheet">
     {% if request.blueprint and 'admin' in request.blueprint.split('.') %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
     {% else %}
@@ -17,7 +20,11 @@
     <header class="navbar">
         <div class="navbar__inner">
             <a href="{{ url_for('web.site.home.index') }}" class="navbar__brand">
-                <span class="navbar__brand-name">Gradebook</span>
+                <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo Lanzillotta" class="navbar__logo">
+                <span class="navbar__brand-text">
+                    <span class="navbar__brand-name">Lanzillotta</span>
+                    <span class="navbar__brand-sub">Intro. Desarrollo de Software</span>
+                </span>
             </a>
 
             {% block navbar_menu %}
@@ -31,8 +38,14 @@
                    class="navbar__link {% if request.endpoint == 'web.site.home.index' %}navbar__link--active{% endif %}">Inicio</a>
                 <a href="{{ url_for('web.site.items.index') }}"
                    class="navbar__link {% if request.endpoint == 'web.site.items.index' %}navbar__link--active{% endif %}">Items</a>
-                <a href="{{ url_for('web.admin.auth.login') }}"
+                {% if session.get('usuario', {}).get('tipo') == 'docente' %}
+                <a href="{{ url_for('web.admin.panel.index') }}"
                    class="navbar__link navbar__link--cta">Admin</a>
+                {% endif %}
+                {% if session.get('token') %}
+                <a href="{{ url_for('web.admin.auth.logout') }}"
+                   class="navbar__link">Cerrar sesión</a>
+                {% endif %}
             </nav>
             {% endblock %}
         </div>
@@ -43,5 +56,6 @@
     </main>
 
     <script src="{{ url_for('static', filename='js/main.js') }}" defer></script>
+    {% block extra_js %}{% endblock %}
 </body>
 </html>

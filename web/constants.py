@@ -19,3 +19,18 @@ def api_headers(extra: dict | None = None) -> dict:
         headers['X-API-Key'] = API_KEY
 
     return headers
+
+# Site key PÚBLICA de reCAPTCHA v2. Se renderiza en el widget del login. Si está
+# vacía, el login no muestra el captcha. El secret NO va en el frontend: la
+# verificación server-side la hace gradebook-api con su RECAPTCHA_SECRET.
+RECAPTCHA_SITE_KEY = os.getenv('RECAPTCHA_SITE_KEY', '').strip()
+
+# Código de la materia de la cátedra. Se usa para resolver la cursada vigente
+# contra la API (GET /cursadas?codigo=MATERIA_CODIGO).
+MATERIA_CODIGO = 'TB022'
+
+# Año/cuatrimestre de respaldo si la API no devuelve una cursada vigente.
+CURSADA_ANIO = '2026'
+CURSADA_CUATRIMESTRE = '2'
+
+ROL_SUPER_ADMIN = 'super_admin'
