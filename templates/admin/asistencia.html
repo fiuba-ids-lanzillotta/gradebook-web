@@ -3,17 +3,33 @@
 {% block title %}Asistencia · Gradebook{% endblock %}
 
 {% block content %}
-<section class="asistencia">
+<section
+    class="asistencia"
+    id="asistencia-app"
+    data-clase-id="{{ clase_id }}"
+    data-fecha="{{ fecha }}"
+    data-url-clases="{{ url_for('web.admin.asistencia.crear_clase') }}"
+    data-url-enviar-tpl="{{ url_for('web.admin.asistencia.enviar_qrs', clase_id=0) }}"
+    data-url-marcar-tpl="{{ url_for('web.admin.asistencia.marcar', clase_id=0) }}"
+>
     <div class="asistencia__card">
-        <form method="POST" action="{{ url_for('web.admin.asistencia.tomar') }}" class="asistencia__tomar-form">
+        <div class="asistencia__tomar-form">
             <button type="button" class="btn-solid asistencia__tomar js-tomar">Tomar asistencia</button>
-        </form>
+        </div>
 
         <h1 class="asistencia__title">Asistencia</h1>
+        <p class="asistencia__fecha">Hoy {{ fecha }}</p>
 
         {% for categoria, mensaje in get_flashed_messages(with_categories=True) %}
         <p class="listado__flash listado__flash--{{ categoria }}">{{ mensaje }}</p>
         {% endfor %}
+
+        <div id="progreso-envio" class="asistencia__progreso" hidden>
+            <div class="asistencia__progreso-track">
+                <span id="progreso-envio-bar" class="asistencia__progreso-bar"></span>
+            </div>
+            <p id="progreso-envio-texto" class="asistencia__progreso-texto"></p>
+        </div>
 
         <div class="asistencia__scanner" id="scanner-viewport">
             <div class="asistencia__frame">
@@ -39,13 +55,7 @@
 
         <p class="asistencia__divider">-o buscá manualmente-</p>
 
-        <form
-            id="form-marcar"
-            class="asistencia__form"
-            method="POST"
-            action="{{ url_for('web.admin.asistencia.marcar') }}"
-            data-marcar-url="{{ url_for('web.admin.asistencia.marcar') }}"
-        >
+        <form id="form-marcar" class="asistencia__form">
             <input
                 type="text"
                 name="codigo"
@@ -76,14 +86,13 @@
     <div class="modal__overlay" data-close></div>
     <div class="modal__box" role="dialog">
         <p class="modal__text">
-            ¿Avisar a los alumnos de la cursada vigente? Se manda un mail a cada correo del listado (sin QR todavía).
+            ¿Tomar asistencia de hoy ({{ fecha }})? Se genera un QR único por alumno
+            y se mandan los mails en tandas.
         </p>
-        <form method="POST" action="{{ url_for('web.admin.asistencia.tomar') }}">
-            <div class="modal__actions">
-                <button type="button" class="btn-cancel" data-close>Cancelar</button>
-                <button type="submit" class="btn-confirm">Confirmar</button>
-            </div>
-        </form>
+        <div class="modal__actions">
+            <button type="button" class="btn-cancel" data-close>Cancelar</button>
+            <button type="button" class="btn-confirm" id="btn-confirmar-tomar">Confirmar</button>
+        </div>
     </div>
 </div>
 {% endblock %}

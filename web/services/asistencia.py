@@ -1,87 +1,183 @@
-"""Toma de asistencia (fase visual): mails desde el web, sin QR ni persistencia."""
+"""Consumo de gradebook-api para tomar y marcar asistencia (QR / código / padrón)."""
 import logging
+from datetime import datetime
+from zoneinfo import ZoneInfo
 
-from flask import render_template
-from flask_mail import Message
+import requests
 
-from web.mail import mail, mail_configurado
-from web.services import estudiantes
+from web.constants import API_BASE_URL, CURSADA_ANIO, CURSADA_CUATRIMESTRE, MATERIA_CODIGO, api_headers
+from web.services.cursos import obtener_cursada_vigente
+from web.services.respuestas_api import mensaje_error_api, respuesta_no_autorizada
 
 logger = logging.getLogger(__name__)
 
+TZ_CATEDRA = ZoneInfo('America/Argentina/Buenos_Aires')
 
-def notificar_toma_asistencia(token: str) -> dict:
-    """GET paginado de alumnos de la cursada vigente y un mail a cada email."""
-    listado = _todos_de_cursada(token)
-    if not listado.get('ok'):
-        return listado
 
-    enviados = 0
-    omitidos = 0
-    errores = 0
-    anio = listado.get('anio')
-    cuatrimestre = listado.get('cuatrimestre')
-    simulado = not mail_configurado()
+def fecha_hoy() -> str:
+    """Fecha de la toma: siempre hoy, en hora de Argentina."""
+    return datetime.now(TZ_CATEDRA).date().isoformat()
 
-    for alumno in listado.get('estudiantes') or []:
-        email = (alumno.get('email') or '').strip()
-        estado = alumno.get('estado') or 'cursando'
-        if not email or estado != 'cursando':
-            omitidos += 1
-            continue
 
-        nombre = f"{alumno.get('nombre') or ''} {alumno.get('apellido') or ''}".strip() or 'alumno/a'
-        try:
-            _enviar_aviso(email, nombre, anio, cuatrimestre, simulado=simulado)
-            enviados += 1
-        except Exception as error:
-            logger.error(f"No se pudo avisar a {email}: {error}")
-            errores += 1
+def crear_clase_hoy(token: str) -> dict:
+    """POST /cursadas/{id}/clases con la fecha de hoy (idempotente)."""
+    cursada = obtener_cursada_vigente(token)
+    cursada_id = cursada.get('id')
+    if not cursada_id:
+        return {'ok': False, 'error': 'No hay cursada vigente para tomar asistencia.'}
 
+    resultado = _pedir(
+        token,
+        'POST',
+        f'/cursadas/{cursada_id}/clases',
+        json_body={'fecha': fecha_hoy()},
+        ok=(200, 201),
+        timeout=60,
+    )
+    if not resultado.get('ok'):
+        return resultado
+
+    datos = resultado.get('datos') or {}
+    clase = datos.get('clase') or {}
     return {
         'ok': True,
-        'enviados': enviados,
-        'omitidos': omitidos,
-        'errores': errores,
-        'simulado': simulado,
+        'clase': clase,
+        'clase_id': clase.get('id'),
+        'total_estudiantes': datos.get('total_estudiantes', 0),
+        'generados': datos.get('generados', 0),
+        'fecha': fecha_hoy(),
     }
 
 
-def _todos_de_cursada(token: str) -> dict:
-    """Recorre GET /estudiantes de la cursada vigente (el DTO trae email)."""
-    todos = []
+def enviar_qrs(token: str, clase_id: int) -> dict:
+    """POST /clases/{id}/enviar-qrs: un lote. El front lo llama en bucle."""
+    resultado = _pedir(
+        token,
+        'POST',
+        f'/clases/{clase_id}/enviar-qrs',
+        ok=(200,),
+        timeout=60,
+    )
+    if not resultado.get('ok'):
+        return resultado
+    return {'ok': True, **(resultado.get('datos') or {})}
+
+
+def estado_envio(token: str, clase_id: int) -> dict:
+    resultado = _pedir(token, 'GET', f'/clases/{clase_id}/envio', ok=(200,))
+    if not resultado.get('ok'):
+        return resultado
+    return {'ok': True, **(resultado.get('datos') or {})}
+
+
+def clase_de_hoy(token: str) -> dict:
+    """Busca la clase de hoy en la cursada vigente (para escanear sin volver a disparar)."""
+    cursada = obtener_cursada_vigente(token)
+    cursada_id = cursada.get('id')
+    if not cursada_id:
+        return {'ok': True, 'clase': None}
+
+    hoy = fecha_hoy()
     offset = 0
-    limit = 100
-    anio = None
-    cuatrimestre = None
+    limit = 50
     while True:
-        pagina = estudiantes.listar_de_cursada(token, q='', offset=offset, limit=limit)
-        if not pagina.get('ok'):
-            return pagina
-        anio = pagina.get('anio', anio)
-        cuatrimestre = pagina.get('cuatrimestre', cuatrimestre)
-        lote = pagina.get('estudiantes') or []
-        todos.extend(lote)
-        if not (pagina.get('links') or {}).get('_next') or not lote:
-            break
+        resultado = _pedir(
+            token,
+            'GET',
+            f'/cursadas/{cursada_id}/clases',
+            params={'_offset': offset, '_limit': limit},
+            ok=(200, 204),
+        )
+        if not resultado.get('ok'):
+            return resultado
+        if resultado.get('vacio'):
+            return {'ok': True, 'clase': None}
+
+        clases = (resultado.get('datos') or {}).get('clases') or []
+        for clase in clases:
+            if str(clase.get('fecha') or '')[:10] == hoy:
+                return {'ok': True, 'clase': clase}
+
+        links = (resultado.get('datos') or {}).get('_links') or {}
+        if not links.get('_next') or not clases:
+            return {'ok': True, 'clase': None}
         offset += limit
-    return {'ok': True, 'estudiantes': todos, 'anio': anio, 'cuatrimestre': cuatrimestre}
 
+def _cursada_para_asistencia(token: str) -> dict:
+    vigente = obtener_cursada_vigente(token)
+    if vigente.get('id'):
+        return vigente
 
-def _enviar_aviso(destinatario: str, nombre: str, anio, cuatrimestre, simulado: bool) -> None:
-    html = render_template(
-        'emails/asistencia.html',
-        nombre=nombre,
-        anio=anio,
-        cuatrimestre=cuatrimestre,
+    resultado = _pedir(
+        token,
+        'GET',
+        '/cursadas',
+        params={'codigo': MATERIA_CODIGO, '_limit': 100},
+        ok=(200, 204),
     )
-    if simulado:
-        logger.warning(f'[asistencia] Mail deshabilitado; aviso para {destinatario}')
-        return
+    if not resultado.get('ok'):
+        return resultado
+    cursos = (resultado.get('datos') or {}).get('cursadas') or []
+    for curso in cursos:
+        if str(curso.get('anio')) == str(CURSADA_ANIO) and str(curso.get('cuatrimestre')) == str(CURSADA_CUATRIMESTRE):
+            return curso
+    return cursos[0] if cursos else {}
 
-    mensaje = Message(
-        subject='Se está tomando asistencia — Intro. Desarrollo de Software',
-        recipients=[destinatario],
-        html=html,
+def marcar(token: str, clase_id: int, codigo: str = '', padron: str = '', manual: bool = False) -> dict:
+    """POST /clases/{id}/marcar. Exactamente uno de codigo o padron."""
+    cuerpo = {}
+    if codigo:
+        cuerpo['codigo'] = codigo
+        if manual:
+            cuerpo['manual'] = True
+    elif padron:
+        cuerpo['padron'] = padron
+
+    resultado = _pedir(
+        token,
+        'POST',
+        f'/clases/{clase_id}/marcar',
+        json_body=cuerpo,
+        ok=(200,),
     )
-    mail.send(mensaje)
+    if not resultado.get('ok'):
+        return resultado
+    return {'ok': True, **(resultado.get('datos') or {})}
+
+
+def _pedir(token: str, method: str, path: str, *, json_body=None, params=None, ok=(200,), timeout=20) -> dict:
+    try:
+        response = requests.request(
+            method,
+            f'{API_BASE_URL}{path}',
+            json=json_body,
+            params=params,
+            headers=api_headers({'Authorization': f'Bearer {token}'}),
+            timeout=timeout,
+        )
+    except requests.exceptions.ConnectionError:
+        logger.error(f"No se pudo conectar con la API en {API_BASE_URL}")
+        return {'ok': False, 'error': 'No se pudo conectar con el servidor. Intentá más tarde.'}
+    except Exception as error:
+        logger.error(f"Error en {method} {path}: {error}")
+        return {'ok': False, 'error': 'Ocurrió un error al hablar con el servidor.'}
+
+    no_autorizada = respuesta_no_autorizada(response)
+    if no_autorizada:
+        return no_autorizada
+
+    if response.status_code == 204:
+        return {'ok': True, 'vacio': True, 'datos': {}}
+
+    if response.status_code not in ok:
+        return {
+            'ok': False,
+            'error': mensaje_error_api(response),
+            'status': response.status_code,
+        }
+
+    try:
+        datos = response.json() or {}
+    except Exception:
+        datos = {}
+    return {'ok': True, 'datos': datos}
