@@ -148,16 +148,28 @@
 
         {% if paginacion.total > 1 %}
         <nav class="listado__paginas" aria-label="Paginación">
-            {% for numero in range(1, paginacion.total + 1) %}
+            {% if paginacion.actual > 1 %}
+            <a
+                class="listado__pagina listado__pagina--nav"
+                href="{{ url_for('web.admin.panel.index', q=q, _offset=(paginacion.actual - 2) * paginacion.limit, _limit=paginacion.limit) }}"
+                aria-label="Anterior"
+            >‹</a>
+            {% endif %}
+            {% for numero in paginacion.numeros %}
+            {% if numero == '...' %}
+            <span class="listado__pagina listado__pagina--ellipsis">…</span>
+            {% else %}
             <a
                 class="listado__pagina {% if numero == paginacion.actual %}is-current{% endif %}"
                 href="{{ url_for('web.admin.panel.index', q=q, _offset=(numero - 1) * paginacion.limit, _limit=paginacion.limit) }}"
             >{{ numero }}</a>
+            {% endif %}
             {% endfor %}
             {% if paginacion.actual < paginacion.total %}
             <a
-                class="listado__pagina"
+                class="listado__pagina listado__pagina--nav"
                 href="{{ url_for('web.admin.panel.index', q=q, _offset=paginacion.offset + paginacion.limit, _limit=paginacion.limit) }}"
+                aria-label="Siguiente"
             >›</a>
             {% endif %}
         </nav>

@@ -121,12 +121,32 @@ def paginas_desde_links(links: dict, offset: int, limit: int) -> dict:
     else:
         total_paginas = (ultimo_offset // limit) + 1
 
+    total = max(total_paginas, 1)
+
     return {
         'actual': pagina_actual,
-        'total': max(total_paginas, 1),
+        'total': total,
+        'numeros': _ventana_paginas(pagina_actual, total),
         'offset': offset,
         'limit': limit,
     }
+
+
+def _ventana_paginas(actual: int, total: int, ventana: int = 4) -> list:
+    """Números de página a mostrar: una ventana de `ventana` páginas desde la actual,
+    y la última con elipsis (`'...'`) si queda un hueco. Ej: [2, 3, 4, 5, '...', 26]."""
+    if total <= ventana + 1:
+        return list(range(1, total + 1))
+
+    inicio = max(1, min(actual, total - ventana + 1))
+    paginas = list(range(inicio, inicio + ventana))
+
+    if paginas[-1] < total:
+        if paginas[-1] < total - 1:
+            paginas.append('...')
+        paginas.append(total)
+
+    return paginas
 
 
 def _offset_de_link(link) -> int | None:

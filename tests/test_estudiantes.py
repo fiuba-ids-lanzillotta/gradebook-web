@@ -1,7 +1,7 @@
 import requests
 
 from web.services import estudiantes
-from web.services.estudiantes import interpretar_busqueda
+from web.services.estudiantes import interpretar_busqueda, _ventana_paginas
 
 
 def test_busqueda_vacia():
@@ -58,3 +58,25 @@ def test_listar_de_cursada_sin_vigente_usa_respaldo(monkeypatch, respuesta_falsa
     assert capturado['params']['anio'] == CURSADA_ANIO
     assert capturado['params']['cuatrimestre'] == CURSADA_CUATRIMESTRE
     assert resultado['anio'] == CURSADA_ANIO and resultado['cuatrimestre'] == CURSADA_CUATRIMESTRE
+
+
+# --- ventana de paginacion ---
+
+def test_ventana_pocas_paginas_muestra_todas():
+    assert _ventana_paginas(1, 5) == [1, 2, 3, 4, 5]
+
+
+def test_ventana_primera_pagina():
+    assert _ventana_paginas(1, 26) == [1, 2, 3, 4, '...', 26]
+
+
+def test_ventana_avanza_una():
+    assert _ventana_paginas(2, 26) == [2, 3, 4, 5, '...', 26]
+
+
+def test_ventana_cerca_del_final_sin_elipsis():
+    assert _ventana_paginas(25, 26) == [23, 24, 25, 26]
+
+
+def test_ventana_sin_hueco_no_pone_elipsis():
+    assert _ventana_paginas(2, 6) == [2, 3, 4, 5, 6]
