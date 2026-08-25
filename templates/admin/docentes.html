@@ -1,0 +1,169 @@
+{% extends "admin/base_admin.html" %}
+
+{% block title %}Docentes · Gradebook{% endblock %}
+
+{% block content %}
+<section class="listado docentes">
+    <div class="listado__card">
+        <h1 class="listado__title">Docentes</h1>
+
+        {% for categoria, mensaje in get_flashed_messages(with_categories=True) %}
+        <p class="listado__flash listado__flash--{{ categoria }}">{{ mensaje }}</p>
+        {% endfor %}
+
+        <form class="listado__alta" method="POST" action="{{ url_for('web.admin.docentes.crear') }}">
+            <h2 class="listado__alta-title">Agregar Docente</h2>
+            <div class="listado__alta-grid docentes__alta-grid">
+                <label>Nombre
+                    <input type="text" name="nombre" placeholder="nombre" required autocomplete="off">
+                </label>
+                <label>Apellido
+                    <input type="text" name="apellido" placeholder="apellido" required autocomplete="off">
+                </label>
+                <label>Correo electrónico
+                    <input type="email" name="email" placeholder="correo electrónico" required autocomplete="off">
+                </label>
+                <label>Rol
+                    <select name="rol" required>
+                        <option value="" disabled selected>Rol</option>
+                        {% for cargo in cargos %}
+                        <option value="{{ cargo }}">{{ cargo }}</option>
+                        {% endfor %}
+                    </select>
+                </label>
+                <button type="submit" class="btn-outline listado__alta-btn">+ Agregar</button>
+            </div>
+        </form>
+
+        {% if docentes %}
+        <div class="listado__tabla-wrap docentes__tabla-wrap">
+            <table class="listado__tabla">
+                <thead>
+                    <tr>
+                        <th>Apellido, Nombre</th>
+                        <th>Correo electrónico</th>
+                        <th class="docentes__col-centro">Rol</th>
+                        <th class="docentes__col-centro">Estado</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for docente in docentes %}
+                    <tr class="{% if not docente.activo %}docentes__fila--inactiva{% endif %}">
+                        <td data-label="Apellido, Nombre">{{ docente.apellido }}, {{ docente.nombre }}</td>
+                        <td data-label="Correo electrónico">{{ docente.email }}</td>
+                        <td data-label="Rol" class="docentes__col-centro">
+                            <span class="docentes__rol docentes__rol--{{ docente.rol | lower }}">{{ docente.rol }}</span>
+                        </td>
+                        <td data-label="Estado" class="docentes__col-centro">
+                            {% if docente.activo %}activo{% else %}inactivo{% endif %}
+                        </td>
+                        <td class="listado__acciones">
+                            {% if docente.activo %}
+                                {% if docente.rol != 'Profesor' %}
+                                <button
+                                    type="button"
+                                    class="listado__icon-btn js-desactivar-docente"
+                                    aria-label="Desactivar docente"
+                                    data-nombre="{{ docente.nombre }}"
+                                    data-apellido="{{ docente.apellido }}"
+                                    data-url="{{ url_for('web.admin.docentes.desactivar', docente_id=docente.id) }}"
+                                >
+                                    <img src="{{ url_for('static', filename='img/trash.svg') }}" alt="">
+                                </button>
+                                {% endif %}
+                            {% else %}
+                            <form method="POST" action="{{ url_for('web.admin.docentes.reactivar', docente_id=docente.id) }}">
+                                <button type="submit" class="btn-alta btn-alta--ok">Reactivar</button>
+                            </form>
+                            {% endif %}
+                            <button
+                                type="button"
+                                class="listado__icon-btn js-editar-docente"
+                                aria-label="Editar docente"
+                                data-id="{{ docente.id }}"
+                                data-nombre="{{ docente.nombre }}"
+                                data-apellido="{{ docente.apellido }}"
+                                data-email="{{ docente.email }}"
+                                data-rol="{{ docente.rol }}"
+                                data-permisos='{{ docente.permisos | tojson }}'
+                                data-url="{{ url_for('web.admin.docentes.editar', docente_id=docente.id) }}"
+                            >
+                                <img src="{{ url_for('static', filename='img/edit.svg') }}" alt="">
+                            </button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="listado__vacio">No hay docentes para mostrar.</p>
+        {% endif %}
+    </div>
+</section>
+
+<div class="modal" id="modal-editar-docente" aria-hidden="true">
+    <div class="modal__overlay" data-close></div>
+    <div class="modal__box modal__box--docente" role="dialog" aria-labelledby="editar-docente-titulo">
+        <h2 id="editar-docente-titulo" class="modal__title">{Nombre} {Apellido}</h2>
+        <form method="POST" id="form-editar-docente">
+            <label class="modal__field">Nombre
+                <input type="text" name="nombre" id="editar-docente-nombre" required>
+            </label>
+            <label class="modal__field">Apellido
+                <input type="text" name="apellido" id="editar-docente-apellido" required>
+            </label>
+            <label class="modal__field">Correo electrónico
+                <input type="email" name="email" id="editar-docente-email" required>
+            </label>
+            <label class="modal__field">Rol
+                <select name="rol" id="editar-docente-rol" required>
+                    {% for cargo in cargos %}
+                    <option value="{{ cargo }}">{{ cargo }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+
+            <fieldset class="docentes__permisos" id="editar-docente-permisos">
+                <legend>Permisos</legend>
+                <p class="docentes__permisos-nota" id="editar-docente-permisos-nota" hidden>
+                    El profesor siempre tiene todos los permisos.
+                </p>
+                {% for permiso in permisos_catalogo %}
+                <label class="docentes__check">
+                    <input type="checkbox" name="permisos" value="{{ permiso.codigo }}">
+                    <span>
+                        <strong>{{ permiso.descripcion }}</strong>
+                        <small>{{ permiso.codigo }}</small>
+                    </span>
+                </label>
+                {% endfor %}
+            </fieldset>
+
+            <div class="modal__actions">
+                <button type="button" class="btn-cancel" data-close>Cancelar</button>
+                <button type="submit" class="btn-confirm">Confirmar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="modal" id="modal-desactivar-docente" aria-hidden="true">
+    <div class="modal__overlay" data-close></div>
+    <div class="modal__box" role="dialog">
+        <p class="modal__text" id="desactivar-docente-texto"></p>
+        <form method="POST" id="form-desactivar-docente">
+            <div class="modal__actions">
+                <button type="button" class="btn-cancel" data-close>Cancelar</button>
+                <button type="submit" class="btn-danger-soft">Desactivar</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script type="application/json" id="permisos-por-cargo">{{ permisos_por_cargo | tojson }}</script>
+<script src="{{ url_for('static', filename='js/docentes.js') }}"></script>
+{% endblock %}

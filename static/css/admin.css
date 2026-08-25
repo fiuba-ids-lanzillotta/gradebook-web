@@ -310,7 +310,9 @@ html:has(.admin-body),
     color: #374151;
 }
 .listado__alta-grid input,
+.listado__alta-grid select,
 .modal__field input,
+.modal__field select,
 .listado__buscar input {
     padding: 8px 10px;
     border: 1px solid #d1d5db;
@@ -425,10 +427,79 @@ html:has(.admin-body),
 }
 .admin-body .modal__field { text-align: left; }
 .modal__box--form { max-width: 420px; }
+.modal__box--docente {
+    max-width: 480px;
+    max-height: 90vh;
+    overflow-y: auto;
+    text-align: left;
+}
 .modal__field { display: flex; flex-direction: column; gap: 4px; font-weight: 600; font-size: 14px; margin-bottom: 12px; }
 .modal__lista { list-style: none; display: flex; flex-direction: column; gap: 10px; margin: 0 0 16px; }
 .modal__lista li { background: #f3f4f6; border-radius: 8px; padding: 10px 12px; }
 .modal__lista strong { display: block; color: #3d6488; margin-bottom: 2px; }
+.docentes__rol {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+}
+.docentes__rol--profesor { background: #e8d9f5; color: #5b3d8a; }
+.docentes__rol--ayudante { background: #f8e0c8; color: #8a4b16; }
+.docentes__rol--colaborador { background: #d5efd4; color: #27633a; }
+.listado.docentes .listado__tabla {
+    table-layout: fixed;
+}
+.listado.docentes .listado__tabla th.docentes__col-centro,
+.listado.docentes .listado__tabla td.docentes__col-centro {
+    text-align: center;
+}
+.docentes__tabla-wrap {
+    max-height: calc(5.6rem + 5 * 3.05rem);
+    overflow-y: auto;
+}
+.listado.docentes .listado__tabla thead th {
+    position: sticky;
+    top: 0;
+    background: #fff;
+    z-index: 1;
+}
+.docentes__fila--inactiva td { color: #6b7280; }
+.docentes__permisos {
+    border: none;
+    background: #eceff3;
+    border-radius: 12px;
+    padding: 12px 14px 8px;
+    margin: 4px 0 16px;
+    max-height: 220px;
+    overflow-y: auto;
+    text-align: left;
+}
+.docentes__permisos legend {
+    font-size: 14px;
+    font-weight: 700;
+    color: #374151;
+    padding: 6px 14px 4px; 
+    background-color: #eceff3;
+    border-radius: 5px;
+}
+.docentes__permisos-nota {
+    font-size: 13px;
+    color: #6b7280;
+    margin: 0 0 10px;
+    font-weight: 500;
+}
+.docentes__check {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin: 0 0 10px;
+    font-weight: 500;
+    color: #1f2937;
+    cursor: pointer;
+}
+.docentes__check input { margin-top: 3px; }
+.docentes__check small { display: block; color: #6b7280; font-size: 11px; font-weight: 400; }
 .admin-topbar { display: none; }
 .admin-sidebar-overlay { display: none; }
 
@@ -559,7 +630,8 @@ html:has(.admin-body),
 .asistencia__resultado.is-info { background: #e8f4fb; color: #3d6488; }
 
 @media (max-width: 960px) {
-    .listado__alta-grid { grid-template-columns: 1fr 1fr; }
+    .listado__alta-grid,
+    .docentes__alta-grid { grid-template-columns: 1fr 1fr; }
 }
 @media (max-width: 720px) {
     .admin-topbar {
@@ -673,6 +745,8 @@ html:has(.admin-body),
     .listado__tabla td { display: flex; justify-content: space-between; gap: 12px; border: none; padding: 4px 0; }
     .listado__tabla td::before { content: attr(data-label); font-weight: 700; color: #6b7280; }
     .listado__acciones { justify-content: flex-start; }
+    .docentes__tabla-wrap { max-height: none; overflow: visible; }
+    .listado.docentes .listado__tabla thead th { position: static; }
     .asistencia__title { font-size: 24px; }
     .asistencia__card { padding: 16px 14px 20px; }
     .asistencia__scanner { width: min(100%, 320px); }
