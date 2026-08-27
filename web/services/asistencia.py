@@ -23,6 +23,7 @@ def crear_clase_hoy(token: str) -> dict:
     """POST /cursadas/{id}/clases con la fecha de hoy (idempotente)."""
     cursada = obtener_cursada_vigente(token)
     cursada_id = cursada.get('id')
+
     if not cursada_id:
         return {'ok': False, 'error': 'No hay cursada vigente para tomar asistencia.'}
 
@@ -34,11 +35,13 @@ def crear_clase_hoy(token: str) -> dict:
         ok=(200, 201),
         timeout=60,
     )
+
     if not resultado.get('ok'):
         return resultado
 
     datos = resultado.get('datos') or {}
     clase = datos.get('clase') or {}
+
     return {
         'ok': True,
         'clase': clase,
@@ -58,15 +61,19 @@ def enviar_qrs(token: str, clase_id: int) -> dict:
         ok=(200,),
         timeout=60,
     )
+
     if not resultado.get('ok'):
         return resultado
+
     return {'ok': True, **(resultado.get('datos') or {})}
 
 
 def estado_envio(token: str, clase_id: int) -> dict:
     resultado = _pedir(token, 'GET', f'/clases/{clase_id}/envio', ok=(200,))
+    
     if not resultado.get('ok'):
         return resultado
+
     return {'ok': True, **(resultado.get('datos') or {})}
 
 
@@ -74,12 +81,14 @@ def clase_de_hoy(token: str) -> dict:
     """Busca la clase de hoy en la cursada vigente (para escanear sin volver a disparar)."""
     cursada = obtener_cursada_vigente(token)
     cursada_id = cursada.get('id')
+
     if not cursada_id:
         return {'ok': True, 'clase': None}
 
     hoy = fecha_hoy()
     offset = 0
     limit = 50
+
     while True:
         resultado = _pedir(
             token,
@@ -88,23 +97,29 @@ def clase_de_hoy(token: str) -> dict:
             params={'_offset': offset, '_limit': limit},
             ok=(200, 204),
         )
+
         if not resultado.get('ok'):
             return resultado
+
         if resultado.get('vacio'):
             return {'ok': True, 'clase': None}
 
         clases = (resultado.get('datos') or {}).get('clases') or []
+
         for clase in clases:
             if str(clase.get('fecha') or '')[:10] == hoy:
                 return {'ok': True, 'clase': clase}
 
         links = (resultado.get('datos') or {}).get('_links') or {}
+
         if not links.get('_next') or not clases:
             return {'ok': True, 'clase': None}
+
         offset += limit
 
 def _cursada_para_asistencia(token: str) -> dict:
     vigente = obtener_cursada_vigente(token)
+
     if vigente.get('id'):
         return vigente
 
@@ -115,19 +130,25 @@ def _cursada_para_asistencia(token: str) -> dict:
         params={'codigo': MATERIA_CODIGO, '_limit': 100},
         ok=(200, 204),
     )
+
     if not resultado.get('ok'):
         return resultado
+
     cursos = (resultado.get('datos') or {}).get('cursadas') or []
+
     for curso in cursos:
         if str(curso.get('anio')) == str(CURSADA_ANIO) and str(curso.get('cuatrimestre')) == str(CURSADA_CUATRIMESTRE):
             return curso
+
     return cursos[0] if cursos else {}
 
 def marcar(token: str, clase_id: int, codigo: str = '', padron: str = '', manual: bool = False) -> dict:
     """POST /clases/{id}/marcar. Exactamente uno de codigo o padron."""
     cuerpo = {}
+
     if codigo:
         cuerpo['codigo'] = codigo
+
         if manual:
             cuerpo['manual'] = True
     elif padron:
@@ -140,8 +161,10 @@ def marcar(token: str, clase_id: int, codigo: str = '', padron: str = '', manual
         json_body=cuerpo,
         ok=(200,),
     )
+
     if not resultado.get('ok'):
         return resultado
+
     return {'ok': True, **(resultado.get('datos') or {})}
 
 
@@ -157,12 +180,15 @@ def _pedir(token: str, method: str, path: str, *, json_body=None, params=None, o
         )
     except requests.exceptions.ConnectionError:
         logger.error(f"No se pudo conectar con la API en {API_BASE_URL}")
+
         return {'ok': False, 'error': 'No se pudo conectar con el servidor. Intentá más tarde.'}
     except Exception as error:
         logger.error(f"Error en {method} {path}: {error}")
+
         return {'ok': False, 'error': 'Ocurrió un error al hablar con el servidor.'}
 
     no_autorizada = respuesta_no_autorizada(response)
+
     if no_autorizada:
         return no_autorizada
 
@@ -180,4 +206,5 @@ def _pedir(token: str, method: str, path: str, *, json_body=None, params=None, o
         datos = response.json() or {}
     except Exception:
         datos = {}
+        
     return {'ok': True, 'datos': datos}

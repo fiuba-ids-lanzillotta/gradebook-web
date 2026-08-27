@@ -23,6 +23,7 @@ def autenticar(email: str, password: str, recaptcha_token: str = '') -> dict:
 
         if response.status_code == 200:
             datos = response.json()
+            
             return {'ok': True, 'token': datos['token'], 'usuario': datos['usuario']}
 
         if response.status_code == 401:

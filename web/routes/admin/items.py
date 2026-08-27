@@ -31,6 +31,7 @@ def index():
         resultado = crear_item(session.get('token'), body_desde_formulario(request.form))
 
         redireccion = _resultado_o_redirect(resultado)
+
         if redireccion:
             return redireccion
 
@@ -49,6 +50,7 @@ def editar(item_id):
     )
 
     redireccion = _resultado_o_redirect(resultado)
+
     if redireccion:
         return redireccion
 
@@ -61,6 +63,7 @@ def eliminar(item_id):
     resultado = eliminar_item(session.get('token'), item_id)
 
     redireccion = _resultado_o_redirect(resultado)
+    
     if redireccion:
         return redireccion
 

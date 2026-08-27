@@ -1,4 +1,4 @@
-"""Pantalla admin: docentes (template, sin cablear la API todavía)."""
+"""Pantalla admin: docentes (consumo de la API real)."""
 from flask import (
     Blueprint,
     flash,
@@ -11,109 +11,53 @@ from flask import (
 
 from web.auth_sesion import admin_required, es_super_admin
 from web.routes.admin.panel import contexto_admin
+from web.services.docentes import (
+    listar_docentes,
+    crear_docente,
+    actualizar_docente,
+    eliminar_docente,
+    actualizar_permisos_docente,
+)
+from web.services.permisos import obtener_catalogo_permisos
 
 docentes_bp = Blueprint('docentes', __name__)
 
 CARGOS = ('Profesor', 'Ayudante', 'Colaborador')
 
-PERMISOS_CATALOGO = (
-    {'codigo': 'docentes.leer', 'descripcion': 'Ver docentes'},
-    {'codigo': 'docentes.gestionar', 'descripcion': 'Alta, edición y desactivar docentes'},
-    {'codigo': 'estudiantes.leer', 'descripcion': 'Ver alumnos'},
-    {'codigo': 'estudiantes.gestionar', 'descripcion': 'Alta, edición, baja y abandono de alumnos'},
-    {'codigo': 'cursadas.leer', 'descripcion': 'Ver cursadas'},
-    {'codigo': 'asistencias.leer', 'descripcion': 'Ver asistencia'},
-    {'codigo': 'asistencias.gestionar', 'descripcion': 'Tomar asistencia'},
-    {'codigo': 'roles.gestionar', 'descripcion': 'Configurar permisos por rol'},
-    {'codigo': 'permisos.asignar', 'descripcion': 'Asignar o revocar permisos por persona'},
-)
-
-_TODOS = [item['codigo'] for item in PERMISOS_CATALOGO]
-_SIN_DOCENTE_NI_RBAC = [
-    codigo for codigo in _TODOS
-    if codigo not in ('docentes.gestionar', 'roles.gestionar', 'permisos.asignar')
-]
-PERMISOS_POR_CARGO = {
-    'Profesor': list(_TODOS),
-    'Ayudante': list(_SIN_DOCENTE_NI_RBAC),
-    'Colaborador': list(_SIN_DOCENTE_NI_RBAC),
-}
-
-_SEMILLA = (
-    {
-        'id': 1,
-        'nombre': 'Bruno',
-        'apellido': 'Lanzillotta',
-        'email': 'blanzillotta@fi.uba.ar',
-        'rol': 'Profesor',
-        'activo': True,
-        'permisos': list(PERMISOS_POR_CARGO['Profesor']),
-    },
-    {
-        'id': 2,
-        'nombre': 'Leonel',
-        'apellido': 'Chaves',
-        'email': 'lchaves@fi.uba.ar',
-        'rol': 'Ayudante',
-        'activo': True,
-        'permisos': list(PERMISOS_POR_CARGO['Ayudante']),
-    },
-    {
-        'id': 3,
-        'nombre': 'Valentina',
-        'apellido': 'Grobly',
-        'email': 'vgrobly@fi.uba.ar',
-        'rol': 'Colaborador',
-        'activo': True,
-        'permisos': list(PERMISOS_POR_CARGO['Colaborador']),
-    },
-)
-
 
 def _solo_profesor():
     if not es_super_admin():
         flash('Solo un profesor puede administrar docentes.', 'error')
+
         return redirect(url_for('web.admin.panel.index'))
+
     return None
 
 
-def _listado() -> list[dict]:
-    if 'docentes_ui' not in session:
-        session['docentes_ui'] = [dict(fila) for fila in _SEMILLA]
-        session.modified = True
-    return session['docentes_ui']
+def _permisos_por_cargo(catalogo: list[dict]) -> dict:
+    """Calcula los permisos por cargo basado en el catálogo dinámico."""
+    todos = [item['codigo'] for item in catalogo]
 
-
-def _guardar(filas: list[dict]) -> None:
-    session['docentes_ui'] = filas
-    session.modified = True
-
-
-def _buscar(docente_id: int) -> dict | None:
-    for fila in _listado():
-        if fila['id'] == docente_id:
-            return fila
-    return None
-
-
-def _email_usado(email: str, excluir_id: int | None = None) -> bool:
-    email_norm = (email or '').strip().lower()
-    for fila in _listado():
-        if fila['id'] == excluir_id:
-            continue
-        if (fila.get('email') or '').lower() == email_norm:
-            return True
-    return False
+    return {
+        'Profesor': list(todos),
+        'Ayudante': [codigo for codigo in todos if codigo not in ('permisos.asignar', 'docentes.gestionar', 'estudiantes.crear', 'roles.gestionar')],
+        'Colaborador': [codigo for codigo in todos if codigo not in ('permisos.asignar', 'docentes.gestionar', 'estudiantes.crear', 'estudiantes.eliminar', 'roles.gestionar')],
+    }
 
 
 def _contexto_pantalla(**extra) -> dict:
-    docentes = sorted(_listado(), key=lambda fila: (fila['apellido'] or '', fila['nombre'] or ''))
+    token = session.get('token')
+    docentes = listar_docentes(token) if token else []
+    docentes_ordenados = sorted(docentes, key=lambda fila: (fila.get('apellido') or '', fila.get('nombre') or ''))
+    permisos_catalogo = obtener_catalogo_permisos(token) if token else []
+    permisos_por_cargo = _permisos_por_cargo(permisos_catalogo)
+
     return {
         **contexto_admin('docentes'),
-        'docentes': docentes,
+        'docentes': docentes_ordenados,
         'cargos': CARGOS,
-        'permisos_catalogo': PERMISOS_CATALOGO,
-        'permisos_por_cargo': PERMISOS_POR_CARGO,
+        'permisos_catalogo': permisos_catalogo,
+        'permisos_por_cargo': permisos_por_cargo,
         **extra,
     }
 
@@ -122,8 +66,10 @@ def _contexto_pantalla(**extra) -> dict:
 @admin_required
 def index():
     bloqueo = _solo_profesor()
+
     if bloqueo:
         return bloqueo
+
     return render_template('admin/docentes.html', **_contexto_pantalla())
 
 
@@ -131,6 +77,7 @@ def index():
 @admin_required
 def crear():
     bloqueo = _solo_profesor()
+
     if bloqueo:
         return bloqueo
 
@@ -141,24 +88,20 @@ def crear():
 
     if not (nombre and apellido and email and rol in CARGOS):
         flash('Completá nombre, apellido, correo y rol.', 'error')
-        return redirect(url_for('web.admin.docentes.index'))
-    if _email_usado(email):
-        flash('Ya hay un docente con ese correo.', 'error')
+
         return redirect(url_for('web.admin.docentes.index'))
 
-    filas = _listado()
-    nuevo_id = max((fila['id'] for fila in filas), default=0) + 1
-    filas.append({
-        'id': nuevo_id,
-        'nombre': nombre,
-        'apellido': apellido,
-        'email': email,
-        'rol': rol,
-        'activo': True,
-        'permisos': list(PERMISOS_POR_CARGO[rol]),
-    })
-    _guardar(filas)
-    flash(f'Se agregó a {apellido}, {nombre} ({rol}). El mail con la clave se cablea después.', 'ok')
+    token = session.get('token')
+    resultado = crear_docente(token, nombre, apellido, email, rol)
+
+    if resultado:
+        permisos_catalogo = obtener_catalogo_permisos(token) if token else []
+        permisos_por_cargo = _permisos_por_cargo(permisos_catalogo)
+        actualizar_permisos_docente(token, resultado['id'], permisos_por_cargo[rol])
+        flash(f'Se agregó a {apellido}, {nombre} ({rol}). Se envió un email con la contraseña.', 'ok')
+    else:
+        flash('Error al crear el docente. Verificá los datos.', 'error')
+
     return redirect(url_for('web.admin.docentes.index'))
 
 
@@ -169,37 +112,33 @@ def editar(docente_id):
     if bloqueo:
         return bloqueo
 
-    fila = _buscar(docente_id)
-    if not fila:
-        flash('No se encontró ese docente.', 'error')
-        return redirect(url_for('web.admin.docentes.index'))
-
     nombre = (request.form.get('nombre') or '').strip()
     apellido = (request.form.get('apellido') or '').strip()
     email = (request.form.get('email') or '').strip()
     rol = (request.form.get('rol') or '').strip()
+
     if not (nombre and apellido and email and rol in CARGOS):
         flash('Completá nombre, apellido, correo y rol.', 'error')
         return redirect(url_for('web.admin.docentes.index'))
-    if _email_usado(email, excluir_id=docente_id):
-        flash('Ya hay un docente con ese correo.', 'error')
-        return redirect(url_for('web.admin.docentes.index'))
 
-    if rol == 'Profesor':
-        permisos = list(PERMISOS_POR_CARGO['Profesor'])
+    token = session.get('token')
+    resultado = actualizar_docente(token, docente_id, nombre, apellido, email, rol)
+
+    if resultado:
+        permisos_catalogo = obtener_catalogo_permisos(token) if token else []
+        permisos_por_cargo = _permisos_por_cargo(permisos_catalogo)
+
+        if rol == 'Profesor':
+            permisos = list(permisos_por_cargo['Profesor'])
+        else:
+            tildados = set(request.form.getlist('permisos'))
+            permisos = [item['codigo'] for item in permisos_catalogo if item['codigo'] in tildados]
+
+        actualizar_permisos_docente(token, docente_id, permisos)
+        flash(f'Se actualizó a {apellido}, {nombre}.', 'ok')
     else:
-        tildados = set(request.form.getlist('permisos'))
-        permisos = [item['codigo'] for item in PERMISOS_CATALOGO if item['codigo'] in tildados]
+        flash('Error al actualizar el docente. Verificá los datos.', 'error')
 
-    fila.update({
-        'nombre': nombre,
-        'apellido': apellido,
-        'email': email,
-        'rol': rol,
-        'permisos': permisos,
-    })
-    _guardar(_listado())
-    flash(f'Se actualizó a {apellido}, {nombre}.', 'ok')
     return redirect(url_for('web.admin.docentes.index'))
 
 
@@ -209,16 +148,28 @@ def desactivar(docente_id):
     bloqueo = _solo_profesor()
     if bloqueo:
         return bloqueo
-    fila = _buscar(docente_id)
+
+    token = session.get('token')
+    docentes = listar_docentes(token) if token else []
+    fila = next((d for d in docentes if d.get('id') == docente_id), None)
+
     if not fila:
         flash('No se encontró ese docente.', 'error')
+
         return redirect(url_for('web.admin.docentes.index'))
-    if fila['rol'] == 'Profesor':
+
+    if fila.get('rol') == 'Profesor':
         flash('No se puede desactivar a un profesor.', 'error')
+
         return redirect(url_for('web.admin.docentes.index'))
-    fila['activo'] = False
-    _guardar(_listado())
-    flash(f'{fila["apellido"]}, {fila["nombre"]} quedó inactivo.', 'ok')
+
+    resultado = eliminar_docente(token, docente_id)
+
+    if resultado:
+        flash(f'{fila.get("apellido")}, {fila.get("nombre")} quedó inactivo.', 'ok')
+    else:
+        flash('Error al desactivar el docente.', 'error')
+
     return redirect(url_for('web.admin.docentes.index'))
 
 
@@ -226,13 +177,19 @@ def desactivar(docente_id):
 @admin_required
 def reactivar(docente_id):
     bloqueo = _solo_profesor()
+
     if bloqueo:
         return bloqueo
-    fila = _buscar(docente_id)
+
+    token = session.get('token')
+    docentes = listar_docentes(token) if token else []
+    fila = next((d for d in docentes if d.get('id') == docente_id), None)
+
     if not fila:
         flash('No se encontró ese docente.', 'error')
+
         return redirect(url_for('web.admin.docentes.index'))
-    fila['activo'] = True
-    _guardar(_listado())
-    flash(f'{fila["apellido"]}, {fila["nombre"]} volvió a estar activo.', 'ok')
+
+    flash(f'{fila.get("apellido")}, {fila.get("nombre")} volvió a estar activo (pendiente de implementación en API).', 'ok')
+    
     return redirect(url_for('web.admin.docentes.index'))

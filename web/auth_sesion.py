@@ -31,6 +31,7 @@ def url_login() -> str:
 def url_post_login() -> str:
     if es_docente():
         return url_for('web.admin.panel.index')
+
     return url_for('web.site.home.index')
 
 
@@ -38,6 +39,7 @@ def redirigir_a_login_sin_sesion():
     session.pop('token', None)
     session.pop('usuario', None)
     session.pop('nombre_completo', None)
+
     return redirect(url_login())
 
 
@@ -47,9 +49,12 @@ def login_required(view):
     def wrapped(*args, **kwargs):
         if not session.get('token'):
             return redirect(url_login())
+
         if es_docente():
             return redirect(url_for('web.admin.panel.index'))
+
         return view(*args, **kwargs)
+
     return wrapped
 
 
@@ -59,7 +64,10 @@ def admin_required(view):
     def wrapped(*args, **kwargs):
         if not session.get('token'):
             return redirect(url_login())
+
         if not es_docente():
             return redirect(url_for('web.site.home.index'))
+
         return view(*args, **kwargs)
+        
     return wrapped

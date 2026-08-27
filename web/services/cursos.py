@@ -23,9 +23,11 @@ def obtener_cursada_vigente(token: str) -> dict:
         )
     except requests.exceptions.ConnectionError:
         logger.error(f"No se pudo conectar con la API en {API_BASE_URL}")
+
         return {}
     except Exception as error:
         logger.error(f"Error al obtener cursadas: {error}")
+        
         return {}
 
     if response.status_code != 200:

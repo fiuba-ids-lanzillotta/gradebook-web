@@ -10,6 +10,7 @@ asistencia_bp = Blueprint('asistencia', __name__)
 
 def _quiere_json() -> bool:
     acepta = request.headers.get('Accept') or ''
+
     return (
         request.headers.get('X-Requested-With') == 'XMLHttpRequest'
         or 'application/json' in acepta
@@ -19,11 +20,14 @@ def _quiere_json() -> bool:
 def _json_o_error(resultado, status_ok=200):
     if resultado.get('unauthorized'):
         return redirigir_a_login_sin_sesion()
+
     if not resultado.get('ok'):
         codigo = resultado.get('status') or 400
+
         if codigo < 400:
             codigo = 400
         return jsonify({'ok': False, 'error': resultado.get('error') or 'No se pudo completar.'}), codigo
+
     return jsonify({'ok': True, **{k: v for k, v in resultado.items() if k != 'ok'}}), status_ok
 
 
@@ -31,9 +35,12 @@ def _json_o_error(resultado, status_ok=200):
 @admin_required
 def index():
     clase_hoy = servicio.clase_de_hoy(_token())
+
     if clase_hoy.get('unauthorized'):
         return redirigir_a_login_sin_sesion()
+
     clase = (clase_hoy.get('clase') or {}) if clase_hoy.get('ok') else {}
+
     return render_template(
         'admin/asistencia.html',
         clase_id=clase.get('id') or '',
@@ -70,26 +77,34 @@ def marcar(clase_id):
 
     if padron and not padron.isdigit():
         error = 'El padrón debe ser un número.'
+
         if _quiere_json():
             return jsonify({'ok': False, 'error': error}), 400
+
         return jsonify({'ok': False, 'error': error}), 400
 
     if bool(codigo) == bool(padron):
         error = 'Ingresá el código del QR o el padrón, no los dos.'
+
         return jsonify({'ok': False, 'error': error}), 400
 
     resultado = servicio.marcar(_token(), clase_id, codigo=codigo, padron=padron, manual=manual)
+    
     if resultado.get('unauthorized'):
         return redirigir_a_login_sin_sesion()
+
     if not resultado.get('ok'):
         codigo_http = resultado.get('status') or 400
+
         if codigo_http < 400:
             codigo_http = 400
+
         return jsonify({'ok': False, 'error': resultado.get('error') or 'No se pudo marcar.'}), codigo_http
 
     nombre = f"{resultado.get('apellido') or ''} {resultado.get('nombre') or ''}".strip()
     padron_ok = resultado.get('padron') or padron
     mensaje = f'Presente: {nombre}' + (f' ({padron_ok})' if padron_ok else '')
+    
     return jsonify({
         'ok': True,
         'mensaje': mensaje,

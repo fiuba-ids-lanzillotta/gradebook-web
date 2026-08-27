@@ -24,6 +24,7 @@ def interpretar_busqueda(q: str) -> dict:
     - Vacío               → {} (sin búsqueda)
     """
     consulta = (q or '').strip()
+
     if not consulta:
         return {}
 
@@ -72,6 +73,7 @@ def _pedir_pagina(token: str, filtros: dict, offset: int, limit: int, anio, cuat
         '_offset': offset,
         '_limit': limit,
     }
+
     for clave in ('q', 'nombre', 'apellido', 'padron', 'email'):
         if filtros.get(clave):
             params[clave] = filtros[clave]
@@ -85,12 +87,16 @@ def _pedir_pagina(token: str, filtros: dict, offset: int, limit: int, anio, cuat
         )
     except requests.exceptions.ConnectionError:
         logger.error(f"No se pudo conectar con la API en {API_BASE_URL}")
+
         return {'ok': False, 'error': 'No se pudo conectar con el servidor. Intentá más tarde.'}
+
     except Exception as error:
         logger.error(f"Error al listar estudiantes: {error}")
+
         return {'ok': False, 'error': 'Ocurrió un error al cargar el listado.'}
 
     no_autorizada = respuesta_no_autorizada(response)
+
     if no_autorizada:
         return no_autorizada
 
@@ -101,6 +107,7 @@ def _pedir_pagina(token: str, filtros: dict, offset: int, limit: int, anio, cuat
         return {'ok': False, 'error': mensaje_error_api(response)}
 
     datos = response.json() or {}
+
     return {
         'ok': True,
         'estudiantes': datos.get('estudiantes') or [],
@@ -114,8 +121,10 @@ def paginas_desde_links(links: dict, offset: int, limit: int) -> dict:
     """Calcula página actual y total a partir de _links (href de la API o offsets locales)."""
     pagina_actual = (offset // limit) + 1 if limit else 1
     ultimo_offset = _offset_de_link(links.get('_last'))
+
     if ultimo_offset is None:
         total_paginas = pagina_actual
+
         if links.get('_next'):
             total_paginas = pagina_actual + 1
     else:
@@ -144,6 +153,7 @@ def _ventana_paginas(actual: int, total: int, ventana: int = 4) -> list:
     if paginas[-1] < total:
         if paginas[-1] < total - 1:
             paginas.append('...')
+
         paginas.append(total)
 
     return paginas
@@ -152,14 +162,20 @@ def _ventana_paginas(actual: int, total: int, ventana: int = 4) -> list:
 def _offset_de_link(link) -> int | None:
     if not link:
         return None
+
     if isinstance(link, dict) and '_offset' in link and 'href' not in link:
         return int(link['_offset'])
+
     href = (link or {}).get('href') if isinstance(link, dict) else None
+
     if not href:
         return None
+
     valores = parse_qs(urlparse(href).query).get('_offset') or []
+
     if not valores:
         return None
+
     return int(valores[0])
 
 
@@ -172,6 +188,7 @@ def crear_estudiante(token: str, datos: dict) -> dict:
         'email': datos.get('email', '').strip(),
         'password': datos.get('padron', '').strip(),
     }
+
     return _escribir('post', f'{API_BASE_URL}/estudiantes', token, json=body, ok=201)
 
 
@@ -183,14 +200,17 @@ def actualizar_estudiante(token: str, estudiante_id: int, datos: dict) -> dict:
         'padron': datos.get('padron', '').strip(),
         'email': datos.get('email', '').strip(),
     }
+
     return _escribir('put', f'{API_BASE_URL}/estudiantes/{estudiante_id}', token, json=body, ok=200)
 
 
 def cambiar_estado(token: str, estudiante_id: int, estado: str, motivo: str | None = None) -> dict:
     """POST /estudiantes/{id}/baja  {estado, motivo?}."""
     body = {'estado': estado}
+
     if estado == 'baja':
         body['motivo'] = (motivo or '').strip()
+
     return _escribir('post', f'{API_BASE_URL}/estudiantes/{estudiante_id}/baja', token, json=body, ok=200)
 
 
@@ -207,9 +227,11 @@ def importar_csv(token: str, archivo) -> dict:
         return {'ok': False, 'error': 'No se pudo conectar con el servidor. Intentá más tarde.'}
     except Exception as error:
         logger.error(f"Error al importar CSV: {error}")
+
         return {'ok': False, 'error': 'Ocurrió un error al publicar el CSV.'}
 
     no_autorizada = respuesta_no_autorizada(response)
+
     if no_autorizada:
         return no_autorizada
 
@@ -233,17 +255,22 @@ def exportar_csv(token: str) -> dict:
             headers=api_headers({'Authorization': f'Bearer {token}'}),
             timeout=30,
         )
+
         if response.status_code == 200 and (response.headers.get('Content-Type') or '').startswith('text/csv'):
             return {'ok': True, 'contenido': response.content, 'nombre': _nombre_archivo()}
+
         no_autorizada = respuesta_no_autorizada(response)
+
         if no_autorizada:
             return no_autorizada
     except requests.exceptions.ConnectionError:
         return {'ok': False, 'error': 'No se pudo conectar con el servidor. Intentá más tarde.'}
+
     except Exception as error:
         logger.error(f"Error al pedir CSV a la API: {error}")
 
     todos = _listar_todos(token)
+
     if not todos.get('ok'):
         return todos
 
@@ -262,15 +289,19 @@ def _listar_todos(token: str) -> dict:
     todos = []
     offset = 0
     limit = 100
+
     while True:
         pagina = _pedir_pagina(token, {}, offset, limit)
+
         if not pagina.get('ok'):
             return pagina
         lote = pagina['estudiantes']
         todos.extend(lote)
+
         if not pagina['links'].get('_next') or not lote:
             break
         offset += limit
+
     return {'ok': True, 'estudiantes': todos}
 
 
@@ -279,6 +310,7 @@ def _serializar_csv_siu(estudiantes: list[dict]) -> str:
     buffer = io.StringIO()
     writer = csv.writer(buffer, delimiter=';', lineterminator='\r\n')
     writer.writerow(CSV_HEADER)
+
     for estudiante in estudiantes:
         alumno = f"{estudiante.get('apellido') or ''}, {estudiante.get('nombre') or ''}"
         writer.writerow([
@@ -300,11 +332,14 @@ def _escribir(metodo: str, url: str, token: str, json=None, ok: int = 200) -> di
         )
     except requests.exceptions.ConnectionError:
         return {'ok': False, 'error': 'No se pudo conectar con el servidor. Intentá más tarde.'}
+
     except Exception as error:
         logger.error(f"Error al escribir {url}: {error}")
+
         return {'ok': False, 'error': 'Ocurrió un error al guardar.'}
 
     no_autorizada = respuesta_no_autorizada(response)
+    
     if no_autorizada:
         return no_autorizada
 

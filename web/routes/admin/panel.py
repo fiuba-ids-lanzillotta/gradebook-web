@@ -42,27 +42,34 @@ def _token() -> str:
 def _resultado_o_redirect(resultado):
     if resultado.get('unauthorized'):
         return redirigir_a_login_sin_sesion()
+
     if resultado.get('ok'):
         return redirect(url_for('web.admin.panel.index'))
+
     return None
 
 
 def _nombre_docente() -> str:
     guardado = session.get('nombre_completo')
+
     if guardado:
         return guardado
 
     usuario = session.get('usuario') or {}
     docente_id = usuario.get('id')
+
     if not docente_id:
         return usuario.get('email') or ''
 
     docente = obtener_docente(_token(), docente_id)
+
     if docente.get('_unauthorized'):
         return usuario.get('email') or ''
+
     if docente.get('nombre') or docente.get('apellido'):
         nombre = f"{docente.get('nombre') or ''} {docente.get('apellido') or ''}".strip()
         session['nombre_completo'] = nombre
+
         return nombre
 
     return usuario.get('email') or ''
@@ -94,22 +101,26 @@ def _contexto_listado(listado: dict, error=None, ok=None):
         'cursada_anio': listado.get('anio', CURSADA_ANIO),
         'cursada_cuatrimestre': listado.get('cuatrimestre', CURSADA_CUATRIMESTRE),
     })
+
     return contexto
 
 @panel_bp.route('/')
 @admin_required
 def index():
     q = request.args.get('q', '').strip()
+
     try:
         offset = max(int(request.args.get('_offset', 0)), 0)
     except (TypeError, ValueError):
         offset = 0
+
     try:
         limit = max(int(request.args.get('_limit', 10)), 1)
     except (TypeError, ValueError):
         limit = 10
 
     listado = servicio.listar_de_cursada(_token(), q=q, offset=offset, limit=limit)
+
     if listado.get('unauthorized'):
         return redirigir_a_login_sin_sesion()
 
@@ -122,26 +133,35 @@ def index():
 @admin_required
 def agregar():
     resultado = servicio.crear_estudiante(_token(), request.form)
+
     if resultado.get('unauthorized'):
         return redirigir_a_login_sin_sesion()
+
     if resultado.get('ok'):
         flash('Alumno agregado e inscripto en el cuatrimestre vigente.', 'ok')
         padron = (request.form.get('padron') or '').strip()
+
         return redirect(url_for('web.admin.panel.index', q=padron))
+
     flash(resultado.get('error') or 'No se pudo agregar al alumno.', 'error')
+
     return redirect(url_for('web.admin.panel.index'))
 
 @panel_bp.route('/alumnos/csv', methods=['POST'])
 @admin_required
 def publicar_csv():
     archivo = request.files.get('archivo')
+
     if archivo is None or not archivo.filename:
         flash('Elegí un archivo CSV.', 'error')
+
         return redirect(url_for('web.admin.panel.index'))
 
     resultado = servicio.importar_csv(_token(), archivo)
+
     if resultado.get('unauthorized'):
         return redirigir_a_login_sin_sesion()
+
     if resultado.get('ok'):
         resumen = resultado.get('resumen') or {}
         flash(
@@ -149,11 +169,14 @@ def publicar_csv():
             f"Inscriptos: {resumen.get('inscriptos', 0)}.",
             'ok',
         )
+
         return redirect(url_for('web.admin.panel.index'))
 
     listado = servicio.listar_de_cursada(_token())
+
     if listado.get('unauthorized'):
         return redirigir_a_login_sin_sesion()
+
     return render_template('admin/panel.html', **_contexto_listado(listado, error=resultado.get('error'))), 400
 
 
@@ -161,10 +184,13 @@ def publicar_csv():
 @admin_required
 def descargar_csv():
     resultado = servicio.exportar_csv(_token())
+
     if resultado.get('unauthorized'):
         return redirigir_a_login_sin_sesion()
+
     if not resultado.get('ok'):
         flash(resultado.get('error') or 'No se pudo descargar el CSV.', 'error')
+
         return redirect(url_for('web.admin.panel.index'))
 
     return Response(
@@ -179,14 +205,17 @@ def descargar_csv():
 def editar(estudiante_id):
     resultado = servicio.actualizar_estudiante(_token(), estudiante_id, request.form)
     redireccion = _resultado_o_redirect(resultado)
+
     if redireccion:
         if resultado.get('ok'):
             flash('Datos del alumno actualizados.', 'ok')
         return redireccion
 
     listado = servicio.listar_de_cursada(_token())
+
     if listado.get('unauthorized'):
         return redirigir_a_login_sin_sesion()
+
     return render_template('admin/panel.html', **_contexto_listado(listado, error=resultado.get('error'))), 400
 
 
@@ -195,14 +224,17 @@ def editar(estudiante_id):
 def abandonar(estudiante_id):
     resultado = servicio.cambiar_estado(_token(), estudiante_id, 'abandono')
     redireccion = _resultado_o_redirect(resultado)
+
     if redireccion:
         if resultado.get('ok'):
             flash('Se marcó que el alumno abandonó la materia.', 'ok')
         return redireccion
 
     listado = servicio.listar_de_cursada(_token())
+
     if listado.get('unauthorized'):
         return redirigir_a_login_sin_sesion()
+
     return render_template('admin/panel.html', **_contexto_listado(listado, error=resultado.get('error'))), 400
 
 
@@ -210,20 +242,25 @@ def abandonar(estudiante_id):
 @admin_required
 def dar_de_baja(estudiante_id):
     motivo = (request.form.get('motivo') or '').strip()
+
     if not motivo:
         flash('La razón es obligatoria para dar de baja.', 'error')
+
         return redirect(url_for('web.admin.panel.index'))
 
     resultado = servicio.cambiar_estado(_token(), estudiante_id, 'baja', motivo)
     redireccion = _resultado_o_redirect(resultado)
+
     if redireccion:
         if resultado.get('ok'):
             flash('Alumno dado de baja.', 'ok')
         return redireccion
 
     listado = servicio.listar_de_cursada(_token())
+
     if listado.get('unauthorized'):
         return redirigir_a_login_sin_sesion()
+
     return render_template('admin/panel.html', **_contexto_listado(listado, error=resultado.get('error'))), 400
 
 
@@ -232,18 +269,23 @@ def dar_de_baja(estudiante_id):
 def dar_de_alta(estudiante_id):
     if not es_super_admin():
         flash('Solo un superadmin puede dar de alta a un alumno.', 'error')
+
         return redirect(url_for('web.admin.panel.index'))
 
     resultado = servicio.cambiar_estado(_token(), estudiante_id, 'cursando')
     redireccion = _resultado_o_redirect(resultado)
+
     if redireccion:
         if resultado.get('ok'):
             flash('Alumno dado de alta de nuevo.', 'ok')
+
         return redireccion
 
     listado = servicio.listar_de_cursada(_token())
+
     if listado.get('unauthorized'):
         return redirigir_a_login_sin_sesion()
+        
     return render_template('admin/panel.html', **_contexto_listado(listado, error=resultado.get('error'))), 400
 
 

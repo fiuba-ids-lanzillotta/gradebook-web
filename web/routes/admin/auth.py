@@ -27,10 +27,13 @@ def login():
         email = request.form.get('email', '').strip()
         password = request.form.get('password', '')
         resultado = autenticar(email, password, recaptcha_token=_captcha_token())
+
         if resultado['ok']:
             session['token'] = resultado['token']
             session['usuario'] = resultado['usuario']
+
             return redirect(url_post_login())
+
         error = resultado['error']
 
     return render_template(
@@ -55,8 +58,10 @@ MENSAJE_CAMBIO_OK = 'Tu contraseña se actualizó. Ya podés iniciar sesión.'
 def recuperar():
     error = None
     ok = None
+    
     if request.method == 'POST':
         email = request.form.get('email', '').strip()
+
         if not email:
             error = 'Ingresá un correo electrónico.'
         else:
@@ -67,6 +72,7 @@ def recuperar():
                 ok = MENSAJE_RECUPERAR
             else:
                 error = resultado['error']
+
     return render_template('admin/recuperar.html', error=error, ok=ok)
 
 
@@ -75,6 +81,7 @@ def cambiar_contrasena():
     token = (request.values.get('token') or '').strip()
     error = None
     ok = None
+
     if not token:
         error = 'El enlace no es válido o expiró. Solicitá uno nuevo.'
         return render_template(
@@ -83,9 +90,11 @@ def cambiar_contrasena():
             error=error,
             ok=ok,
         )
+
     if request.method == 'POST':
         password = request.form.get('password', '')
         confirm = request.form.get('password_confirm', '')
+
         if not password or not confirm:
             error = 'Completá ambos campos.'
         elif password != confirm:
@@ -96,6 +105,7 @@ def cambiar_contrasena():
                 ok = MENSAJE_CAMBIO_OK
             else:
                 error = resultado['error']
+
     return render_template(
         'admin/cambiar_contrasena.html',
         token=token,
