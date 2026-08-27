@@ -49,13 +49,18 @@ gradebook-web/
 ├── .gitignore / .gitattributes
 │
 ├── web/
-│   ├── constants.py             # API_BASE_URL, API_KEY y api_headers()
+│   ├── constants.py             # API_BASE_URL, API_KEY, api_headers(), RECAPTCHA_SITE_KEY, MATERIA_CODIGO
+│   ├── auth_sesion.py            # Helpers de sesión: admin_required, es_super_admin, puede_dar_baja
 │   ├── routes/                  # Blueprints (presentación / flujo)
-│   │   ├── site/                #   Zona pública (sin prefijo): home, items
-│   │   └── admin/               #   Zona admin (/admin): auth, panel, items
+│   │   ├── site/                #   Zona pública (sin prefijo): home
+│   │   └── admin/               #   Zona admin (/admin): auth, panel, docentes
 │   └── services/                # Llamadas HTTP a gradebook-api
 │       ├── auth.py              #   login
-│       ├── items.py             #   CRUD del recurso de ejemplo
+│       ├── docentes.py          #   CRUD de docentes (listar, crear, actualizar, eliminar, permisos)
+│       ├── permisos.py         #   Catálogo de permisos
+│       ├── estudiantes.py       #   CRUD de estudiantes
+│       ├── asistencia.py        #   Gestión de asistencia
+│       ├── cursos.py            #   Cursadas
 │       └── respuestas_api.py    #   helpers para interpretar errores / 401-403
 │
 ├── templates/
@@ -135,12 +140,9 @@ La app queda disponible en `http://localhost:5001`.
 | Ruta            | Auth  | Descripción                                             |
 |-----------------|-------|---------------------------------------------------------|
 | `/`             | —     | Inicio (landing del proyecto base).                     |
-| `/items`        | —     | Listado público de items (consume `GET /items`).        |
 | `/admin/login`  | —     | Login del panel (valida contra `POST /login`).          |
-| `/admin/`       | admin | Panel de administración.                                |
-| `/admin/items`  | admin | Alta y listado de items (`GET`/`POST /items`).          |
-| `/admin/items/<id>/editar`  | admin | Edición de un item (`PUT /items/<id>`).     |
-| `/admin/items/<id>/eliminar`| admin | Baja de un item (`DELETE /items/<id>`).     |
+| `/admin/`       | admin | Panel de administración (listado de alumnos).           |
+| `/admin/docentes` | admin | Gestión de docentes (listar, crear, editar, eliminar, permisos). |
 
 ## Tests
 
