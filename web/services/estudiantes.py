@@ -289,8 +289,9 @@ def _listar_todos(token: str) -> dict:
     todos = []
     offset = 0
     limit = 100
+    hay_mas_paginas = True
 
-    while True:
+    while hay_mas_paginas:
         pagina = _pedir_pagina(token, {}, offset, limit)
 
         if not pagina.get('ok'):
@@ -298,8 +299,7 @@ def _listar_todos(token: str) -> dict:
         lote = pagina['estudiantes']
         todos.extend(lote)
 
-        if not pagina['links'].get('_next') or not lote:
-            break
+        hay_mas_paginas = pagina['links'].get('_next') and lote
         offset += limit
 
     return {'ok': True, 'estudiantes': todos}

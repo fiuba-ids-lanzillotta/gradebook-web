@@ -88,8 +88,9 @@ def clase_de_hoy(token: str) -> dict:
     hoy = fecha_hoy()
     offset = 0
     limit = 50
+    continuar_busqueda = True
 
-    while True:
+    while continuar_busqueda:
         resultado = _pedir(
             token,
             'GET',
@@ -112,10 +113,10 @@ def clase_de_hoy(token: str) -> dict:
 
         links = (resultado.get('datos') or {}).get('_links') or {}
 
-        if not links.get('_next') or not clases:
-            return {'ok': True, 'clase': None}
-
+        continuar_busqueda = links.get('_next') and clases
         offset += limit
+
+    return {'ok': True, 'clase': None}
 
 def _cursada_para_asistencia(token: str) -> dict:
     vigente = obtener_cursada_vigente(token)

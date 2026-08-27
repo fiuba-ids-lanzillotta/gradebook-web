@@ -34,12 +34,3 @@ CURSADA_ANIO = '2026'
 CURSADA_CUATRIMESTRE = '2'
 
 ROL_SUPER_ADMIN = 'super_admin'
-
-MAIL_SERVER = os.getenv('MAIL_SERVER', 'smtp.gmail.com')
-MAIL_PORT = int(os.getenv('MAIL_PORT', '587'))
-MAIL_USE_TLS = os.getenv('MAIL_USE_TLS', 'true').lower() == 'true'
-MAIL_USE_SSL = os.getenv('MAIL_USE_SSL', 'false').lower() == 'true'
-MAIL_USERNAME = os.getenv('MAIL_USERNAME', '')
-MAIL_PASSWORD = os.getenv('MAIL_PASSWORD', '')
-MAIL_DEFAULT_SENDER = os.getenv('MAIL_DEFAULT_SENDER', '') or MAIL_USERNAME
-MAIL_SUPPRESS_SEND = os.getenv('MAIL_SUPPRESS_SEND', 'false').lower() == 'true'
