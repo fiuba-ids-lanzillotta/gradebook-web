@@ -404,7 +404,11 @@ html:has(.admin-body),
 }
 .btn-outline { background: #fff; border-color: #3d6488; color: #3d6488; }
 .btn-solid { background: #3d6488; color: #fff; border: none; }
+.btn-solid--ok { background: #3d6488; color: #fff; border: none; }
+.btn-solid--off { background: #c4c4c4; color: #fff; border: none; cursor: not-allowed; }
 .btn-danger { background: #c43c3c; color: #fff; border: none; }
+.btn-danger--ok { background: #c43c3c; color: #fff; border: none; }
+.btn-danger--off { background: #c4c4c4; color: #fff; border: none; cursor: not-allowed; }
 .btn-alta--ok { background: #3d9a5a; color: #fff; border: none; }
 .btn-alta--off { background: #c4c4c4; color: #fff; border: none; cursor: not-allowed; }
 .btn-cancel { background: #e8e4df; color: #374151; border: none; }

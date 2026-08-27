@@ -24,6 +24,19 @@ def es_estudiante() -> bool:
 def es_super_admin() -> bool:
     return usuario_sesion().get('rol') == 'super_admin'
 
+
+def es_admin() -> bool:
+    return usuario_sesion().get('rol') == 'admin'
+
+
+def es_superusuario() -> bool:
+    return usuario_sesion().get('rol') == 'superusuario'
+
+
+def puede_dar_baja() -> bool:
+    """Puede dar baja si es super_admin o admin (no superusuario)."""
+    return es_super_admin() or es_admin()
+
 def url_login() -> str:
     return url_for('web.admin.auth.login')
 

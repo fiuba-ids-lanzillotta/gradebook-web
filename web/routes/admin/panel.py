@@ -10,7 +10,7 @@ from flask import (
     Response,
 )
 
-from web.auth_sesion import admin_required, es_super_admin, redirigir_a_login_sin_sesion
+from web.auth_sesion import admin_required, es_super_admin, redirigir_a_login_sin_sesion, puede_dar_baja
 from web.constants import CURSADA_ANIO, CURSADA_CUATRIMESTRE
 from web.services.docentes import obtener_docente
 from web.services import estudiantes as servicio
@@ -77,6 +77,7 @@ def _nombre_docente() -> str:
 def contexto_admin(solapa_activa: str) -> dict:
     return {
         'es_super_admin': es_super_admin(),
+        'puede_dar_baja': puede_dar_baja(),
         'nombre_docente': _nombre_docente(),
         'solapas': [
             (clave, etiqueta, icono, clave == solapa_activa)

@@ -116,7 +116,8 @@
                             {% if estado == 'cursando' %}
                             <button
                                 type="button"
-                                class="btn-danger js-abandonar"
+                                class="btn-danger {% if puede_dar_baja %}btn-danger--ok{% else %}btn-danger--off{% endif %} js-abandonar"
+                                {% if not puede_dar_baja %}disabled{% endif %}
                                 data-nombre="{{ alumno.nombre }}"
                                 data-apellido="{{ alumno.apellido }}"
                                 data-padron="{{ alumno.padron }}"
@@ -124,7 +125,8 @@
                             >Abandonar</button>
                             <button
                                 type="button"
-                                class="btn-solid js-baja"
+                                class="btn-solid {% if puede_dar_baja %}btn-solid--ok{% else %}btn-solid--off{% endif %} js-baja"
+                                {% if not puede_dar_baja %}disabled{% endif %}
                                 data-nombre="{{ alumno.nombre }}"
                                 data-apellido="{{ alumno.apellido }}"
                                 data-padron="{{ alumno.padron }}"
