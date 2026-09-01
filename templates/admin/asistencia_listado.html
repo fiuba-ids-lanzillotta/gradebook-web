@@ -54,10 +54,11 @@
 
         {% if resumen.total %}
         <p class="asistencias__resumen">
+            En esta página:
             {{ resumen.presente }} presentes
             · {{ resumen.pendiente }} pendientes
             · {{ resumen.ausente }} ausentes
-            · {{ resumen.total }} en total
+            · {{ resumen.total }} filas
         </p>
         {% endif %}
 
@@ -87,6 +88,34 @@
                 </tbody>
             </table>
         </div>
+        {% if paginacion.total > 1 %}
+        <nav class="listado__paginas" aria-label="Paginación">
+            {% if paginacion.actual > 1 %}
+            <a
+                class="listado__pagina listado__pagina--nav"
+                href="{{ url_for('web.admin.asistencia.listado', clase_id=clase.id, estado=estado_filtro, q=q, _offset=(paginacion.actual - 2) * paginacion.limit, _limit=paginacion.limit) }}"
+                aria-label="Anterior"
+            >‹</a>
+            {% endif %}
+            {% for numero in paginacion.numeros %}
+            {% if numero == '...' %}
+            <span class="listado__pagina listado__pagina--ellipsis">…</span>
+            {% else %}
+            <a
+                class="listado__pagina {% if numero == paginacion.actual %}is-current{% endif %}"
+                href="{{ url_for('web.admin.asistencia.listado', clase_id=clase.id, estado=estado_filtro, q=q, _offset=(numero - 1) * paginacion.limit, _limit=paginacion.limit) }}"
+            >{{ numero }}</a>
+            {% endif %}
+            {% endfor %}
+            {% if paginacion.actual < paginacion.total %}
+            <a
+                class="listado__pagina listado__pagina--nav"
+                href="{{ url_for('web.admin.asistencia.listado', clase_id=clase.id, estado=estado_filtro, q=q, _offset=paginacion.offset + paginacion.limit, _limit=paginacion.limit) }}"
+                aria-label="Siguiente"
+            >›</a>
+            {% endif %}
+        </nav>
+        {% endif %}
         {% else %}
         <p class="listado__vacio">No hay asistencias para mostrar con esos filtros.</p>
         {% endif %}

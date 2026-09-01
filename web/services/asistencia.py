@@ -169,7 +169,7 @@ def marcar(token: str, clase_id: int, codigo: str = '', padron: str = '', manual
     return {'ok': True, **(resultado.get('datos') or {})}
 
 def listar_clases(token: str) -> dict:
-    """GET /cursadas/{id}/clases (trae estado abierta/cerrada). Más recientes primero."""
+    """GET /cursadas/{id}/clases. En un cuatri hay pocas tomas: un solo pedido alcanza."""
     cursada = _cursada_para_asistencia(token)
 
     if cursada.get('unauthorized'):
@@ -180,76 +180,57 @@ def listar_clases(token: str) -> dict:
     if not cursada_id:
         return {'ok': True, 'clases': []}
 
-    clases = []
-    offset = 0
-    limit = 50
+    resultado = _pedir(
+        token,
+        'GET',
+        f'/cursadas/{cursada_id}/clases',
+        params={'_offset': 0, '_limit': 100},
+        ok=(200, 204),
+    )
 
-    while True:
-        resultado = _pedir(
-            token,
-            'GET',
-            f'/cursadas/{cursada_id}/clases',
-            params={'_offset': offset, '_limit': limit},
-            ok=(200, 204),
-        )
+    if not resultado.get('ok'):
+        return resultado
 
-        if not resultado.get('ok'):
-            return resultado
+    if resultado.get('vacio'):
+        return {'ok': True, 'clases': []}
 
-        if resultado.get('vacio'):
-            break
-
-        lote = (resultado.get('datos') or {}).get('clases') or []
-        clases.extend(lote)
-        links = (resultado.get('datos') or {}).get('_links') or {}
-
-        if not links.get('_next') or not lote:
-            break
-
-        offset += limit
-
-    return {'ok': True, 'clases': clases}
+    return {'ok': True, 'clases': (resultado.get('datos') or {}).get('clases') or []}
 
 
-def listar_asistencias(token: str, clase_id: int, estado: str = '', q: str = '') -> dict:
-    """GET /clases/{id}/asistencias (todas las páginas)."""
-    filas = []
-    offset = 0
-    limit = 100
+def listar_asistencias(token: str, clase_id: int, estado: str = '', q: str = '',
+                       offset: int = 0, limit: int = 10) -> dict:
+    """GET /clases/{id}/asistencias: una página (la API pagina con _offset/_limit)."""
+    params = {'_offset': offset, '_limit': limit}
 
-    while True:
-        params = {'_offset': offset, '_limit': limit}
+    if estado:
+        params['estado'] = estado
 
-        if estado:
-            params['estado'] = estado
+    if q:
+        params['q'] = q
 
-        if q:
-            params['q'] = q
+    resultado = _pedir(
+        token,
+        'GET',
+        f'/clases/{clase_id}/asistencias',
+        params=params,
+        ok=(200, 204),
+    )
 
-        resultado = _pedir(
-            token,
-            'GET',
-            f'/clases/{clase_id}/asistencias',
-            params=params,
-            ok=(200, 204),
-        )
+    if not resultado.get('ok'):
+        return resultado
 
-        if not resultado.get('ok'):
-            return resultado
+    if resultado.get('vacio'):
+        return {'ok': True, 'asistencias': [], 'links': {}, 'offset': offset, 'limit': limit}
 
-        if resultado.get('vacio'):
-            break
+    datos = resultado.get('datos') or {}
 
-        lote = (resultado.get('datos') or {}).get('asistencias') or []
-        filas.extend(lote)
-        links = (resultado.get('datos') or {}).get('_links') or {}
-
-        if not links.get('_next') or not lote:
-            break
-
-        offset += limit
-
-    return {'ok': True, 'asistencias': filas}
+    return {
+        'ok': True,
+        'asistencias': datos.get('asistencias') or [],
+        'links': datos.get('_links') or {},
+        'offset': offset,
+        'limit': limit,
+    }
 
 
 def cerrar_clase(token: str, clase_id: int) -> dict:

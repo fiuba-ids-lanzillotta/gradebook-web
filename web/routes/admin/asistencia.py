@@ -4,6 +4,7 @@ from flask import Blueprint, jsonify, render_template, request, redirect, url_fo
 from web.auth_sesion import admin_required, redirigir_a_login_sin_sesion
 from web.routes.admin.panel import _token, contexto_admin
 from web.services import asistencia as servicio
+from web.services.estudiantes import paginas_desde_links
 
 ESTADO_ETIQUETA = {
     'presente': 'Presente',
@@ -150,6 +151,16 @@ def listado():
     estado = (request.args.get('estado') or '').strip()
     q = (request.args.get('q') or '').strip()
 
+    try:
+        offset = max(int(request.args.get('_offset', 0)), 0)
+    except (TypeError, ValueError):
+        offset = 0
+
+    try:
+        limit = max(int(request.args.get('_limit', 10)), 1)
+    except (TypeError, ValueError):
+        limit = 10
+    
     if estado not in ESTADOS_FILTRO:
         estado = ''
 
@@ -164,17 +175,25 @@ def listado():
     asistencias = []
     error = None if clases_res.get('ok') else (clases_res.get('error') or 'No se pudieron cargar las clases.')
 
+    paginacion = {'actual': 1, 'total': 1, 'numeros': [1], 'offset': offset, 'limit': limit}
+
     if clase and clase.get('id'):
-        lista = servicio.listar_asistencias(token, int(clase['id']), estado=estado, q=q)
+        lista = servicio.listar_asistencias(
+            token, int(clase['id']), estado=estado, q=q, offset=offset, limit=limit
+        )
 
         if lista.get('unauthorized'):
             return redirigir_a_login_sin_sesion()
 
         if lista.get('ok'):
             asistencias = lista.get('asistencias') or []
+            paginacion = paginas_desde_links(
+                lista.get('links') or {},
+                lista.get('offset', offset),
+                lista.get('limit', limit),
+            )
         else:
             error = lista.get('error') or 'No se pudo cargar el listado de esa clase.'
-
     resumen = {
         'presente': sum(1 for fila in asistencias if fila.get('estado') == 'presente'),
         'pendiente': sum(1 for fila in asistencias if fila.get('estado') == 'pendiente'),
@@ -193,6 +212,7 @@ def listado():
         q=q,
         estado_etiqueta=ESTADO_ETIQUETA,
         metodo_etiqueta=METODO_ETIQUETA,
+        paginacion=paginacion,
         **contexto_admin('asistencia'),
     )
 
