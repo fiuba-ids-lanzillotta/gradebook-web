@@ -1,0 +1,133 @@
+{% extends "admin/base_admin.html" %}
+
+{% block title %}Listado de asistencias · Gradebook{% endblock %}
+
+{% block content %}
+<section class="listado asistencias">
+    <div class="listado__card">
+        <p class="asistencias__volver-wrap">
+            <a class="asistencias__volver" href="{{ url_for('web.admin.asistencia.index') }}">← Tomar asistencia</a>
+        </p>
+
+        <h1 class="listado__title">Asistencias</h1>
+        {% if clase %}
+        <p class="listado__cursada">{{ clase.etiqueta }}{% if clase.estado %} · {{ clase.estado }}{% endif %}</p>
+        {% else %}
+        <p class="listado__cursada">Cursada vigente</p>
+        {% endif %}
+
+        {% for categoria, mensaje in get_flashed_messages(with_categories=True) %}
+        <p class="listado__flash listado__flash--{{ categoria }}">{{ mensaje }}</p>
+        {% endfor %}
+        {% if error %}
+        <p class="listado__flash listado__flash--error">{{ error }}</p>
+        {% endif %}
+
+        {% if clases %}
+        <form class="asistencias__filtro" method="GET" action="{{ url_for('web.admin.asistencia.listado') }}">
+            <label>Clase
+                <select name="clase_id" onchange="this.form.submit()">
+                    {% for fila in clases %}
+                    <option value="{{ fila.id }}" {% if clase and fila.id == clase.id %}selected{% endif %}>{{ fila.etiqueta }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <label>Estado
+                <select name="estado" onchange="this.form.submit()">
+                    <option value="" {% if not estado_filtro %}selected{% endif %}>Todos</option>
+                    <option value="presente" {% if estado_filtro == 'presente' %}selected{% endif %}>Presente</option>
+                    <option value="pendiente" {% if estado_filtro == 'pendiente' %}selected{% endif %}>Pendiente</option>
+                    <option value="ausente" {% if estado_filtro == 'ausente' %}selected{% endif %}>Ausente</option>
+                </select>
+            </label>
+            <label>Buscar
+                <input type="search" name="q" value="{{ q }}" placeholder="Nombre, apellido o padrón">
+            </label>
+            <button type="submit" class="btn-outline">Buscar</button>
+        </form>
+
+        {% if clase and clase.estado == 'abierta' %}
+        <div class="asistencias__cerrar-wrap">
+            <button type="button" class="btn-solid js-cerrar-clase">Cerrar toma</button>
+        </div>
+        {% endif %}
+
+        {% if resumen.total %}
+        <p class="asistencias__resumen">
+            {{ resumen.presente }} presentes
+            · {{ resumen.pendiente }} pendientes
+            · {{ resumen.ausente }} ausentes
+            · {{ resumen.total }} en total
+        </p>
+        {% endif %}
+
+        {% if asistencias %}
+        <div class="listado__tabla-wrap asistencias__tabla-wrap">
+            <table class="listado__tabla">
+                <thead>
+                    <tr>
+                        <th>Apellido, Nombre</th>
+                        <th>Padrón</th>
+                        <th>Estado</th>
+                        <th>Marcado</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for fila in asistencias %}
+                    {% set estado = fila.estado or 'pendiente' %}
+                    <tr>
+                        <td data-label="Apellido, Nombre">{{ fila.apellido }}, {{ fila.nombre }}</td>
+                        <td data-label="Padrón">{{ fila.padron }}</td>
+                        <td data-label="Estado">
+                            <span class="asistencias__estado asistencias__estado--{{ estado }}">{{ estado_etiqueta.get(estado, estado) }}</span>
+                        </td>
+                        <td data-label="Marcado">{{ metodo_etiqueta.get(fila.metodo, '—') if fila.metodo else '—' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="listado__vacio">No hay asistencias para mostrar con esos filtros.</p>
+        {% endif %}
+
+        {% else %}
+        <p class="listado__vacio">Todavía no hay una toma de asistencia en este cuatrimestre. Solo las clases presenciales generan listado (Tomar asistencia).</p>
+        {% endif %}
+    </div>
+</section>
+
+{% if clase and clase.estado == 'abierta' %}
+<div class="modal" id="modal-cerrar" aria-hidden="true">
+    <div class="modal__overlay" data-close></div>
+    <div class="modal__box" role="dialog">
+        <p class="modal__text">
+            ¿Cerrar la toma de {{ clase.etiqueta }}? Los alumnos en pendiente pasan a ausente y ya no se podrá marcar.
+        </p>
+        <form method="POST" action="{{ url_for('web.admin.asistencia.cerrar', clase_id=clase.id) }}">
+            <div class="modal__actions">
+                <button type="button" class="btn-cancel" data-close>Cancelar</button>
+                <button type="submit" class="btn-confirm">Cerrar toma</button>
+            </div>
+        </form>
+    </div>
+</div>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var modal = document.getElementById('modal-cerrar');
+    var abrir = document.querySelector('.js-cerrar-clase');
+    if (!modal || !abrir) return;
+    abrir.addEventListener('click', function () {
+        modal.classList.add('is-open');
+        modal.setAttribute('aria-hidden', 'false');
+    });
+    modal.querySelectorAll('[data-close]').forEach(function (el) {
+        el.addEventListener('click', function () {
+            modal.classList.remove('is-open');
+            modal.setAttribute('aria-hidden', 'true');
+        });
+    });
+});
+</script>
+{% endif %}
+{% endblock %}

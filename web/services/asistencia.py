@@ -168,6 +168,116 @@ def marcar(token: str, clase_id: int, codigo: str = '', padron: str = '', manual
 
     return {'ok': True, **(resultado.get('datos') or {})}
 
+def listar_clases(token: str) -> dict:
+    """GET /cursadas/{id}/clases (trae estado abierta/cerrada). Más recientes primero."""
+    cursada = _cursada_para_asistencia(token)
+
+    if cursada.get('unauthorized'):
+        return cursada
+
+    cursada_id = cursada.get('id') if isinstance(cursada, dict) else None
+
+    if not cursada_id:
+        return {'ok': True, 'clases': []}
+
+    clases = []
+    offset = 0
+    limit = 50
+
+    while True:
+        resultado = _pedir(
+            token,
+            'GET',
+            f'/cursadas/{cursada_id}/clases',
+            params={'_offset': offset, '_limit': limit},
+            ok=(200, 204),
+        )
+
+        if not resultado.get('ok'):
+            return resultado
+
+        if resultado.get('vacio'):
+            break
+
+        lote = (resultado.get('datos') or {}).get('clases') or []
+        clases.extend(lote)
+        links = (resultado.get('datos') or {}).get('_links') or {}
+
+        if not links.get('_next') or not lote:
+            break
+
+        offset += limit
+
+    return {'ok': True, 'clases': clases}
+
+
+def listar_asistencias(token: str, clase_id: int, estado: str = '', q: str = '') -> dict:
+    """GET /clases/{id}/asistencias (todas las páginas)."""
+    filas = []
+    offset = 0
+    limit = 100
+
+    while True:
+        params = {'_offset': offset, '_limit': limit}
+
+        if estado:
+            params['estado'] = estado
+
+        if q:
+            params['q'] = q
+
+        resultado = _pedir(
+            token,
+            'GET',
+            f'/clases/{clase_id}/asistencias',
+            params=params,
+            ok=(200, 204),
+        )
+
+        if not resultado.get('ok'):
+            return resultado
+
+        if resultado.get('vacio'):
+            break
+
+        lote = (resultado.get('datos') or {}).get('asistencias') or []
+        filas.extend(lote)
+        links = (resultado.get('datos') or {}).get('_links') or {}
+
+        if not links.get('_next') or not lote:
+            break
+
+        offset += limit
+
+    return {'ok': True, 'asistencias': filas}
+
+
+def cerrar_clase(token: str, clase_id: int) -> dict:
+    """POST /clases/{id}/cerrar: pendientes → ausente."""
+    resultado = _pedir(
+        token,
+        'POST',
+        f'/clases/{clase_id}/cerrar',
+        ok=(200,),
+    )
+
+    if not resultado.get('ok'):
+        return resultado
+
+    return {'ok': True, **(resultado.get('datos') or {})}
+
+
+def etiqueta_clase(clase: dict) -> str:
+    fecha = str((clase or {}).get('fecha') or '')[:10]
+
+    if len(fecha) == 10 and fecha[4] == '-' and fecha[7] == '-':
+        fecha_txt = f'{fecha[8:10]}/{fecha[5:7]}/{fecha[0:4]}'
+    else:
+        fecha_txt = fecha or 'Sin fecha'
+
+    titulo = str((clase or {}).get('titulo') or '').strip()
+
+    return f'{fecha_txt} · {titulo}' if titulo else fecha_txt
 
 def _pedir(token: str, method: str, path: str, *, json_body=None, params=None, ok=(200,), timeout=20) -> dict:
     try:

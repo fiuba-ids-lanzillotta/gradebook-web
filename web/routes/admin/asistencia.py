@@ -1,9 +1,23 @@
 """Pantalla admin: tomar asistencia de hoy y marcar presente (QR / código / padrón)."""
-from flask import Blueprint, jsonify, render_template, request
+from flask import Blueprint, jsonify, render_template, request, redirect, url_for, flash
 
 from web.auth_sesion import admin_required, redirigir_a_login_sin_sesion
 from web.routes.admin.panel import _token, contexto_admin
 from web.services import asistencia as servicio
+
+ESTADO_ETIQUETA = {
+    'presente': 'Presente',
+    'pendiente': 'Pendiente',
+    'ausente': 'Ausente',
+}
+
+METODO_ETIQUETA = {
+    'qr': 'QR',
+    'manual': 'Código',
+    'padron': 'Padrón',
+}
+
+ESTADOS_FILTRO = ('presente', 'pendiente', 'ausente')
 
 asistencia_bp = Blueprint('asistencia', __name__)
 
@@ -114,3 +128,86 @@ def marcar(clase_id):
         'metodo': resultado.get('metodo'),
         'estado': resultado.get('estado'),
     })
+
+
+
+
+@asistencia_bp.route('/asistencia/listado')
+@admin_required
+def listado():
+    token = _token()
+    clases_res = servicio.listar_clases(token)
+
+    if clases_res.get('unauthorized'):
+        return redirigir_a_login_sin_sesion()
+
+    clases = clases_res.get('clases') or [] if clases_res.get('ok') else []
+
+    for clase in clases:
+        clase['etiqueta'] = servicio.etiqueta_clase(clase)
+
+    pedida = (request.args.get('clase_id') or '').strip()
+    estado = (request.args.get('estado') or '').strip()
+    q = (request.args.get('q') or '').strip()
+
+    if estado not in ESTADOS_FILTRO:
+        estado = ''
+
+    clase = None
+
+    if pedida.isdigit():
+        clase = next((fila for fila in clases if str(fila.get('id')) == pedida), None)
+
+    if clase is None and clases:
+        clase = clases[0]
+
+    asistencias = []
+    error = None if clases_res.get('ok') else (clases_res.get('error') or 'No se pudieron cargar las clases.')
+
+    if clase and clase.get('id'):
+        lista = servicio.listar_asistencias(token, int(clase['id']), estado=estado, q=q)
+
+        if lista.get('unauthorized'):
+            return redirigir_a_login_sin_sesion()
+
+        if lista.get('ok'):
+            asistencias = lista.get('asistencias') or []
+        else:
+            error = lista.get('error') or 'No se pudo cargar el listado de esa clase.'
+
+    resumen = {
+        'presente': sum(1 for fila in asistencias if fila.get('estado') == 'presente'),
+        'pendiente': sum(1 for fila in asistencias if fila.get('estado') == 'pendiente'),
+        'ausente': sum(1 for fila in asistencias if fila.get('estado') == 'ausente'),
+        'total': len(asistencias),
+    }
+
+    return render_template(
+        'admin/asistencia_listado.html',
+        clases=clases,
+        clase=clase,
+        asistencias=asistencias,
+        resumen=resumen,
+        error=error,
+        estado_filtro=estado,
+        q=q,
+        estado_etiqueta=ESTADO_ETIQUETA,
+        metodo_etiqueta=METODO_ETIQUETA,
+        **contexto_admin('asistencia'),
+    )
+
+
+@asistencia_bp.route('/asistencia/clases/<int:clase_id>/cerrar', methods=['POST'])
+@admin_required
+def cerrar(clase_id):
+    resultado = servicio.cerrar_clase(_token(), clase_id)
+
+    if resultado.get('unauthorized'):
+        return redirigir_a_login_sin_sesion()
+
+    if resultado.get('ok'):
+        flash('Se cerró la toma. Los pendientes pasaron a ausentes.', 'ok')
+    else:
+        flash(resultado.get('error') or 'No se pudo cerrar la clase.', 'error')
+
+    return redirect(url_for('web.admin.asistencia.listado', clase_id=clase_id))

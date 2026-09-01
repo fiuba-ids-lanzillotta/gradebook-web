@@ -515,8 +515,22 @@ html:has(.admin-body),
     padding: 22px 20px 28px;
     box-shadow: 0 12px 32px rgba(0, 0, 0, 0.08);
 }
-.asistencia__tomar-form { margin: 0 0 8px; }
-.asistencia__tomar { min-height: 40px; }
+.asistencia__tomar-form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 0 0 8px;
+}
+.asistencia__tomar,
+.asistencia__listado { min-height: 40px; }
+.asistencia__listado {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    box-sizing: border-box;
+    padding: 0 16px;
+}
 .asistencia__title {
     text-align: center;
     color: #3d6488;
@@ -754,4 +768,75 @@ html:has(.admin-body),
     .asistencia__title { font-size: 24px; }
     .asistencia__card { padding: 16px 14px 20px; }
     .asistencia__scanner { width: min(100%, 320px); }
+}
+
+.asistencias__volver-wrap { margin: 0 0 8px; }
+.asistencias__volver {
+    color: #3d6488;
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+}
+.asistencias__volver:hover { text-decoration: underline; }
+.asistencias__filtro {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: end;
+    gap: 10px;
+    margin: 0 0 14px;
+}
+.asistencias__filtro label {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #374151;
+    min-width: 160px;
+    flex: 1;
+    max-width: 280px;
+}
+.asistencias__filtro select,
+.asistencias__filtro input {
+    padding: 8px 10px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font: inherit;
+    font-weight: 400;
+    background: #f9fafb;
+}
+.asistencias__cerrar-wrap { margin: 0 0 14px; }
+.asistencias__resumen {
+    color: #3d6488;
+    font-size: 14px;
+    font-weight: 600;
+    margin: 0 0 12px;
+}
+.asistencias__estado {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+}
+.asistencias__estado--presente { background: #d5efd4; color: #27633a; }
+.asistencias__estado--pendiente { background: #e8f4fb; color: #3d6488; }
+.asistencias__estado--ausente { background: #fde8e8; color: #b42318; }
+.asistencias__tabla-wrap {
+    max-height: calc(5.6rem + 8 * 3.05rem);
+    overflow-y: auto;
+}
+.listado.asistencias .listado__tabla thead th {
+    position: sticky;
+    top: 0;
+    background: #fff;
+    z-index: 1;
+}
+
+@media (max-width: 720px) {
+    .asistencias__tabla-wrap { max-height: none; overflow: visible; }
+    .listado.asistencias .listado__tabla thead th { position: static; }
+    .asistencia__tomar-form { flex-direction: column; }
+    .asistencia__tomar,
+    .asistencia__listado { width: 100%; }
 }
