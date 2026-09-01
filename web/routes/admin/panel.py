@@ -11,17 +11,11 @@ from flask import (
 )
 
 from web.auth_sesion import admin_required, es_super_admin, redirigir_a_login_sin_sesion, puede_dar_baja
-from web.constants import CURSADA_ANIO, CURSADA_CUATRIMESTRE
+from web.constants import CURSADA_ANIO, CURSADA_CUATRIMESTRE, ESTADO_INSCRIPCION_ETIQUETA
 from web.services.docentes import obtener_docente
 from web.services import estudiantes as servicio
 
 panel_bp = Blueprint('panel', __name__)
-
-ESTADO_ETIQUETA = {
-    'cursando': 'Cursando',
-    'abandono': 'Abandonó',
-    'baja': 'Se dió de baja',
-}
 
 SOLAPAS = (
     ('listado', 'Listado alumnos', 'nav-listado.svg'),
@@ -98,7 +92,7 @@ def _contexto_listado(listado: dict, error=None, ok=None):
         'q': request.args.get('q', '').strip(),
         'error': error or listado.get('error'),
         'ok': ok,
-        'estado_etiqueta': ESTADO_ETIQUETA,
+        'estado_etiqueta': ESTADO_INSCRIPCION_ETIQUETA,
         'cursada_anio': listado.get('anio', CURSADA_ANIO),
         'cursada_cuatrimestre': listado.get('cuatrimestre', CURSADA_CUATRIMESTRE),
     })

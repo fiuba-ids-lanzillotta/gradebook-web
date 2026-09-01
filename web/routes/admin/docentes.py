@@ -19,11 +19,8 @@ from web.services.docentes import (
     actualizar_permisos_docente,
 )
 from web.services.permisos import obtener_catalogo_permisos
-
+from web.constants import CARGOS
 docentes_bp = Blueprint('docentes', __name__)
-
-CARGOS = ('Profesor', 'Ayudante', 'Colaborador')
-
 
 def _solo_profesor():
     if not es_super_admin():
