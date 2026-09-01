@@ -27,11 +27,19 @@ def autenticar(email: str, password: str, recaptcha_token: str = '') -> dict:
             return {'ok': True, 'token': datos['token'], 'usuario': datos['usuario']}
 
         if response.status_code == 401:
-            return {'ok': False, 'error': 'Usuario o contraseña incorrectos.'}
-
-        logger.warning(f"Login: la API respondió HTTP {response.status_code}: {response.text}")
-
-        return {'ok': False, 'error': f'Error del servidor (HTTP {response.status_code}).'}
+            return None, 'Credenciales inválidas.'
+        if response.status_code == 400:
+            try:
+                cuerpo = response.json()
+            except ValueError:
+                cuerpo = {}
+            errores = cuerpo.get('errors') or []
+            codigo = errores[0].get('code') if errores else None
+            if codigo == 'recaptcha.missing':
+                return None, 'Rellená el reCAPTCHA.'
+            if codigo == 'recaptcha.invalid':
+                return None, 'El reCAPTCHA no es válido. Volvé a intentarlo.'
+        return None, f'Error del servidor (HTTP {response.status_code}).'
 
     except requests.exceptions.ConnectionError:
         logger.error(f"No se pudo conectar con la API en {API_BASE_URL}")
