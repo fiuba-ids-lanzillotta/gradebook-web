@@ -5,13 +5,22 @@ from web.auth_sesion import admin_required, redirigir_a_login_sin_sesion
 from web.routes.admin.panel import _token, contexto_admin
 from web.services import asistencia as servicio
 from web.services.estudiantes import paginas_desde_links
-from web.constants import (
-    ESTADO_ASISTENCIA_ETIQUETA,
-    ESTADOS_ASISTENCIA_FILTRO,
-    METODO_ASISTENCIA_ETIQUETA,
-)
 
 asistencia_bp = Blueprint('asistencia', __name__)
+
+ESTADO_ETIQUETA = {
+    'presente': 'Presente',
+    'pendiente': 'Pendiente',
+    'ausente': 'Ausente',
+}
+
+METODO_ETIQUETA = {
+    'qr': 'QR',
+    'manual': 'Código',
+    'padron': 'Padrón',
+}
+
+ESTADOS_FILTRO = ('presente', 'pendiente', 'ausente')
 
 
 def _quiere_json() -> bool:
@@ -152,7 +161,7 @@ def listado():
     except (TypeError, ValueError):
         limit = 10
     
-    if estado not in ESTADOS_ASISTENCIA_FILTRO:
+    if estado not in ESTADOS_FILTRO:
         estado = ''
 
     clase = None
@@ -201,8 +210,8 @@ def listado():
         error=error,
         estado_filtro=estado,
         q=q,
-        estado_etiqueta=ESTADO_ASISTENCIA_ETIQUETA,
-        metodo_etiqueta=METODO_ASISTENCIA_ETIQUETA,
+        estado_etiqueta=ESTADO_ETIQUETA,
+        metodo_etiqueta=METODO_ETIQUETA,
         paginacion=paginacion,
         **contexto_admin('asistencia'),
     )

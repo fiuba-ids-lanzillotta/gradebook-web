@@ -134,8 +134,8 @@ def eliminar_docente(token: str, docente_id: int) -> bool:
     return False
 
 
-def actualizar_permisos_docente(token: str, docente_id: int, permisos: list[str]) -> bool:
-    """PUT /docentes/{id}/permisos. Retorna True si fue exitoso."""
+def actualizar_permisos_docente(token: str, docente_id: int, permisos: list[dict]) -> bool:
+    """PUT /docentes/{id}/permisos. Envia overrides [{permiso, concedido}]."""
     try:
         response = requests.put(
             f'{API_BASE_URL}/docentes/{docente_id}/permisos',

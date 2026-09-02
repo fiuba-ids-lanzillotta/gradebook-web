@@ -18,7 +18,7 @@ def test_autenticar_credenciales_invalidas(monkeypatch, respuesta_falsa):
     resultado = auth.autenticar('admin', 'mala')
 
     assert resultado['ok'] is False
-    assert 'incorrect' in resultado['error'].lower()
+    assert 'inválidas' in resultado['error'].lower()
 
 
 def test_autenticar_sin_conexion(monkeypatch):

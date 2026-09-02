@@ -19,8 +19,11 @@ from web.services.docentes import (
     actualizar_permisos_docente,
 )
 from web.services.permisos import obtener_catalogo_permisos
-from web.constants import CARGOS
+
 docentes_bp = Blueprint('docentes', __name__)
+
+CARGOS = ('Profesor', 'Ayudante', 'Colaborador')
+
 
 def _solo_profesor():
     if not es_super_admin():
@@ -40,6 +43,11 @@ def _permisos_por_cargo(catalogo: list[dict]) -> dict:
         'Ayudante': [codigo for codigo in todos if codigo not in ('permisos.asignar', 'docentes.gestionar', 'estudiantes.crear', 'roles.gestionar')],
         'Colaborador': [codigo for codigo in todos if codigo not in ('permisos.asignar', 'docentes.gestionar', 'estudiantes.crear', 'estudiantes.eliminar', 'roles.gestionar')],
     }
+
+
+def _body_permisos_desde_catalogo(catalogo: list[dict], codigos: set) -> list[dict]:
+    """Arma el body de overrides [{permiso, concedido}] para la API."""
+    return [{'permiso': permiso['codigo'], 'concedido': permiso['codigo'] in codigos} for permiso in catalogo]
 
 
 def _contexto_pantalla(**extra) -> dict:
@@ -94,7 +102,9 @@ def crear():
     if resultado:
         permisos_catalogo = obtener_catalogo_permisos(token) if token else []
         permisos_por_cargo = _permisos_por_cargo(permisos_catalogo)
-        actualizar_permisos_docente(token, resultado['id'], permisos_por_cargo[rol])
+        codigos = set(permisos_por_cargo[rol])
+        body_permisos = _body_permisos_desde_catalogo(permisos_catalogo, codigos)
+        actualizar_permisos_docente(token, resultado['id'], body_permisos)
         flash(f'Se agregó a {apellido}, {nombre} ({rol}). Se envió un email con la contraseña.', 'ok')
     else:
         flash('Error al crear el docente. Verificá los datos.', 'error')
@@ -126,12 +136,12 @@ def editar(docente_id):
         permisos_por_cargo = _permisos_por_cargo(permisos_catalogo)
 
         if rol == 'Profesor':
-            permisos = list(permisos_por_cargo['Profesor'])
+            codigos = set(permisos_por_cargo['Profesor'])
         else:
-            tildados = set(request.form.getlist('permisos'))
-            permisos = [item['codigo'] for item in permisos_catalogo if item['codigo'] in tildados]
+            codigos = set(request.form.getlist('permisos'))
 
-        actualizar_permisos_docente(token, docente_id, permisos)
+        body_permisos = _body_permisos_desde_catalogo(permisos_catalogo, codigos)
+        actualizar_permisos_docente(token, docente_id, body_permisos)
         flash(f'Se actualizó a {apellido}, {nombre}.', 'ok')
     else:
         flash('Error al actualizar el docente. Verificá los datos.', 'error')

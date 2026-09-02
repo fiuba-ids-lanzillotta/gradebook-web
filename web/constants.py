@@ -34,25 +34,3 @@ CURSADA_ANIO = '2026'
 CURSADA_CUATRIMESTRE = '2'
 
 ROL_SUPER_ADMIN = 'super_admin'
-
-CARGOS = ('Profesor', 'Ayudante', 'Colaborador')
-
-ESTADO_INSCRIPCION_ETIQUETA = {
-    'cursando': 'Cursando',
-    'abandono': 'Abandonó',
-    'baja': 'Se dió de baja',
-}
-
-ESTADO_ASISTENCIA_ETIQUETA = {
-    'presente': 'Presente',
-    'pendiente': 'Pendiente',
-    'ausente': 'Ausente',
-}
-
-METODO_ASISTENCIA_ETIQUETA = {
-    'qr': 'QR',
-    'manual': 'Código',
-    'padron': 'Padrón',
-}
-
-ESTADOS_ASISTENCIA_FILTRO = ('presente', 'pendiente', 'ausente')
