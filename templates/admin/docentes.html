@@ -77,8 +77,6 @@
                                 <button type="submit" class="btn-alta btn-alta--ok">Reactivar</button>
                             </form>
                             {% endif %}
-                            {% set permisos_base = permisos_por_cargo.get(docente.rol, []) %}
-                            {% set permisos_docente = (permisos_base + (docente.permisos or [])) | unique | list %}
                             <button
                                 type="button"
                                 class="listado__icon-btn js-editar-docente"
@@ -88,7 +86,7 @@
                                 data-apellido="{{ docente.apellido }}"
                                 data-email="{{ docente.email }}"
                                 data-rol="{{ docente.rol }}"
-                                data-permisos='{{ permisos_docente | tojson }}'
+                                data-permisos='{{ (docente.permisos or []) | tojson }}'
                                 data-url="{{ url_for('web.admin.docentes.editar', docente_id=docente.id) }}"
                             >
                                 <img src="{{ url_for('static', filename='img/edit.svg') }}" alt="">
