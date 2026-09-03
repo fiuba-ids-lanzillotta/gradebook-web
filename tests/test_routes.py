@@ -20,6 +20,13 @@ def _sesion_estudiante(client):
         sesion['usuario'] = {'id': 1, 'tipo': 'estudiante', 'email': 'a@fi.uba.ar', 'rol': 'usuario'}
 
 
+def _sesion_docente_superadmin(client):
+    """Simula un docente superadmin logueado."""
+    with client.session_transaction() as sesion:
+        sesion['token'] = 'token-docente'
+        sesion['usuario'] = {'id': 1, 'tipo': 'docente', 'email': 'p@fi.uba.ar', 'rol': 'super_admin'}
+
+
 def test_pagina_inicio_sin_sesion_redirige_a_login(client):
     respuesta = client.get('/')
 
@@ -136,3 +143,22 @@ def test_cambiar_contrasena_passwords_no_coinciden(client):
 
     assert respuesta.status_code == 200
     assert 'coinciden' in respuesta.get_data(as_text=True).lower()
+
+
+# --- panel: baja / reactivación ---
+
+def test_dar_de_alta_usa_endpoint_reactivacion(client, monkeypatch, respuesta_falsa):
+    _sesion_docente_superadmin(client)
+    capturado = {}
+
+    def fake_post(url, json=None, headers=None, timeout=None):
+        capturado['url'] = url
+        return respuesta_falsa(200, {'estado': 'cursando'})
+
+    monkeypatch.setattr(requests, 'post', fake_post)
+
+    respuesta = client.post('/admin/alumnos/7/alta')
+
+    assert respuesta.status_code == 302
+    assert '/admin/' in respuesta.headers['Location']
+    assert capturado['url'].endswith('/estudiantes/7/reactivacion')

@@ -60,6 +60,42 @@ def test_listar_de_cursada_sin_vigente_usa_respaldo(monkeypatch, respuesta_falsa
     assert resultado['anio'] == CURSADA_ANIO and resultado['cuatrimestre'] == CURSADA_CUATRIMESTRE
 
 
+# --- cambio de estado ---
+
+def test_cambiar_estado_baja_usa_endpoint_baja(monkeypatch, respuesta_falsa):
+    capturado = {}
+
+    def fake_post(url, json=None, headers=None, timeout=None):
+        capturado['url'] = url
+        capturado['json'] = json
+        return respuesta_falsa(200, {'estado': 'baja'})
+
+    monkeypatch.setattr(requests, 'post', fake_post)
+
+    resultado = estudiantes.cambiar_estado('token', 7, 'baja', 'motivo x')
+
+    assert capturado['url'].endswith('/estudiantes/7/baja')
+    assert capturado['json'] == {'estado': 'baja', 'motivo': 'motivo x'}
+    assert resultado['ok']
+
+
+def test_reactivar_usa_nuevo_endpoint(monkeypatch, respuesta_falsa):
+    capturado = {}
+
+    def fake_post(url, json=None, headers=None, timeout=None):
+        capturado['url'] = url
+        capturado['json'] = json
+        return respuesta_falsa(200, {'estado': 'cursando'})
+
+    monkeypatch.setattr(requests, 'post', fake_post)
+
+    resultado = estudiantes.reactivar('token', 7)
+
+    assert capturado['url'].endswith('/estudiantes/7/reactivacion')
+    assert capturado['json'] == {}
+    assert resultado['ok']
+
+
 # --- ventana de paginacion ---
 
 def test_ventana_pocas_paginas_muestra_todas():

@@ -273,7 +273,7 @@ def dar_de_alta(estudiante_id):
 
         return redirect(url_for('web.admin.panel.index'))
 
-    resultado = servicio.cambiar_estado(_token(), estudiante_id, 'cursando')
+    resultado = servicio.reactivar(_token(), estudiante_id)
     redireccion = _resultado_o_redirect(resultado)
 
     if redireccion:

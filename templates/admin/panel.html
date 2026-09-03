@@ -132,7 +132,7 @@
                                 data-padron="{{ alumno.padron }}"
                                 data-url="{{ url_for('web.admin.panel.dar_de_baja', estudiante_id=alumno.id) }}"
                             >Dar de baja</button>
-                            {% else %}
+                            {% elif estado == 'baja' %}
                             <form method="POST" action="{{ url_for('web.admin.panel.dar_de_alta', estudiante_id=alumno.id) }}">
                                 <button
                                     type="submit"

@@ -205,13 +205,18 @@ def actualizar_estudiante(token: str, estudiante_id: int, datos: dict) -> dict:
 
 
 def cambiar_estado(token: str, estudiante_id: int, estado: str, motivo: str | None = None) -> dict:
-    """POST /estudiantes/{id}/baja  {estado, motivo?}."""
+    """POST /estudiantes/{id}/baja  {estado, motivo?}. Solo baja o abandono."""
     body = {'estado': estado}
 
     if estado == 'baja':
         body['motivo'] = (motivo or '').strip()
 
     return _escribir('post', f'{API_BASE_URL}/estudiantes/{estudiante_id}/baja', token, json=body, ok=200)
+
+
+def reactivar(token: str, estudiante_id: int) -> dict:
+    """POST /estudiantes/{id}/reactivacion. Reactiva una inscripción dada de baja."""
+    return _escribir('post', f'{API_BASE_URL}/estudiantes/{estudiante_id}/reactivacion', token, json={}, ok=200)
 
 
 def importar_csv(token: str, archivo) -> dict:
