@@ -23,6 +23,7 @@ document.addEventListener('DOMContentLoaded', function () {
     };
 
     let claseId = (app.dataset.claseId || '').trim();
+    const puedeGestionar = app.dataset.puedeGestionar === '1';
     let html5QrCode = null;
     let camaraActiva = false;
     let enviando = false;
@@ -67,9 +68,11 @@ document.addEventListener('DOMContentLoaded', function () {
     function setTomando(activo) {
         tomando = activo;
         if (!els.btnTomar) return;
-        els.btnTomar.disabled = activo;
+        els.btnTomar.disabled = activo || !puedeGestionar;
         els.btnTomar.setAttribute('aria-busy', activo ? 'true' : 'false');
-        els.btnTomar.textContent = activo ? 'Enviando…' : 'Tomar asistencia';
+        if (puedeGestionar) {
+            els.btnTomar.textContent = activo ? 'Enviando…' : 'Tomar asistencia';
+        }
     }
 
     async function postJson(url, cuerpo) {
@@ -256,7 +259,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     async function iniciarCamara() {
-        if (camaraActiva) return;
+        if (!puedeGestionar || camaraActiva) return;
         if (typeof Html5Qrcode === 'undefined') {
             mostrarResultado('error', 'No se pudo cargar el lector QR. Revisá la conexión.');
             return;
@@ -292,6 +295,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     form.addEventListener('submit', (evento) => {
         evento.preventDefault();
+        if (!puedeGestionar) return;
         marcarAsistencia({
             codigo: els.inputCodigo.value,
             padron: els.inputPadron.value,
@@ -301,7 +305,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     if (els.modalTomar && els.btnTomar) {
         els.btnTomar.addEventListener('click', () => {
-            if (tomando || els.btnTomar.disabled) return;
+            if (!puedeGestionar || tomando || els.btnTomar.disabled) return;
             els.modalTomar.classList.add('is-open');
             els.modalTomar.setAttribute('aria-hidden', 'false');
         });
@@ -314,6 +318,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
     if (els.btnConfirmarTomar) {
         els.btnConfirmarTomar.addEventListener('click', () => {
+            if (!puedeGestionar) return;
             if (els.modalTomar) {
                 els.modalTomar.classList.remove('is-open');
                 els.modalTomar.setAttribute('aria-hidden', 'true');

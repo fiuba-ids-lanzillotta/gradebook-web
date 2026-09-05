@@ -1,7 +1,6 @@
 """Autenticación: login, logout y reexport de los decoradores."""
 from flask import Blueprint, render_template, request, redirect, session, url_for
-
-from web.services.auth import autenticar, solicitar_recuperacion, confirmar_recuperacion
+from web.services.auth import autenticar, obtener_identidad, solicitar_recuperacion, confirmar_recuperacion
 from web.constants import RECAPTCHA_SITE_KEY
 from web.auth_sesion import (
     admin_required,
@@ -30,7 +29,11 @@ def login():
 
         if resultado['ok']:
             session['token'] = resultado['token']
-            session['usuario'] = resultado['usuario']
+            usuario = dict(resultado['usuario'] or {})
+            identidad = obtener_identidad(resultado['token'])
+            usuario['permisos'] = list(identidad.get('permisos') or [])
+            print(usuario['permisos'])
+            session['usuario'] = usuario
 
             return redirect(url_post_login())
 

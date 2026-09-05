@@ -1,7 +1,8 @@
 """Pantalla admin: tomar asistencia de hoy y marcar presente (QR / código / padrón)."""
 from flask import Blueprint, jsonify, render_template, request, redirect, url_for, flash
 
-from web.auth_sesion import admin_required, redirigir_a_login_sin_sesion
+from web.auth_sesion import admin_required, redirigir_a_login_sin_sesion, redirigir_sin_permiso, tiene_permiso
+from web.constants import PERMISO_ASISTENCIAS_GESTIONAR, PERMISO_ASISTENCIAS_LEER
 from web.routes.admin.panel import _token, contexto_admin
 from web.services import asistencia as servicio
 from web.services.estudiantes import paginas_desde_links
@@ -45,10 +46,18 @@ def _json_o_error(resultado, status_ok=200):
 
     return jsonify({'ok': True, **{k: v for k, v in resultado.items() if k != 'ok'}}), status_ok
 
+def _exige_json(permiso: str):
+    if tiene_permiso(permiso):
+        return None
+
+    return jsonify({'ok': False, 'error': 'No tenés permiso para esta acción.'}), 403
 
 @asistencia_bp.route('/asistencia')
 @admin_required
 def index():
+    if not tiene_permiso(PERMISO_ASISTENCIAS_LEER):
+        return redirigir_sin_permiso()
+
     clase_hoy = servicio.clase_de_hoy(_token())
 
     if clase_hoy.get('unauthorized'):
@@ -67,25 +76,43 @@ def index():
 @asistencia_bp.route('/asistencia/clases', methods=['POST'])
 @admin_required
 def crear_clase():
+    bloqueo = _exige_json(PERMISO_ASISTENCIAS_GESTIONAR)
+
+    if bloqueo:
+        return bloqueo
+
     return _json_o_error(servicio.crear_clase_hoy(_token()), status_ok=200)
 
 
 @asistencia_bp.route('/asistencia/clases/<int:clase_id>/enviar-qrs', methods=['POST'])
 @admin_required
 def enviar_qrs(clase_id):
+    bloqueo = _exige_json(PERMISO_ASISTENCIAS_GESTIONAR)
+
+    if bloqueo:
+        return bloqueo
+
     return _json_o_error(servicio.enviar_qrs(_token(), clase_id))
 
 
 @asistencia_bp.route('/asistencia/clases/<int:clase_id>/envio', methods=['GET'])
 @admin_required
 def estado_envio(clase_id):
+    if not tiene_permiso(PERMISO_ASISTENCIAS_LEER):
+        return _exige_json(PERMISO_ASISTENCIAS_LEER)
+
     return _json_o_error(servicio.estado_envio(_token(), clase_id))
 
 
 @asistencia_bp.route('/asistencia/clases/<int:clase_id>/marcar', methods=['POST'])
 @admin_required
 def marcar(clase_id):
-    cuerpo = request.get_json(silent=True) or {}
+    bloqueo = _exige_json(PERMISO_ASISTENCIAS_GESTIONAR)
+
+    if bloqueo:
+        return bloqueo
+
+    cuerpo = request.get_json(silent=True) or {}    
     codigo = (request.form.get('codigo') or cuerpo.get('codigo') or '').strip()
     padron = (request.form.get('padron') or cuerpo.get('padron') or '').strip()
     manual = bool(cuerpo.get('manual')) or request.form.get('manual') == 'true'
@@ -136,6 +163,9 @@ def marcar(clase_id):
 @asistencia_bp.route('/asistencia/listado')
 @admin_required
 def listado():
+    if not tiene_permiso(PERMISO_ASISTENCIAS_LEER):
+        return redirigir_sin_permiso()
+
     token = _token()
     clases_res = servicio.listar_clases(token)
 
@@ -220,6 +250,9 @@ def listado():
 @asistencia_bp.route('/asistencia/clases/<int:clase_id>/cerrar', methods=['POST'])
 @admin_required
 def cerrar(clase_id):
+    if not tiene_permiso(PERMISO_ASISTENCIAS_GESTIONAR):
+        return redirigir_sin_permiso()
+
     resultado = servicio.cerrar_clase(_token(), clase_id)
 
     if resultado.get('unauthorized'):

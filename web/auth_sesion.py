@@ -1,6 +1,12 @@
 """Sesión web: destinos post-login y decoradores de acceso."""
 from functools import wraps
-from flask import redirect, session, url_for
+from flask import flash, redirect, session, url_for
+
+from web.constants import (
+    PERMISO_ASISTENCIAS_LEER,
+    PERMISO_DOCENTES_LEER,
+    PERMISO_ESTUDIANTES_LEER,
+)
 
 TIPO_DOCENTE = 'docente'
 TIPO_ESTUDIANTE = 'estudiante'
@@ -37,16 +43,38 @@ def puede_dar_baja() -> bool:
     """Puede dar baja si es super_admin o admin (no superusuario)."""
     return es_super_admin() or es_admin()
 
+def permisos_sesion() -> list:
+    return list(usuario_sesion().get('permisos') or [])
+
+def tiene_permiso(codigo: str) -> bool:
+    return codigo in set(permisos_sesion())
+
 def url_login() -> str:
     return url_for('web.admin.auth.login')
 
+def url_primera_solapa() -> str:
+    """Primera solapa real que el docente puede leer. Fallback: listado."""
+    if tiene_permiso(PERMISO_ESTUDIANTES_LEER):
+        return url_for('web.admin.panel.index')
+
+    if tiene_permiso(PERMISO_ASISTENCIAS_LEER):
+        return url_for('web.admin.asistencia.index')
+
+    if tiene_permiso(PERMISO_DOCENTES_LEER):
+        return url_for('web.admin.docentes.index')
+
+    return url_for('web.admin.panel.index')
 
 def url_post_login() -> str:
     if es_docente():
-        return url_for('web.admin.panel.index')
+        return url_primera_solapa()
 
     return url_for('web.site.home.index')
 
+def redirigir_sin_permiso(mensaje='No tenés permiso para esta acción.'):
+    flash(mensaje, 'error')
+
+    return redirect(url_primera_solapa())
 
 def redirigir_a_login_sin_sesion():
     session.pop('token', None)

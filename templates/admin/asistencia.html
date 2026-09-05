@@ -11,10 +11,11 @@
     data-url-clases="{{ url_for('web.admin.asistencia.crear_clase') }}"
     data-url-enviar-tpl="{{ url_for('web.admin.asistencia.enviar_qrs', clase_id=0) }}"
     data-url-marcar-tpl="{{ url_for('web.admin.asistencia.marcar', clase_id=0) }}"
+    data-puede-gestionar="{% if 'asistencias.gestionar' in permisos %}1{% else %}0{% endif %}"
 >
     <div class="asistencia__card">
         <div class="asistencia__tomar-form">
-            <button type="button" class="btn-solid asistencia__tomar js-tomar">Tomar asistencia</button>
+            <button type="button" class="btn-solid asistencia__tomar js-tomar {% if 'asistencias.gestionar' in permisos %}btn-solid--ok{% else %}btn-solid--off{% endif %}" {% if 'asistencias.gestionar' not in permisos %}disabled{% endif %}>Tomar asistencia</button>
             <a class="btn-outline asistencia__listado" href="{{ url_for('web.admin.asistencia.listado') }}">Listado de asistencia</a>
         </div>
 
@@ -47,7 +48,7 @@
             </div>
         </div>
 
-        <button type="button" id="btn-activar-camara" class="btn-solid asistencia__btn">
+        <button type="button" id="btn-activar-camara" class="btn-solid asistencia__btn {% if 'asistencias.gestionar' not in permisos %}btn-solid--off{% endif %}" {% if 'asistencias.gestionar' not in permisos %}disabled{% endif %}>
             Activar cámara del dispositivo
         </button>
         <button type="button" id="btn-detener-camara" class="btn-outline asistencia__btn asistencia__btn--detener">
@@ -76,7 +77,7 @@
                 pattern="[0-9]*"
                 autocomplete="off"
             >
-            <button type="submit" id="btn-confirmar" class="btn-solid asistencia__btn">Confirmar asistencia</button>
+            <button type="submit" id="btn-confirmar" class="btn-solid asistencia__btn {% if 'asistencias.gestionar' not in permisos %}btn-solid--off{% endif %}" {% if 'asistencias.gestionar' not in permisos %}disabled{% endif %}>Confirmar asistencia</button>
         </form>
 
         <p id="resultado-asistencia" class="asistencia__resultado" role="status" aria-live="polite"></p>

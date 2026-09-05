@@ -402,7 +402,14 @@ html:has(.admin-body),
     opacity: 0.5;
     cursor: not-allowed;
 }
+.btn-solid--off:disabled,
+.btn-outline--off:disabled,
+.btn-danger--off:disabled,
+.btn-alta--off:disabled {
+    opacity: 1;
+}
 .btn-outline { background: #fff; border-color: #3d6488; color: #3d6488; }
+.btn-outline--off { background: #c4c4c4; color: #fff; border: none; cursor: not-allowed; }
 .btn-solid { background: #3d6488; color: #fff; border: none; }
 .btn-solid--ok { background: #3d6488; color: #fff; border: none; }
 .btn-solid--off { background: #c4c4c4; color: #fff; border: none; cursor: not-allowed; }

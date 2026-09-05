@@ -22,9 +22,9 @@
                 <label class="listado__file">
                     <img src="{{ url_for('static', filename='img/cap.svg') }}" alt="" class="listado__cap">
                     <span class="listado__file-name" id="csv-nombre">Subir archivo csv</span>
-                    <input type="file" name="archivo" accept=".csv,text/csv" required id="csv-input">
+                    <input type="file" name="archivo" accept=".csv,text/csv" id="csv-input" {% if 'estudiantes.crear' in permisos %}required{% else %}disabled{% endif %}>
                 </label>
-                <button type="submit" class="btn-solid">Publicar csv</button>
+                <button type="submit" class="btn-solid {% if 'estudiantes.crear' in permisos %}btn-solid--ok{% else %}btn-solid--off{% endif %}" {% if 'estudiantes.crear' not in permisos %}disabled{% endif %}>Publicar csv</button>
             </form>
         </div>
         <p class="listado__hint">
@@ -39,18 +39,18 @@
             <h2 class="listado__alta-title">Agregar Alumno</h2>
             <div class="listado__alta-grid">
                 <label>Nombre
-                    <input type="text" name="nombre" placeholder="nombre" required>
+                    <input type="text" name="nombre" placeholder="nombre" required {% if 'estudiantes.crear' not in permisos %}disabled{% endif %}>
                 </label>
                 <label>Apellido
-                    <input type="text" name="apellido" placeholder="apellido" required>
+                    <input type="text" name="apellido" placeholder="apellido" required {% if 'estudiantes.crear' not in permisos %}disabled{% endif %}>
                 </label>
                 <label>Padrón
-                    <input type="text" name="padron" placeholder="padrón" required inputmode="numeric" pattern="[0-9]+" title="Solo números" autocomplete="off">
+                    <input type="text" name="padron" placeholder="padrón" required inputmode="numeric" pattern="[0-9]+" title="Solo números" autocomplete="off" {% if 'estudiantes.crear' not in permisos %}disabled{% endif %}>
                 </label>
                 <label>Correo electrónico
-                    <input type="email" name="email" placeholder="correo electrónico" required>
+                    <input type="email" name="email" placeholder="correo electrónico" required {% if 'estudiantes.crear' not in permisos %}disabled{% endif %}>
                 </label>
-                <button type="submit" class="btn-outline listado__alta-btn">+ Agregar</button>
+                <button type="submit" class="btn-outline listado__alta-btn {% if 'estudiantes.crear' not in permisos %}btn-outline--off{% endif %}" {% if 'estudiantes.crear' not in permisos %}disabled{% endif %}>+ Agregar</button>
             </div>
         </form>
 
@@ -99,6 +99,7 @@
                             >
                                 <img src="{{ url_for('static', filename='img/eye.svg') }}" alt="">
                             </a>
+                            {% if 'estudiantes.modificar' in permisos %}
                             <button
                                 type="button"
                                 class="listado__icon-btn js-editar"
@@ -112,12 +113,13 @@
                             >
                                 <img src="{{ url_for('static', filename='img/edit.svg') }}" alt="">
                             </button>
+                            {% endif %}
 
                             {% if estado == 'cursando' %}
                             <button
                                 type="button"
-                                class="btn-danger {% if puede_dar_baja %}btn-danger--ok{% else %}btn-danger--off{% endif %} js-abandonar"
-                                {% if not puede_dar_baja %}disabled{% endif %}
+                                class="btn-danger {% if 'estudiantes.eliminar' in permisos %}btn-danger--ok{% else %}btn-danger--off{% endif %} js-abandonar"
+                                {% if 'estudiantes.eliminar' not in permisos %}disabled{% endif %}
                                 data-nombre="{{ alumno.nombre }}"
                                 data-apellido="{{ alumno.apellido }}"
                                 data-padron="{{ alumno.padron }}"
@@ -125,8 +127,8 @@
                             >Abandonar</button>
                             <button
                                 type="button"
-                                class="btn-solid {% if puede_dar_baja %}btn-solid--ok{% else %}btn-solid--off{% endif %} js-baja"
-                                {% if not puede_dar_baja %}disabled{% endif %}
+                                class="btn-solid {% if 'estudiantes.eliminar' in permisos %}btn-solid--ok{% else %}btn-solid--off{% endif %} js-baja"
+                                {% if 'estudiantes.eliminar' not in permisos %}disabled{% endif %}
                                 data-nombre="{{ alumno.nombre }}"
                                 data-apellido="{{ alumno.apellido }}"
                                 data-padron="{{ alumno.padron }}"
@@ -136,8 +138,8 @@
                             <form method="POST" action="{{ url_for('web.admin.panel.dar_de_alta', estudiante_id=alumno.id) }}">
                                 <button
                                     type="submit"
-                                    class="btn-alta {% if es_super_admin %}btn-alta--ok{% else %}btn-alta--off{% endif %}"
-                                    {% if not es_super_admin %}disabled{% endif %}
+                                    class="btn-alta {% if 'estudiantes.reactivar' in permisos %}btn-alta--ok{% else %}btn-alta--off{% endif %}"
+                                    {% if 'estudiantes.reactivar' not in permisos %}disabled{% endif %}
                                 >Dar de alta</button>
                             </form>
                             {% endif %}

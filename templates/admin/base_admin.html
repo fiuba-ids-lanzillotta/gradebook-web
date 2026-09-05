@@ -38,7 +38,6 @@
 
                 <nav class="admin-sidebar__nav" aria-label="Panel docente">
                     {% for clave, etiqueta, icono, activa in solapas %}
-                        {% if clave != 'docentes' or es_super_admin %}
                         <a
                             href="{% if clave == 'listado' %}{{ url_for('web.admin.panel.index') }}{% elif clave == 'asistencia' %}{{ url_for('web.admin.asistencia.index') }}{% elif clave == 'docentes' %}{{ url_for('web.admin.docentes.index') }}{% else %}#{% endif %}"
                             class="admin-sidebar__link {% if activa %}admin-sidebar__link--active{% endif %} {% if clave not in ('listado', 'asistencia', 'docentes') %}admin-sidebar__link--soon{% endif %}"
@@ -46,7 +45,6 @@
                             <img src="{{ url_for('static', filename='img/' + icono) }}" alt="" class="admin-sidebar__icon">
                             {{ etiqueta }}
                         </a>
-                        {% endif %}
                     {% endfor %}
                 </nav>
             </div>

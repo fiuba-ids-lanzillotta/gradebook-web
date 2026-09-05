@@ -51,6 +51,27 @@ def autenticar(email: str, password: str, recaptcha_token: str = '') -> dict:
 
         return {'ok': False, 'error': 'Ocurrió un error al iniciar sesión.'}
 
+def obtener_identidad(token: str) -> dict:
+    """GET /me. Identidad con permisos efectivos, o {} si falla."""
+    try:
+        response = requests.get(
+            f'{API_BASE_URL}/me',
+            headers=api_headers({'Authorization': f'Bearer {token}'}),
+            timeout=10,
+        )
+    except requests.exceptions.ConnectionError:
+        logger.error(f"No se pudo conectar con la API en {API_BASE_URL}")
+
+        return {}
+    except Exception as error:
+        logger.error(f"Error al obtener identidad: {error}")
+
+        return {}
+
+    if response.status_code != 200:
+        return {}
+
+    return response.json() or {}
 
 def solicitar_recuperacion(email: str) -> dict:
     """Pide a la API el envío del link de recuperación.

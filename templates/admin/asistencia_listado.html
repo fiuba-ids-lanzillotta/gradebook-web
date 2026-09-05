@@ -48,7 +48,7 @@
 
         {% if clase and clase.estado == 'abierta' %}
         <div class="asistencias__cerrar-wrap">
-            <button type="button" class="btn-solid js-cerrar-clase">Cerrar toma</button>
+            <button type="button" class="btn-solid js-cerrar-clase {% if 'asistencias.gestionar' in permisos %}btn-solid--ok{% else %}btn-solid--off{% endif %}" {% if 'asistencias.gestionar' not in permisos %}disabled{% endif %}>Cerrar toma</button>
         </div>
         {% endif %}
 
@@ -141,22 +141,8 @@
         </form>
     </div>
 </div>
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-    var modal = document.getElementById('modal-cerrar');
-    var abrir = document.querySelector('.js-cerrar-clase');
-    if (!modal || !abrir) return;
-    abrir.addEventListener('click', function () {
-        modal.classList.add('is-open');
-        modal.setAttribute('aria-hidden', 'false');
-    });
-    modal.querySelectorAll('[data-close]').forEach(function (el) {
-        el.addEventListener('click', function () {
-            modal.classList.remove('is-open');
-            modal.setAttribute('aria-hidden', 'true');
-        });
-    });
-});
-</script>
 {% endif %}
+{% endblock %}
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/asistencia_listado.js') }}"></script>
 {% endblock %}

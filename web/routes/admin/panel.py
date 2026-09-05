@@ -10,8 +10,25 @@ from flask import (
     Response,
 )
 
-from web.auth_sesion import admin_required, es_super_admin, redirigir_a_login_sin_sesion, puede_dar_baja
-from web.constants import CURSADA_ANIO, CURSADA_CUATRIMESTRE
+from web.auth_sesion import (
+    admin_required,
+    redirigir_a_login_sin_sesion,
+    redirigir_sin_permiso,
+    tiene_permiso,
+    url_primera_solapa,
+    permisos_sesion,
+)
+from web.constants import (
+    CURSADA_ANIO,
+    CURSADA_CUATRIMESTRE,
+    PERMISO_ASISTENCIAS_LEER,
+    PERMISO_DOCENTES_LEER,
+    PERMISO_ESTUDIANTES_CREAR,
+    PERMISO_ESTUDIANTES_ELIMINAR,
+    PERMISO_ESTUDIANTES_LEER,
+    PERMISO_ESTUDIANTES_MODIFICAR,
+    PERMISO_ESTUDIANTES_REACTIVAR,
+)
 from web.services.docentes import obtener_docente
 from web.services import estudiantes as servicio
 
@@ -33,7 +50,11 @@ SOLAPAS = (
     ('entregas', 'Entregas', 'nav-entregas.svg'),
     ('vista', 'Vista general', 'nav-vista.svg'),
 )
-
+SOLAPA_PERMISO = {
+    'listado': PERMISO_ESTUDIANTES_LEER,
+    'asistencia': PERMISO_ASISTENCIAS_LEER,
+    'docentes': PERMISO_DOCENTES_LEER,
+}
 
 def _token() -> str:
     return session.get('token') or ''
@@ -76,12 +97,12 @@ def _nombre_docente() -> str:
 
 def contexto_admin(solapa_activa: str) -> dict:
     return {
-        'es_super_admin': es_super_admin(),
-        'puede_dar_baja': puede_dar_baja(),
+        'permisos': permisos_sesion(),
         'nombre_docente': _nombre_docente(),
         'solapas': [
             (clave, etiqueta, icono, clave == solapa_activa)
             for clave, etiqueta, icono in SOLAPAS
+            if SOLAPA_PERMISO.get(clave) is None or tiene_permiso(SOLAPA_PERMISO[clave])
         ],
     }
 
@@ -108,6 +129,19 @@ def _contexto_listado(listado: dict, error=None, ok=None):
 @panel_bp.route('/')
 @admin_required
 def index():
+    if not tiene_permiso(PERMISO_ESTUDIANTES_LEER):
+        destino = url_primera_solapa()
+
+        if destino != url_for('web.admin.panel.index'):
+            return redirect(destino)
+
+        return render_template(
+            'admin/panel.html',
+            **_contexto_listado(
+                {'ok': True, 'estudiantes': [], 'links': {}},
+                error='No tenés permiso para ver el listado.',
+            ),
+        )
     q = request.args.get('q', '').strip()
 
     try:
