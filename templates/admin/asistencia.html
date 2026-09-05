@@ -16,7 +16,11 @@
     <div class="asistencia__card">
         <div class="asistencia__tomar-form">
             <button type="button" class="btn-solid asistencia__tomar js-tomar {% if 'asistencias.gestionar' in permisos %}btn-solid--ok{% else %}btn-solid--off{% endif %}" {% if 'asistencias.gestionar' not in permisos %}disabled{% endif %}>Tomar asistencia</button>
+            {% if 'asistencias.leer' in permisos %}
             <a class="btn-outline asistencia__listado" href="{{ url_for('web.admin.asistencia.listado') }}">Listado de asistencia</a>
+            {% else %}
+            <span class="btn-outline asistencia__listado btn-outline--off" aria-disabled="true">Listado de asistencia</span>
+            {% endif %}
         </div>
 
         <h1 class="asistencia__title">Asistencia</h1>

@@ -22,6 +22,7 @@ from web.constants import (
     CURSADA_ANIO,
     CURSADA_CUATRIMESTRE,
     PERMISO_ASISTENCIAS_LEER,
+    PERMISO_ASISTENCIAS_GESTIONAR,
     PERMISO_DOCENTES_LEER,
     PERMISO_ESTUDIANTES_CREAR,
     PERMISO_ESTUDIANTES_ELIMINAR,
@@ -95,6 +96,17 @@ def _nombre_docente() -> str:
 
     return usuario.get('email') or ''
 
+def _solapa_visible(clave: str) -> bool:
+    if clave == 'asistencia':
+        return tiene_permiso(PERMISO_ASISTENCIAS_LEER) or tiene_permiso(PERMISO_ASISTENCIAS_GESTIONAR)
+
+    permiso = SOLAPA_PERMISO.get(clave)
+
+    if permiso is None:
+        return True
+
+    return tiene_permiso(permiso)
+
 def contexto_admin(solapa_activa: str) -> dict:
     return {
         'permisos': permisos_sesion(),
@@ -102,7 +114,7 @@ def contexto_admin(solapa_activa: str) -> dict:
         'solapas': [
             (clave, etiqueta, icono, clave == solapa_activa)
             for clave, etiqueta, icono in SOLAPAS
-            if SOLAPA_PERMISO.get(clave) is None or tiene_permiso(SOLAPA_PERMISO[clave])
+            if _solapa_visible(clave)
         ],
     }
 
@@ -302,10 +314,8 @@ def dar_de_baja(estudiante_id):
 @panel_bp.route('/alumnos/<int:estudiante_id>/alta', methods=['POST'])
 @admin_required
 def dar_de_alta(estudiante_id):
-    if not es_super_admin():
-        flash('Solo un superadmin puede dar de alta a un alumno.', 'error')
-
-        return redirect(url_for('web.admin.panel.index'))
+    if not tiene_permiso(PERMISO_ESTUDIANTES_CREAR):
+        return redirigir_sin_permiso()
 
     resultado = servicio.reactivar(_token(), estudiante_id)
     redireccion = _resultado_o_redirect(resultado)

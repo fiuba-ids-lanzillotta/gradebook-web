@@ -32,7 +32,6 @@ def login():
             usuario = dict(resultado['usuario'] or {})
             identidad = obtener_identidad(resultado['token'])
             usuario['permisos'] = list(identidad.get('permisos') or [])
-            print(usuario['permisos'])
             session['usuario'] = usuario
 
             return redirect(url_post_login())

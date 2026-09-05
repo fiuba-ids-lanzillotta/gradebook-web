@@ -55,15 +55,18 @@ def _exige_json(permiso: str):
 @asistencia_bp.route('/asistencia')
 @admin_required
 def index():
-    if not tiene_permiso(PERMISO_ASISTENCIAS_LEER):
+    if not (tiene_permiso(PERMISO_ASISTENCIAS_LEER) or tiene_permiso(PERMISO_ASISTENCIAS_GESTIONAR)):
         return redirigir_sin_permiso()
 
-    clase_hoy = servicio.clase_de_hoy(_token())
+    clase = {}
 
-    if clase_hoy.get('unauthorized'):
-        return redirigir_a_login_sin_sesion()
+    if tiene_permiso(PERMISO_ASISTENCIAS_LEER):
+        clase_hoy = servicio.clase_de_hoy(_token())
 
-    clase = (clase_hoy.get('clase') or {}) if clase_hoy.get('ok') else {}
+        if clase_hoy.get('unauthorized'):
+            return redirigir_a_login_sin_sesion()
+
+        clase = (clase_hoy.get('clase') or {}) if clase_hoy.get('ok') else {}
 
     return render_template(
         'admin/asistencia.html',

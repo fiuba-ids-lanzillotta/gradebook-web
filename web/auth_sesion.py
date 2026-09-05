@@ -3,6 +3,7 @@ from functools import wraps
 from flask import flash, redirect, session, url_for
 
 from web.constants import (
+    PERMISO_ASISTENCIAS_GESTIONAR,
     PERMISO_ASISTENCIAS_LEER,
     PERMISO_DOCENTES_LEER,
     PERMISO_ESTUDIANTES_LEER,
@@ -57,7 +58,7 @@ def url_primera_solapa() -> str:
     if tiene_permiso(PERMISO_ESTUDIANTES_LEER):
         return url_for('web.admin.panel.index')
 
-    if tiene_permiso(PERMISO_ASISTENCIAS_LEER):
+    if tiene_permiso(PERMISO_ASISTENCIAS_LEER) or tiene_permiso(PERMISO_ASISTENCIAS_GESTIONAR):
         return url_for('web.admin.asistencia.index')
 
     if tiene_permiso(PERMISO_DOCENTES_LEER):
