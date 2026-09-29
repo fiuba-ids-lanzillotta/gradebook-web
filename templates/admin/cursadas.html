@@ -31,24 +31,22 @@
 
         {% if cursadas %}
         <div class="listado__tabla-wrap">
-            <table class="listado__tabla">
+            <table class="listado__tabla cursadas__tabla">
                 <thead>
                     <tr>
                         <th>Materia</th>
                         <th>Cuatrimestre</th>
-                        <th>Inicio</th>
-                        <th>Fin</th>
+                        <th>Fechas</th>
                         <th></th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for cursada in cursadas %}
                     <tr>
-                        <td data-label="Materia">{{ cursada.codigo }}{% if cursada.nombre %} · {{ cursada.nombre }}{% endif %}</td>
-                        <td data-label="Cuatrimestre">{{ cursada.cuatrimestre }}C {{ cursada.anio }}{% if cursada.vigente %} <strong>(vigente)</strong>{% endif %}</td>
-                        <td data-label="Inicio">{{ cursada.inicio_txt or '—' }}</td>
-                        <td data-label="Fin">{{ cursada.fin_txt or '—' }}</td>
-                        <td class="listado__acciones">
+                        <td class="cursada__materia" data-label="Materia">{{ cursada.codigo }}{% if cursada.nombre %} · {{ cursada.nombre }}{% endif %}</td>
+                        <td class="cursada__cuatri" data-label="Cuatrimestre">{{ cursada.cuatrimestre }}C {{ cursada.anio }}{% if cursada.vigente %} <strong>(vigente)</strong>{% endif %}</td>
+                        <td class="cursada__fechas" data-label="Fechas">{{ cursada.inicio_txt or '—' }} → {{ cursada.fin_txt or '—' }}</td>
+                        <td class="listado__acciones cursada__acciones">
                             {% if puede_editar %}
                             <button
                                 type="button"
@@ -88,12 +86,13 @@
                 <input type="text" name="codigo" id="crear-codigo" list="codigos-materia" placeholder="TB022" required autocomplete="off">
                 <datalist id="codigos-materia">
                     {% for codigo in materias %}
-                    <option value="{{ codigo }}">{{ materias[codigo] }}</option>
+                    <option value="{{ codigo }}">{{ codigo }} — {{ materias[codigo] }}</option>
                     {% endfor %}
                 </datalist>
             </label>
+            <p class="modal__hint" id="crear-hint" hidden>Código nuevo: se dará de alta la materia con el nombre que cargues.</p>
             <label class="modal__field">Nombre materia
-                <input type="text" name="nombre" id="crear-nombre" required>
+                <input type="text" name="nombre" id="crear-nombre" required readonly>
             </label>
             <label class="modal__field">Año
                 <input type="number" name="anio" min="2000" max="2100" required>
@@ -129,6 +128,7 @@
             <label class="modal__field">Nombre materia
                 <input type="text" name="nombre" id="editar-cursada-nombre" required>
             </label>
+            <p class="modal__hint">Editar el nombre renombra la materia en todas sus cursadas.</p>
             <label class="modal__field">Año
                 <input type="number" name="anio" id="editar-cursada-anio" min="2000" max="2100" required>
             </label>

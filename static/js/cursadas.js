@@ -27,20 +27,35 @@ document.addEventListener('DOMContentLoaded', function () {
         const form = document.getElementById('form-crear-cursada');
         const inputCodigo = document.getElementById('crear-codigo');
         const inputNombre = document.getElementById('crear-nombre');
+        const hint = document.getElementById('crear-hint');
         cablearCierre(modalCrear);
 
         document.querySelectorAll('.js-crear-cursada').forEach((btn) => {
             btn.addEventListener('click', () => {
                 form.reset();
+                inputNombre.readOnly = true;
+                if (hint) hint.hidden = true;
                 abrirModal(modalCrear);
             });
         });
 
         if (inputCodigo && inputNombre) {
-            inputCodigo.addEventListener('change', () => {
+            const sincronizarNombre = () => {
                 const nombre = materias[inputCodigo.value.trim().toUpperCase()];
-                if (nombre) inputNombre.value = nombre;
-            });
+
+                if (nombre) {
+                    inputNombre.value = nombre;
+                    inputNombre.readOnly = true;
+                    if (hint) hint.hidden = true;
+                } else {
+                    inputNombre.value = '';
+                    inputNombre.readOnly = false;
+                    if (hint) hint.hidden = inputCodigo.value.trim() === '';
+                }
+            };
+
+            inputCodigo.addEventListener('input', sincronizarNombre);
+            inputCodigo.addEventListener('change', sincronizarNombre);
         }
     }
 

@@ -445,6 +445,7 @@ html:has(.admin-body),
     text-align: left;
 }
 .modal__field { display: flex; flex-direction: column; gap: 4px; font-weight: 600; font-size: 14px; margin-bottom: 12px; }
+.modal__hint { margin: -6px 0 12px; font-size: 12px; color: #6b7280; }
 .modal__lista { list-style: none; display: flex; flex-direction: column; gap: 10px; margin: 0 0 16px; }
 .modal__lista li { background: #f3f4f6; border-radius: 8px; padding: 10px 12px; }
 .modal__lista strong { display: block; color: #3d6488; margin-bottom: 2px; }
@@ -849,15 +850,38 @@ html:has(.admin-body),
 }
 /* --- Cursada (cuatrimestre actual + historial) --- */
 .cursada-actual {
-    border: 1px solid #e3e9f0;
+    border: 1px solid #cfe0ef;
+    border-left: 5px solid #3d6488;
     border-radius: 10px;
     padding: 14px 16px;
     margin: 12px 0 18px;
-    background: #f7fafc;
+    background: #e8f4fb;
+    box-shadow: 0 2px 8px rgba(61, 100, 136, 0.08);
 }
-.cursada-actual__title { font-size: 14px; color: #6b7280; margin: 0 0 6px; text-transform: uppercase; letter-spacing: 0.4px; }
+.cursada-actual__title { font-size: 13px; color: #3d6488; font-weight: 700; margin: 0 0 6px; text-transform: uppercase; letter-spacing: 0.4px; }
 .cursada-actual__materia { font-weight: 700; color: #1f2937; margin: 0 0 2px; }
 .cursada-actual__periodo { color: #3d6488; font-weight: 700; margin: 0 0 2px; }
 .cursada-actual__fechas { color: #374151; font-size: 14px; margin: 0; }
 .cursada-actual__vacio { color: #6b7280; margin: 0; }
 .cursada__nueva { margin-bottom: 14px; }
+
+@media (max-width: 720px) {
+    .cursada__nueva { width: 100%; }
+    .cursadas__tabla,
+    .cursadas__tabla tbody { display: block; }
+    .cursadas__tabla tr {
+        display: block;
+        position: relative;
+        border: 1px solid #e3e9f0;
+        border-radius: 10px;
+        padding: 12px 14px;
+        margin-bottom: 12px;
+        background: #fff;
+    }
+    .cursadas__tabla td { display: block; padding: 2px 0; }
+    .cursadas__tabla td::before { content: none; }
+    .cursadas__tabla .cursada__materia { font-weight: 700; color: #1f2937; padding-right: 40px; }
+    .cursadas__tabla .cursada__cuatri { color: #3d6488; font-weight: 600; font-size: 14px; }
+    .cursadas__tabla .cursada__fechas { color: #6b7280; font-size: 14px; margin-top: 4px; }
+    .cursadas__tabla .cursada__acciones { position: absolute; top: 10px; right: 12px; padding: 0; }
+}

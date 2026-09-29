@@ -55,7 +55,7 @@ gradebook-web/
 │   ├── routes/                  # Blueprints (presentación / flujo)
 │   │   ├── site/                #   Zona alumno (sin prefijo, login): home, items (ejemplo)
 │   │   └── admin/               #   Backoffice docente (/admin): auth, panel, asistencia,
-│   │                            #   docentes, items (ejemplo)
+│   │                            #   docentes, cursadas, items (ejemplo)
 │   └── services/                # Llamadas HTTP a gradebook-api
 │       ├── auth.py              #   login, recuperación de contraseña, identidad
 │       ├── docentes.py          #   CRUD de docentes (listar, crear, actualizar, eliminar, permisos)
@@ -63,6 +63,7 @@ gradebook-web/
 │       ├── estudiantes.py       #   CRUD de estudiantes + CSV
 │       ├── asistencia.py        #   Gestión de asistencia
 │       ├── cursos.py            #   Cursadas
+│       ├── materias.py          #   Catálogo de materias
 │       ├── items.py            #   Recurso de ejemplo
 │       └── respuestas_api.py    #   helpers para interpretar errores / 401-403
 │
@@ -73,12 +74,15 @@ gradebook-web/
 │   └── admin/                   # base_admin.html (layout con sidebar de solapas), login.html,
 │                                #   recuperar.html, cambiar_contrasena.html, panel.html,
 │                                #   asistencia.html, asistencia_listado.html, docentes.html,
-│                                #   items.html
+│                                #   cursadas.html, items.html
 ├── static/
 │   ├── css/                     # common.css, site.css, admin.css
-│   └── js/                      # main.js (modales, asistencia, toggle de contraseña)
-├── tests/                       # Tests (pytest): auth, cursos, estudiantes, items, rutas,
-│   └── resources/json/          #   respuestas_api — mocks JSON de las respuestas de la API
+│   ├── img/                     # Íconos del sidebar (nav-*.svg) e imágenes
+│   └── js/                      # main.js + un script por sección (asistencia, asistencia_listado,
+│                                #   cursadas, docentes)
+├── tests/                       # Tests (pytest): auth, cursos, materias, estudiantes, docentes,
+│                                #   asistencia, permisos, items, rutas, respuestas_api
+│   └── resources/json/          #   mocks JSON de las respuestas de la API
 └── .agents/skills/              # Skills para agentes (add-page, verify, sync-docs, ...)
 ```
 

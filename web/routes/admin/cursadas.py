@@ -21,6 +21,7 @@ from web.constants import (
 )
 from web.routes.admin.panel import _token, contexto_admin
 from web.services import cursos as servicio
+from web.services import materias as servicio_materias
 
 cursadas_bp = Blueprint('cursadas', __name__)
 
@@ -83,11 +84,18 @@ def index():
         fila['inicio_txt'] = _fecha_txt(fila.get('fecha_inicio'))
         fila['fin_txt'] = _fecha_txt(fila.get('fecha_fin'))
 
+    # Catálogo real de la API; si falla, se reconstruye desde las cursadas.
+    catalogo = {
+        fila['codigo']: fila.get('nombre') or ''
+        for fila in servicio_materias.listar_materias(_token())
+        if fila.get('codigo')
+    } or _materias(cursadas)
+
     return render_template(
         'admin/cursadas.html',
         cursadas=cursadas,
         vigente=vigente,
-        materias=_materias(cursadas),
+        materias=catalogo,
         puede_crear=tiene_permiso(PERMISO_CURSADAS_CREAR),
         puede_editar=tiene_permiso(PERMISO_CURSADAS_MODIFICAR),
         error=None if resultado.get('ok') else resultado.get('error'),

@@ -1,7 +1,7 @@
 # Asistencia por QR — guía de frontend (`gradebook-web`)
 
 Cómo implementar la asistencia en el frontend. El **backend ya está** (`gradebook-api`):
-esta guía describe el flujo, el orden de las llamadas y las piezas a construir en el web.
+esta guía describe el flujo, el orden de las llamadas y las piezas implementadas en el web.
 
 > Recordatorio de arquitectura (BFF): el navegador **no** le pega a la API directo. Todo pasa por
 > `web/services/*.py`, que agrega `X-API-Key` + el `Authorization: Bearer <token>` de la sesión del
@@ -149,23 +149,23 @@ Detalles:
 
 ---
 
-## 5. Piezas a construir en `gradebook-web`
+## 5. Piezas implementadas en `gradebook-web`
 
-1. **`web/services/asistencias.py`** — llamadas HTTP a la API (con `api_headers()` + `Bearer`, como
+1. **`web/services/asistencia.py`** — llamadas HTTP a la API (con `api_headers()` + `Bearer`, como
    los otros services). Una función por endpoint: `crear_clase`, `enviar_qrs`, `estado_envio`,
    `marcar`, `listar_asistencias`, `listar_clases`, `cerrar`. Los reads degradan a `[]`/error
-   manejable; en 401/403 devolver `{'unauthorized': True}` (patrón `respuestas_api.py`).
-2. **`web/routes/admin/asistencias.py`** — blueprint fino con las rutas del web que el JS llama
-   (`/admin/asistencia/...`), que proxean a los services. Registrarlo en el `__init__.py` de admin.
+   manejable; en 401/403 devuelven `{'unauthorized': True}` (patrón `respuestas_api.py`).
+2. **`web/routes/admin/asistencia.py`** — blueprint fino con las rutas del web que el JS llama
+   (`/admin/asistencia/...`), que proxean a los services. Registrado en el `__init__.py` de admin.
 3. **Templates** (`templates/admin/`):
    - `asistencia.html` — panel de la clase: botón "Tomar asistencia", barra de progreso, tabla de
      estado, botón "Cerrar".
-   - `asistencia_escanear.html` — vista de cámara + input de fallback.
-4. **`static/js/`** — el orquestador del botón (fase generar + bucle de envío + polling), el scanner
-   (html5-qrcode + `fetch` a `/admin/asistencia/.../marcar`), y el fetch parcial del listado (misma
+   - `asistencia_listado.html` — listado de asistencias de la clase (filtros por estado y búsqueda).
+4. **`static/js/`** — `asistencia.js` orquesta el botón (fase generar + bucle de envío + polling) y
+   el marcado por QR/código/padrón; `asistencia_listado.js` hace el fetch parcial del listado (misma
    idea de las otras pantallas, sin recargar).
-5. **Tests** — services (con `requests` mockeado) y rutas (`app.test_client()`), + mocks JSON en
-   `tests/resources/json/asistencias/`.
+5. **Tests** — `tests/test_asistencia.py` cubre services (con `requests` mockeado, fixtures
+   `respuesta_falsa`/`monkeypatch`) y las rutas JSON (`app.test_client()`).
 
 ---
 

@@ -5,6 +5,7 @@ from app import app as flask_app
 from web.routes.admin import docentes as rutas_docentes
 from web.services import asistencia as servicio_asistencia
 from web.services import cursos as servicio_cursos
+from web.services import materias as servicio_materias
 
 
 @pytest.fixture
@@ -620,17 +621,41 @@ def test_cursadas_index_ok(client, monkeypatch):
              'fecha_inicio': '2026-03-01', 'fecha_fin': '2026-07-15', 'vigente': False},
         ],
     })
+    monkeypatch.setattr(servicio_materias, 'listar_materias', lambda token: [
+        {'id': 1, 'codigo': 'TB022', 'nombre': 'IDS'},
+        {'id': 2, 'codigo': 'TB099', 'nombre': 'Materia sin cursada'},
+    ])
 
     respuesta = client.get('/admin/cursadas')
 
     assert respuesta.status_code == 200
     assert 'Cuatrimestre actual' in respuesta.get_data(as_text=True)
     assert '2C 2026' in respuesta.get_data(as_text=True)
+    # El datalist sale del catálogo real, no solo de materias con cursada
+    assert 'TB099' in respuesta.get_data(as_text=True)
+
+
+def test_cursadas_index_sin_catalogo_usa_cursadas(client, monkeypatch):
+    _sesion_docente(client, ['cursadas.leer'])
+    monkeypatch.setattr(servicio_cursos, 'listar_cursadas', lambda token: {
+        'ok': True,
+        'cursadas': [
+            {'id': 9, 'codigo': 'TB022', 'nombre': 'IDS', 'anio': 2026, 'cuatrimestre': 2,
+             'fecha_inicio': '2026-08-01', 'fecha_fin': '2026-12-15', 'vigente': True},
+        ],
+    })
+    monkeypatch.setattr(servicio_materias, 'listar_materias', lambda token: [])
+
+    respuesta = client.get('/admin/cursadas')
+
+    assert respuesta.status_code == 200
+    assert 'TB022' in respuesta.get_data(as_text=True)
 
 
 def test_cursadas_index_sin_vigente(client, monkeypatch):
     _sesion_docente(client, ['cursadas.leer'])
     monkeypatch.setattr(servicio_cursos, 'listar_cursadas', lambda token: {'ok': True, 'cursadas': []})
+    monkeypatch.setattr(servicio_materias, 'listar_materias', lambda token: [])
 
     respuesta = client.get('/admin/cursadas')
 

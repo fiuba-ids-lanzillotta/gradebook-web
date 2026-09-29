@@ -24,7 +24,7 @@ python app.py               # http://localhost:5001
 ```
 
 Needs a `.env` (see `.env.example`). The admin panel requires `gradebook-api` running to log in;
-the public pages degrade gracefully if the API is down.
+the pages degrade gracefully if the API is down.
 
 ## Environment (`.env`)
 
@@ -64,7 +64,7 @@ requieren `gradebook-api` corriendo. Las respuestas de la API se guardan como **
   (`web/routes/admin/panel.py`) and gated with `tiene_permiso(PERMISO_*)` + `redirigir_sin_permiso()`;
   permission codes live in `web/constants.py`.
 - **All calls to `gradebook-api`** go through `web/services/*.py` and MUST include the API key via
-  `api_headers()` (`web/constants.py`). **Public reads degrade gracefully**: on any non-200,
+  `api_headers()` (`web/constants.py`). **Reads degrade gracefully**: on any non-200,
   return empty (`[]`) so the page still renders.
 - **Admin auth**: `POST /login` on the API returns a JWT stored in `session['token']`; admin routes
   use `@admin_required` and send `Authorization: Bearer <token>`. On 401/403 from the API, the
@@ -95,7 +95,7 @@ See `.agents/skills/add-page` for the full checklist. In short, mirror the `item
 
 Vercel (`vercel.json` → Python function over `app.py`, `includeFiles: "**"`). Set env vars in the
 dashboard: `SECRET_KEY`, `API_BASE_URL` (the deployed API, not localhost), `API_KEY` (same as
-`gradebook-api`).
+`gradebook-api`), `RECAPTCHA_SITE_KEY`.
 
 ## Git
 
