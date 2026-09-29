@@ -1,0 +1,158 @@
+{% extends "admin/base_admin.html" %}
+
+{% block title %}Cursada · Gradebook{% endblock %}
+
+{% block content %}
+<section class="listado">
+    <div class="listado__card">
+        <h1 class="listado__title">Cursada</h1>
+
+        {% for categoria, mensaje in get_flashed_messages(with_categories=True) %}
+        <p class="listado__flash listado__flash--{{ categoria }}">{{ mensaje }}</p>
+        {% endfor %}
+        {% if error %}
+        <p class="listado__flash listado__flash--error">{{ error }}</p>
+        {% endif %}
+
+        <div class="cursada-actual">
+            <h2 class="cursada-actual__title">Cuatrimestre actual</h2>
+            {% if vigente %}
+            <p class="cursada-actual__materia">{{ vigente.codigo }}{% if vigente.nombre %} · {{ vigente.nombre }}{% endif %}</p>
+            <p class="cursada-actual__periodo">{{ vigente.cuatrimestre }}C {{ vigente.anio }}</p>
+            <p class="cursada-actual__fechas">{{ vigente.inicio_txt or '—' }} → {{ vigente.fin_txt or '—' }}</p>
+            {% else %}
+            <p class="cursada-actual__vacio">No hay cursada vigente en este momento.</p>
+            {% endif %}
+        </div>
+
+        {% if puede_crear %}
+        <button type="button" class="btn-solid btn-solid--ok cursada__nueva js-crear-cursada">+ Nueva cursada</button>
+        {% endif %}
+
+        {% if cursadas %}
+        <div class="listado__tabla-wrap">
+            <table class="listado__tabla">
+                <thead>
+                    <tr>
+                        <th>Materia</th>
+                        <th>Cuatrimestre</th>
+                        <th>Inicio</th>
+                        <th>Fin</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for cursada in cursadas %}
+                    <tr>
+                        <td data-label="Materia">{{ cursada.codigo }}{% if cursada.nombre %} · {{ cursada.nombre }}{% endif %}</td>
+                        <td data-label="Cuatrimestre">{{ cursada.cuatrimestre }}C {{ cursada.anio }}{% if cursada.vigente %} <strong>(vigente)</strong>{% endif %}</td>
+                        <td data-label="Inicio">{{ cursada.inicio_txt or '—' }}</td>
+                        <td data-label="Fin">{{ cursada.fin_txt or '—' }}</td>
+                        <td class="listado__acciones">
+                            {% if puede_editar %}
+                            <button
+                                type="button"
+                                class="listado__icon-btn js-editar-cursada"
+                                aria-label="Editar cursada"
+                                data-url="{{ url_for('web.admin.cursadas.editar', cursada_id=cursada.id) }}"
+                                data-codigo="{{ cursada.codigo }}"
+                                data-nombre="{{ cursada.nombre }}"
+                                data-anio="{{ cursada.anio }}"
+                                data-cuatrimestre="{{ cursada.cuatrimestre }}"
+                                data-inicio="{{ cursada.fecha_inicio }}"
+                                data-fin="{{ cursada.fecha_fin }}"
+                            >
+                                <img src="{{ url_for('static', filename='img/edit.svg') }}" alt="">
+                            </button>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="listado__vacio">No hay cursadas cargadas.</p>
+        {% endif %}
+    </div>
+</section>
+
+<script type="application/json" id="materias-cursadas">{{ materias | tojson }}</script>
+
+<div class="modal" id="modal-crear-cursada" aria-hidden="true">
+    <div class="modal__overlay" data-close></div>
+    <div class="modal__box modal__box--form" role="dialog" aria-labelledby="crear-cursada-titulo">
+        <h2 id="crear-cursada-titulo" class="modal__title">Crear cursada</h2>
+        <form method="POST" action="{{ url_for('web.admin.cursadas.crear') }}" id="form-crear-cursada">
+            <label class="modal__field">Código materia
+                <input type="text" name="codigo" id="crear-codigo" list="codigos-materia" placeholder="TB022" required autocomplete="off">
+                <datalist id="codigos-materia">
+                    {% for codigo in materias %}
+                    <option value="{{ codigo }}">{{ materias[codigo] }}</option>
+                    {% endfor %}
+                </datalist>
+            </label>
+            <label class="modal__field">Nombre materia
+                <input type="text" name="nombre" id="crear-nombre" required>
+            </label>
+            <label class="modal__field">Año
+                <input type="number" name="anio" min="2000" max="2100" required>
+            </label>
+            <label class="modal__field">Cuatrimestre
+                <select name="cuatrimestre" required>
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                </select>
+            </label>
+            <label class="modal__field">Fecha inicio
+                <input type="date" name="fecha_inicio" required>
+            </label>
+            <label class="modal__field">Fecha fin
+                <input type="date" name="fecha_fin" required>
+            </label>
+            <div class="modal__actions">
+                <button type="button" class="btn-cancel" data-close>Cancelar</button>
+                <button type="submit" class="btn-confirm">Confirmar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="modal" id="modal-editar-cursada" aria-hidden="true">
+    <div class="modal__overlay" data-close></div>
+    <div class="modal__box modal__box--form" role="dialog" aria-labelledby="editar-cursada-titulo">
+        <h2 id="editar-cursada-titulo" class="modal__title">Editar cursada</h2>
+        <form method="POST" id="form-editar-cursada">
+            <label class="modal__field">Código materia
+                <input type="text" name="codigo" id="editar-cursada-codigo" readonly>
+            </label>
+            <label class="modal__field">Nombre materia
+                <input type="text" name="nombre" id="editar-cursada-nombre" required>
+            </label>
+            <label class="modal__field">Año
+                <input type="number" name="anio" id="editar-cursada-anio" min="2000" max="2100" required>
+            </label>
+            <label class="modal__field">Cuatrimestre
+                <select name="cuatrimestre" id="editar-cursada-cuatrimestre" required>
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                </select>
+            </label>
+            <label class="modal__field">Fecha inicio
+                <input type="date" name="fecha_inicio" id="editar-cursada-inicio" required>
+            </label>
+            <label class="modal__field">Fecha fin
+                <input type="date" name="fecha_fin" id="editar-cursada-fin" required>
+            </label>
+            <div class="modal__actions">
+                <button type="button" class="btn-cancel" data-close>Cancelar</button>
+                <button type="submit" class="btn-confirm">Confirmar</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/cursadas.js') }}" defer></script>
+{% endblock %}

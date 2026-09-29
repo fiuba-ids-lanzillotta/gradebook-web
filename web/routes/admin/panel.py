@@ -23,6 +23,7 @@ from web.constants import (
     CURSADA_CUATRIMESTRE,
     PERMISO_ASISTENCIAS_LEER,
     PERMISO_ASISTENCIAS_GESTIONAR,
+    PERMISO_CURSADAS_LEER,
     PERMISO_DOCENTES_LEER,
     PERMISO_ESTUDIANTES_CREAR,
     PERMISO_ESTUDIANTES_ELIMINAR,
@@ -42,6 +43,7 @@ ESTADO_ETIQUETA = {
 }
 
 SOLAPAS = (
+    ('cursada', 'Cursada', 'nav-cursada.svg'),
     ('listado', 'Listado alumnos', 'nav-listado.svg'),
     ('dashboards', 'Dashboards', 'nav-dashboards.svg'),
     ('asistencia', 'Asistencia', 'nav-asistencia.svg'),
@@ -52,6 +54,7 @@ SOLAPAS = (
     ('vista', 'Vista general', 'nav-vista.svg'),
 )
 SOLAPA_PERMISO = {
+    'cursada': PERMISO_CURSADAS_LEER,
     'listado': PERMISO_ESTUDIANTES_LEER,
     'asistencia': PERMISO_ASISTENCIAS_LEER,
     'docentes': PERMISO_DOCENTES_LEER,

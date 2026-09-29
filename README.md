@@ -182,6 +182,7 @@ Notas:
 | `/admin/docentes`           | docente* | Gestión de docentes (listar, crear, editar, desactivar, permisos).    |
 | `/admin/asistencia`         | docente* | Toma de asistencia del día (QR / código / padrón).                   |
 | `/admin/asistencia/listado` | docente* | Asistencias por clase (filtros por estado y búsqueda).               |
+| `/admin/cursadas`           | docente* | Cursada: cuatrimestre vigente + historial (alta y edición).          |
 
 \* Las pantallas de docente están gateadas por permisos (`PERMISO_*` en `web/constants.py`); el
 sidebar solo muestra las solapas habilitadas. Solapas declaradas pero sin pantalla todavía:

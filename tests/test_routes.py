@@ -4,6 +4,7 @@ import pytest
 from app import app as flask_app
 from web.routes.admin import docentes as rutas_docentes
 from web.services import asistencia as servicio_asistencia
+from web.services import cursos as servicio_cursos
 
 
 @pytest.fixture
@@ -588,3 +589,115 @@ def test_desactivar_ayudante_llama_eliminar(client, monkeypatch):
 
     assert respuesta.status_code == 302
     assert capturado['docente_id'] == 7
+
+
+# --- cursadas (rutas) ---
+
+def test_cursadas_requiere_login(client):
+    respuesta = client.get('/admin/cursadas')
+
+    assert respuesta.status_code == 302
+    assert '/admin/login' in respuesta.headers['Location']
+
+
+def test_cursadas_sin_permiso_redirige(client):
+    _sesion_docente(client, ['estudiantes.leer'])
+
+    respuesta = client.get('/admin/cursadas')
+
+    assert respuesta.status_code == 302
+    assert '/admin/cursadas' not in respuesta.headers['Location']
+
+
+def test_cursadas_index_ok(client, monkeypatch):
+    _sesion_docente(client, ['cursadas.leer'])
+    monkeypatch.setattr(servicio_cursos, 'listar_cursadas', lambda token: {
+        'ok': True,
+        'cursadas': [
+            {'id': 9, 'codigo': 'TB022', 'nombre': 'IDS', 'anio': 2026, 'cuatrimestre': 2,
+             'fecha_inicio': '2026-08-01', 'fecha_fin': '2026-12-15', 'vigente': True},
+            {'id': 5, 'codigo': 'TB022', 'nombre': 'IDS', 'anio': 2026, 'cuatrimestre': 1,
+             'fecha_inicio': '2026-03-01', 'fecha_fin': '2026-07-15', 'vigente': False},
+        ],
+    })
+
+    respuesta = client.get('/admin/cursadas')
+
+    assert respuesta.status_code == 200
+    assert 'Cuatrimestre actual' in respuesta.get_data(as_text=True)
+    assert '2C 2026' in respuesta.get_data(as_text=True)
+
+
+def test_cursadas_index_sin_vigente(client, monkeypatch):
+    _sesion_docente(client, ['cursadas.leer'])
+    monkeypatch.setattr(servicio_cursos, 'listar_cursadas', lambda token: {'ok': True, 'cursadas': []})
+
+    respuesta = client.get('/admin/cursadas')
+
+    assert respuesta.status_code == 200
+    assert 'No hay cursada vigente' in respuesta.get_data(as_text=True)
+
+
+def test_crear_cursada_postea_a_api(client, monkeypatch, respuesta_falsa):
+    _sesion_docente(client, ['cursadas.leer', 'cursadas.crear'])
+    capturado = {}
+
+    def fake_request(method, url, json=None, **kwargs):
+        capturado['method'] = method
+        capturado['url'] = url
+        capturado['json'] = json
+        return respuesta_falsa(201, {'id': 9})
+
+    monkeypatch.setattr(requests, 'request', fake_request)
+
+    respuesta = client.post('/admin/cursadas', data={
+        'codigo': 'tb022', 'nombre': 'IDS', 'anio': '2027', 'cuatrimestre': '1',
+        'fecha_inicio': '2027-03-01', 'fecha_fin': '2027-07-15',
+    })
+
+    assert respuesta.status_code == 302
+    assert capturado['url'].endswith('/cursadas')
+    assert capturado['json']['codigo'] == 'TB022'
+
+
+def test_crear_cursada_sin_permiso_no_llama_api(client, monkeypatch):
+    _sesion_docente(client, ['cursadas.leer'])
+    llamadas = []
+    monkeypatch.setattr(requests, 'request', lambda *a, **k: llamadas.append(a))
+
+    respuesta = client.post('/admin/cursadas', data={'codigo': 'TB022'})
+
+    assert respuesta.status_code == 302
+    assert llamadas == []
+
+
+def test_editar_cursada_putea_a_api(client, monkeypatch, respuesta_falsa):
+    _sesion_docente(client, ['cursadas.leer', 'cursadas.modificar'])
+    capturado = {}
+
+    def fake_request(method, url, json=None, **kwargs):
+        capturado['method'] = method
+        capturado['url'] = url
+        return respuesta_falsa(200, {'id': 9})
+
+    monkeypatch.setattr(requests, 'request', fake_request)
+
+    respuesta = client.post('/admin/cursadas/9', data={
+        'codigo': 'TB022', 'nombre': 'IDS', 'anio': '2026', 'cuatrimestre': '2',
+        'fecha_inicio': '2026-08-01', 'fecha_fin': '2026-12-10',
+    })
+
+    assert respuesta.status_code == 302
+    assert capturado['method'] == 'PUT'
+    assert capturado['url'].endswith('/cursadas/9')
+
+
+def test_editar_cursada_sin_permiso_no_llama_api(client, monkeypatch):
+    _sesion_docente(client, ['cursadas.leer'])
+    llamadas = []
+    monkeypatch.setattr(requests, 'request', lambda *a, **k: llamadas.append(a))
+
+    respuesta = client.post('/admin/cursadas/9', data={'codigo': 'TB022'})
+
+    assert respuesta.status_code == 302
+    assert llamadas == []

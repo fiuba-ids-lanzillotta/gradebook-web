@@ -5,6 +5,7 @@ from flask import flash, redirect, session, url_for
 from web.constants import (
     PERMISO_ASISTENCIAS_GESTIONAR,
     PERMISO_ASISTENCIAS_LEER,
+    PERMISO_CURSADAS_LEER,
     PERMISO_DOCENTES_LEER,
     PERMISO_ESTUDIANTES_LEER,
 )
@@ -63,6 +64,9 @@ def url_primera_solapa() -> str:
 
     if tiene_permiso(PERMISO_DOCENTES_LEER):
         return url_for('web.admin.docentes.index')
+
+    if tiene_permiso(PERMISO_CURSADAS_LEER):
+        return url_for('web.admin.cursadas.index')
 
     return url_for('web.admin.panel.index')
 

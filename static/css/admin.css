@@ -847,3 +847,17 @@ html:has(.admin-body),
     .asistencia__tomar,
     .asistencia__listado { width: 100%; }
 }
+/* --- Cursada (cuatrimestre actual + historial) --- */
+.cursada-actual {
+    border: 1px solid #e3e9f0;
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin: 12px 0 18px;
+    background: #f7fafc;
+}
+.cursada-actual__title { font-size: 14px; color: #6b7280; margin: 0 0 6px; text-transform: uppercase; letter-spacing: 0.4px; }
+.cursada-actual__materia { font-weight: 700; color: #1f2937; margin: 0 0 2px; }
+.cursada-actual__periodo { color: #3d6488; font-weight: 700; margin: 0 0 2px; }
+.cursada-actual__fechas { color: #374151; font-size: 14px; margin: 0; }
+.cursada-actual__vacio { color: #6b7280; margin: 0; }
+.cursada__nueva { margin-bottom: 14px; }
