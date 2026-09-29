@@ -134,6 +134,31 @@ python app.py
 
 La app queda disponible en `http://localhost:5001`.
 
+### 4. Probar desde un celular
+
+Como las llamadas a `gradebook-api` las hace el servidor (server-side), el celular solo
+necesita alcanzar `gradebook-web`; la API puede seguir en `localhost:5000` sin exponerse.
+
+Con la app corriendo en `:5001`, exponela con un túnel:
+
+```bash
+ngrok http 5001                # o
+npx localtunnel --port 5001
+```
+
+Abrí la URL generada (`https://<algo>.ngrok.io` / `.loca.lt`) en el celular. No hay que tocar
+el `.env`: `API_BASE_URL` sigue siendo `localhost` porque la llamada sale del servidor, no del
+browser del celular.
+
+Notas:
+
+- Los planes gratuitos muestran una página intermedia en la primera visita (ngrok) o piden la
+  IP pública como "password" del túnel (localtunnel).
+- Si usás una **site key real de reCAPTCHA**, el dominio del túnel tiene que estar autorizado
+  en la consola de reCAPTCHA — la test key de Google funciona en cualquier dominio.
+- Alternativa sin túnel en la misma Wi-Fi: `flask --app app run --host 0.0.0.0 --port 5001` y
+  el celular entra a `http://<IP-de-la-PC>:5001` (con `python app.py` solo bindea a localhost).
+
 ## Páginas
 
 | Ruta            | Auth  | Descripción                                             |

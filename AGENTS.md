@@ -79,6 +79,9 @@ Mirror the `items` pattern:
 - `app.py` uses absolute paths (`BASE_DIR`) for `templates/` and `static/` so Vercel finds them.
 - Vercel bundles everything (`includeFiles: "**"`) because it needs `templates/` and `static/`.
 - The web runs on port **5001**; the API on **5000** — so both can run locally at the same time.
+- To test from a phone/other device, tunnel **only the web** (`ngrok http 5001` or
+  `npx localtunnel --port 5001`): API calls are server-side, so `API_BASE_URL` stays on
+  localhost. Same-Wi-Fi alternative: `flask --app app run --host 0.0.0.0 --port 5001`.
 
 ## Deploy
 
