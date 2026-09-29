@@ -5,10 +5,11 @@ Guide for agents (and people) working on **gradebook-web**. Keep it short and ac
 ## Overview
 
 Server-rendered **base** frontend (**Flask + Jinja2**) that consumes the backend API
-**`gradebook-api`** over HTTP. Renders public pages and an admin panel, and manages the example
-resource **`items`** (`{id, nombre, descripcion, activo}`) through the API. It has **no database**
-of its own. Meant as a starting point for a real frontend; follows the same style/architecture as
-the rest of the workspace (based on `ids-web`).
+**`gradebook-api`** over HTTP. Two zones: **`site/`** is the student backoffice (login required)
+and **`/admin`** is the docente backoffice (login + docente role, sections gated by permissions).
+Also manages the example resource **`items`** (`{id, nombre, descripcion, activo}`) through the
+API. It has **no database** of its own. Meant as a starting point for a real frontend; follows the
+same style/architecture as the rest of the workspace (based on `ids-web`).
 
 ## How to run
 
@@ -30,6 +31,8 @@ the public pages degrade gracefully if the API is down.
 - `SECRET_KEY` — Flask session signing (random, gradebook-web only).
 - `API_BASE_URL` — base URL of `gradebook-api` (default `http://localhost:5000/gradebook_api`).
 - `API_KEY` — **shared** with `gradebook-api`; sent as the `X-API-Key` header. Empty if the API is public.
+- `RECAPTCHA_SITE_KEY` — **public** reCAPTCHA site key for the login widget. Its secret pair lives
+  in `gradebook-api` (`RECAPTCHA_SECRET`). Empty = login without captcha.
 
 ## Verification (run before considering a change done)
 
@@ -53,8 +56,13 @@ requieren `gradebook-api` corriendo. Las respuestas de la API se guardan como **
 - **Spanish naming, no abbreviations** (self-explanatory variables).
 - **Layers**: `routes` (Flask blueprints, presentation/flow) → `services` (HTTP calls to
   `gradebook-api` via `requests`). Routes hold no HTTP-client logic; services encapsulate the API calls.
-- **Blueprints**: `web` → `site` (public pages, no prefix) + `admin` (`/admin`). Templates mirror
-  this: `templates/site/` and `templates/admin/`.
+- **Blueprints**: `web` → `site` (student zone, no prefix, `@login_required`) + `admin`
+  (`/admin`, `@admin_required` — docentes only). Templates mirror this: `templates/site/` extends
+  `base.html`; `templates/admin/` panel pages extend `admin/base_admin.html` (sidebar), auth pages
+  extend `base.html`.
+- **Admin permissions**: each sidebar section is declared in `SOLAPAS`/`SOLAPA_PERMISO`
+  (`web/routes/admin/panel.py`) and gated with `tiene_permiso(PERMISO_*)` + `redirigir_sin_permiso()`;
+  permission codes live in `web/constants.py`.
 - **All calls to `gradebook-api`** go through `web/services/*.py` and MUST include the API key via
   `api_headers()` (`web/constants.py`). **Public reads degrade gracefully**: on any non-200,
   return empty (`[]`) so the page still renders.
@@ -64,7 +72,7 @@ requieren `gradebook-api` corriendo. Las respuestas de la API se guardan como **
 
 ## How to add a new section/resource
 
-Mirror the `items` pattern:
+See `.agents/skills/add-page` for the full checklist. In short, mirror the `items` pattern:
 1. `web/services/<recurso>.py`: HTTP calls to the API (reads degrade gracefully; writes return
    `{'ok': ...}` and use `respuesta_no_autorizada` / `mensaje_error_api` from `respuestas_api.py`).
 2. `web/routes/site/<recurso>.py` and/or `web/routes/admin/<recurso>.py`: thin blueprints; register
@@ -97,3 +105,5 @@ dashboard: `SECRET_KEY`, `API_BASE_URL` (the deployed API, not localhost), `API_
 ## Pointers
 
 - Backend it consumes: `../gradebook-api` (see its `AGENTS.md`, `README.md` and `docs/swagger.yaml`).
+- Agent skills in `.agents/skills/` (`add-page`, `code-review-python`, `deploy-vercel`,
+  `manage-secrets`, `sync-docs`, `verify`).

@@ -1,9 +1,10 @@
 # gradebook-web
 
 Proyecto **base** de un frontend web server-rendered en **Flask + Jinja2**, pensado como punto de
-partida. Renderiza páginas públicas y un panel de administración, y consume el backend
-**`gradebook-api`** por HTTP. No tiene base de datos propia. Sigue el mismo estilo y arquitectura
-que el resto de los proyectos del workspace (basado en `ids-web`).
+partida. Tiene dos zonas: **`site/`** es el backoffice del alumno (requiere login) y **`/admin`**
+es el backoffice del docente (requiere login + rol docente, con permisos por sección). Consume el
+backend **`gradebook-api`** por HTTP. No tiene base de datos propia. Sigue el mismo estilo y
+arquitectura que el resto de los proyectos del workspace (basado en `ids-web`).
 
 ## Tecnologías
 
@@ -48,30 +49,37 @@ gradebook-web/
 ├── .gitignore / .gitattributes
 │
 ├── web/
-│   ├── constants.py             # API_BASE_URL, API_KEY, api_headers(), RECAPTCHA_SITE_KEY, MATERIA_CODIGO
-│   ├── auth_sesion.py            # Helpers de sesión: admin_required, es_super_admin, puede_dar_baja
+│   ├── constants.py             # API_BASE_URL, API_KEY, api_headers(), RECAPTCHA_SITE_KEY,
+│   │                            #   MATERIA_CODIGO, fallbacks CURSADA_*, códigos PERMISO_*
+│   ├── auth_sesion.py            # Helpers de sesión: login_required, admin_required, tiene_permiso
 │   ├── routes/                  # Blueprints (presentación / flujo)
-│   │   ├── site/                #   Zona pública (sin prefijo): home
-│   │   └── admin/               #   Zona admin (/admin): auth, panel, docentes
+│   │   ├── site/                #   Zona alumno (sin prefijo, login): home, items (ejemplo)
+│   │   └── admin/               #   Backoffice docente (/admin): auth, panel, asistencia,
+│   │                            #   docentes, items (ejemplo)
 │   └── services/                # Llamadas HTTP a gradebook-api
-│       ├── auth.py              #   login
+│       ├── auth.py              #   login, recuperación de contraseña, identidad
 │       ├── docentes.py          #   CRUD de docentes (listar, crear, actualizar, eliminar, permisos)
 │       ├── permisos.py         #   Catálogo de permisos
-│       ├── estudiantes.py       #   CRUD de estudiantes
+│       ├── estudiantes.py       #   CRUD de estudiantes + CSV
 │       ├── asistencia.py        #   Gestión de asistencia
 │       ├── cursos.py            #   Cursadas
+│       ├── items.py            #   Recurso de ejemplo
 │       └── respuestas_api.py    #   helpers para interpretar errores / 401-403
 │
 ├── templates/
-│   ├── base.html                # Layout base (navbar, bloques)
+│   ├── base.html                # Layout base (navbar, bloques) — site + auth
 │   ├── 404.html
 │   ├── site/                    # inicio.html, items.html
-│   └── admin/                   # login.html, panel.html, items.html
+│   └── admin/                   # base_admin.html (layout con sidebar de solapas), login.html,
+│                                #   recuperar.html, cambiar_contrasena.html, panel.html,
+│                                #   asistencia.html, asistencia_listado.html, docentes.html,
+│                                #   items.html
 ├── static/
 │   ├── css/                     # common.css, site.css, admin.css
-│   └── js/                      # main.js (modales de items + toggle de contraseña)
-└── tests/                       # Tests (pytest): auth, items, rutas, respuestas_api
-    └── resources/json/          # Mocks JSON de las respuestas de la API
+│   └── js/                      # main.js (modales, asistencia, toggle de contraseña)
+├── tests/                       # Tests (pytest): auth, cursos, estudiantes, items, rutas,
+│   └── resources/json/          #   respuestas_api — mocks JSON de las respuestas de la API
+└── .agents/skills/              # Skills para agentes (add-page, verify, sync-docs, ...)
 ```
 
 ## Configuración
@@ -90,6 +98,7 @@ copy .env.example .env      # Windows
 | `SECRET_KEY`   | Clave con la que Flask firma las sesiones (propia de gradebook-web).               |
 | `API_BASE_URL` | URL base de `gradebook-api` (default `http://localhost:5000/gradebook_api`).       |
 | `API_KEY`      | Debe coincidir con la `API_KEY` del backend. Se envía como header `X-API-Key`. Vacío si la API es pública. |
+| `RECAPTCHA_SITE_KEY` | Site key **pública** de reCAPTCHA v2 para el widget del login. El secret vive en `gradebook-api` (`RECAPTCHA_SECRET`). Vacío = login sin captcha. |
 
 > El `.env` está en `.gitignore` y **no debe subirse al repositorio**.
 
@@ -161,12 +170,22 @@ Notas:
 
 ## Páginas
 
-| Ruta            | Auth  | Descripción                                             |
-|-----------------|-------|---------------------------------------------------------|
-| `/`             | —     | Inicio (landing del proyecto base).                     |
-| `/admin/login`  | —     | Login del panel (valida contra `POST /login`).          |
-| `/admin/`       | admin | Panel de administración (listado de alumnos).           |
-| `/admin/docentes` | admin | Gestión de docentes (listar, crear, editar, eliminar, permisos). |
+| Ruta                        | Auth     | Descripción                                                          |
+|-----------------------------|----------|----------------------------------------------------------------------|
+| `/`                         | alumno   | Inicio de la zona alumno (hoy: landing base, pendiente "Novedades").   |
+| `/items`                    | alumno   | Recurso de ejemplo `items`.                                          |
+| `/admin/login`              | —        | Login compartido (valida contra `POST /login` de la API + reCAPTCHA). |
+| `/admin/logout`             | —        | Cierra la sesión.                                                    |
+| `/admin/recuperar`          | —        | Solicita mail de recuperación de contraseña.                         |
+| `/admin/cambiar-contrasena` | —        | Define contraseña nueva desde el link del mail (`?token=`).          |
+| `/admin/`                   | docente  | Listado de alumnos del cuatrimestre: alta, edición, baja/abandono, CSV.|
+| `/admin/docentes`           | docente* | Gestión de docentes (listar, crear, editar, desactivar, permisos).    |
+| `/admin/asistencia`         | docente* | Toma de asistencia del día (QR / código / padrón).                   |
+| `/admin/asistencia/listado` | docente* | Asistencias por clase (filtros por estado y búsqueda).               |
+
+\* Las pantallas de docente están gateadas por permisos (`PERMISO_*` en `web/constants.py`); el
+sidebar solo muestra las solapas habilitadas. Solapas declaradas pero sin pantalla todavía:
+dashboards, categorías, registros, entregas, vista general (ver `.agents/skills/add-page`).
 
 ## Tests
 
@@ -182,4 +201,5 @@ red. Las respuestas de la API se guardan como mocks JSON en `tests/resources/jso
 
 Vercel (`vercel.json` → función Python sobre `app.py`, `includeFiles: "**"`). Las variables de
 entorno se configuran en el dashboard de Vercel: `SECRET_KEY`, `API_BASE_URL` (la API desplegada,
-no localhost) y `API_KEY` (la misma que `gradebook-api`).
+no localhost), `API_KEY` (la misma que `gradebook-api`) y `RECAPTCHA_SITE_KEY` (par público del
+`RECAPTCHA_SECRET` de la API).
