@@ -43,8 +43,7 @@ gradebook-web/
 ├── vercel.json                  # Configuración de deploy en Vercel
 ├── pytest.ini / conftest.py     # Configuración de los tests
 ├── .env.example                 # Template de variables de entorno
-├── setup_virtualenv.bat/.sh     # Scripts de setup con virtualenv
-├── setup_pipenv.bat/.sh         # Scripts de setup con pipenv
+├── scripts/                     # setup_virtualenv / setup_pipenv (.bat/.sh)
 ├── AGENTS.md / README.md / LICENSE
 ├── .gitignore / .gitattributes
 │
@@ -112,15 +111,15 @@ Los scripts crean el entorno virtual, instalan las dependencias y levantan la ap
 **Con virtualenv:**
 
 ```bash
-setup_virtualenv.bat          # Windows
-chmod +x setup_virtualenv.sh && ./setup_virtualenv.sh   # Linux / macOS
+scripts\setup_virtualenv.bat          # Windows
+chmod +x scripts/setup_virtualenv.sh && scripts/setup_virtualenv.sh   # Linux / macOS
 ```
 
 **Con pipenv:**
 
 ```bash
-setup_pipenv.bat              # Windows
-chmod +x setup_pipenv.sh && ./setup_pipenv.sh           # Linux / macOS
+scripts\setup_pipenv.bat              # Windows
+chmod +x scripts/setup_pipenv.sh && scripts/setup_pipenv.sh           # Linux / macOS
 ```
 
 También manualmente:

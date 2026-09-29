@@ -13,8 +13,8 @@ the rest of the workspace (based on `ids-web`).
 ## How to run
 
 ```bash
-setup_virtualenv.bat        # Windows
-./setup_virtualenv.sh       # Linux / macOS
+scripts\setup_virtualenv.bat   # Windows
+scripts/setup_virtualenv.sh    # Linux / macOS
 
 # or manually
 python -m venv .venv && .venv\Scripts\activate   # (source .venv/bin/activate on Linux/macOS)
