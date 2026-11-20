@@ -1,0 +1,112 @@
+{% extends "admin/base_admin.html" %}
+
+{% block title %}Listado equipos · Gradebook{% endblock %}
+
+{% block content %}
+<section class="listado equipos">
+    <div class="listado__card">
+        <h1 class="listado__title">Listado equipos</h1>
+        {% if cursada_filtro %}
+        <p class="listado__cursada">{{ cursada_filtro.cuatrimestre }}C {{ cursada_filtro.anio }}{% if cursada_filtro.codigo %} · {{ cursada_filtro.codigo }}{% endif %}</p>
+        {% endif %}
+
+        {% for categoria, mensaje in get_flashed_messages(with_categories=True) %}
+        <p class="listado__flash listado__flash--{{ categoria }}">{{ mensaje }}</p>
+        {% endfor %}
+        {% if error %}
+        <p class="listado__flash listado__flash--error">{{ error }}</p>
+        {% endif %}
+
+        <form class="equipos__buscar" id="equipos-buscar">
+            <input type="search" id="equipos-q" placeholder="Buscar por nombre de equipo" autocomplete="off">
+            <label>Evaluación
+                <select id="equipos-evaluacion">
+                    <option value="">Todas</option>
+                    {% for nombre in evaluaciones | default([]) %}
+                    <option value="{{ nombre }}">{{ nombre }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <label>Tutor
+                <select id="equipos-tutor">
+                    <option value="">Todos</option>
+                    <option value="sin">Sin asignar</option>
+                    {% for docente in docentes %}
+                    <option value="{{ docente.id }}">{{ docente.nombre }} {{ docente.apellido }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+        </form>
+
+        {% if grupos %}
+        <form method="POST" action="{{ url_for('web.admin.grupos.guardar_tutores') }}">
+            <div class="listado__tabla-wrap">
+                <table class="listado__tabla equipos__tabla">
+                    <thead>
+                        <tr>
+                            <th>Equipo</th>
+                            <th>Integrantes</th>
+                            <th>Tutor</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for grupo in grupos %}
+                        <tr data-nombre="{{ grupo.nombre }}" data-tutor="{{ grupo.tutor_id or '' }}" data-evaluacion="{{ grupo.evaluacion_nombre or '' }}">
+                            <td class="equipos__nombre" data-label="Equipo">
+                                {{ grupo.nombre }}
+                                {% if grupo.evaluacion_nombre %}<span class="equipos__eval">{{ grupo.evaluacion_nombre }}</span>{% endif %}
+                            </td>
+                            <td data-label="Integrantes">Integrantes: {{ grupo.integrantes }}</td>
+                            <td data-label="Tutor">
+                                {% if puede_editar %}
+                                <label class="equipos__tutor">
+                                    <select name="tutor_{{ grupo.id }}" aria-label="Tutor de {{ grupo.nombre }}">
+                                        <option value="">Sin asignar</option>
+                                        {% for docente in docentes %}
+                                        <option value="{{ docente.id }}" {% if docente.id == grupo.tutor_id %}selected{% endif %}>{{ docente.nombre }} {{ docente.apellido }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </label>
+                                {% else %}
+                                {{ grupo.tutor_nombre or 'Sin asignar' }}
+                                {% endif %}
+                            </td>
+                            <td class="listado__acciones">
+                                <a class="listado__icon-btn" href="{{ url_for('web.admin.grupos.detalle', grupo_id=grupo.id) }}" aria-label="Ver equipo">
+                                    <img src="{{ url_for('static', filename='img/eye.svg') }}" alt="">
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <p class="listado__vacio" id="equipos-sin-resultado" hidden>Ningún equipo coincide con el filtro.</p>
+
+            <div class="equipos__pie">
+                <label class="equipos__cerrar" title="Todavía no está disponible">
+                    <input type="checkbox" disabled>
+                    Cerrar grupos
+                </label>
+                {% if puede_editar %}
+                <button type="submit" class="btn-solid btn-solid--ok">Guardar</button>
+                {% endif %}
+            </div>
+        </form>
+        {% else %}
+        <p class="listado__vacio">No hay equipos en esta cursada. Los alumnos los arman desde su pantalla.</p>
+        <div class="equipos__pie">
+            <label class="equipos__cerrar" title="Todavía no está disponible">
+                <input type="checkbox" disabled>
+                Cerrar grupos
+            </label>
+        </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/equipos.js') }}" defer></script>
+{% endblock %}

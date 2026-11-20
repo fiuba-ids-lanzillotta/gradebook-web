@@ -10,6 +10,7 @@ from web.routes.admin.panel import panel_bp
 from web.routes.admin.asistencia import asistencia_bp
 from web.routes.admin.cursadas import cursadas_bp
 from web.routes.admin.docentes import docentes_bp
+from web.routes.admin.grupos import grupos_bp
 from web.routes.admin.items import items_bp
 
 admin_bp = Blueprint('admin', __name__)
@@ -18,4 +19,5 @@ admin_bp.register_blueprint(panel_bp)
 admin_bp.register_blueprint(asistencia_bp)
 admin_bp.register_blueprint(cursadas_bp)
 admin_bp.register_blueprint(docentes_bp)
+admin_bp.register_blueprint(grupos_bp)
 admin_bp.register_blueprint(items_bp)

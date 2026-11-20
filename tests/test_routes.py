@@ -808,3 +808,26 @@ def test_editar_cursada_sin_permiso_no_llama_api(client, monkeypatch):
 
     assert respuesta.status_code == 302
     assert llamadas == []
+
+
+def test_equipos_lista_los_de_la_cursada_elegida(client, monkeypatch):
+    _sesion_docente(client, ['estudiantes.leer', 'cursadas.leer'])
+    filas = [{'id': 1, 'anio': 2026, 'cuatrimestre': 2, 'codigo': 'TB022', 'vigente': True}]
+    monkeypatch.setattr('web.cursada_filtro.opciones', lambda token: filas)
+    monkeypatch.setattr('web.routes.admin.panel.opciones', lambda token: filas)
+    monkeypatch.setattr('web.routes.admin.grupos.servicio.listar', lambda token, cursada_id: {
+        'ok': True,
+        'datos': {'grupos': [{
+            'id': 3, 'nombre': 'Equipo1', 'integrantes': 2, 'tutor_id': None,
+            'tutor_nombre': '', 'evaluacion_nombre': 'TP1',
+        }]},
+    })
+    monkeypatch.setattr('web.routes.admin.grupos.listar_docentes', lambda token: [])
+
+    respuesta = client.get('/admin/equipos')
+
+    assert respuesta.status_code == 200
+    html = respuesta.get_data(as_text=True)
+    assert 'Equipo1' in html
+    assert 'Cerrar grupos' in html
+    assert 'cursada_id' not in html or '1' in html

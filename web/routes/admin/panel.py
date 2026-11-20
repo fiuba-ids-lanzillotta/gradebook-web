@@ -46,6 +46,7 @@ ESTADO_ETIQUETA = {
 SOLAPAS = (
     ('cursada', 'Cursada', 'nav-cursada.svg'),
     ('listado', 'Listado alumnos', 'nav-listado.svg'),
+    ('equipos', 'Listado equipos', 'nav-equipos.svg'),
     ('dashboards', 'Dashboards', 'nav-dashboards.svg'),
     ('asistencia', 'Asistencia', 'nav-asistencia.svg'),
     ('categorias', 'Categorías', 'nav-categorias.svg'),
@@ -57,6 +58,7 @@ SOLAPAS = (
 SOLAPA_PERMISO = {
     'cursada': PERMISO_CURSADAS_LEER,
     'listado': PERMISO_ESTUDIANTES_LEER,
+    'equipos': PERMISO_ESTUDIANTES_LEER,
     'asistencia': PERMISO_ASISTENCIAS_LEER,
     'docentes': PERMISO_DOCENTES_LEER,
 }

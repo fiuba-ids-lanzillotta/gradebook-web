@@ -1,0 +1,127 @@
+{% extends "admin/base_admin.html" %}
+
+{% block title %}{{ grupo.nombre or 'Equipo' }} · Gradebook{% endblock %}
+
+{% block content %}
+<section class="listado equipos">
+    <div class="listado__card">
+        <p class="asistencias__volver-wrap">
+            <a class="asistencias__volver" href="{{ url_for('web.admin.grupos.index') }}">← Listado equipos</a>
+        </p>
+
+        {% for categoria, mensaje in get_flashed_messages(with_categories=True) %}
+        <p class="listado__flash listado__flash--{{ categoria }}">{{ mensaje }}</p>
+        {% endfor %}
+        {% if error %}
+        <p class="listado__flash listado__flash--error">{{ error }}</p>
+        {% endif %}
+
+        {% if grupo.id %}
+        <div class="equipo__titulo">
+            <h1 class="equipo__nombre" id="equipo-nombre">{{ grupo.nombre }}</h1>
+            {% if puede_editar %}
+            <button type="button" class="listado__icon-btn" id="equipo-editar-nombre" aria-label="Editar nombre">
+                <img src="{{ url_for('static', filename='img/edit.svg') }}" alt="">
+            </button>
+            <form class="equipo__renombrar" id="equipo-renombrar" method="POST" action="{{ url_for('web.admin.grupos.renombrar', grupo_id=grupo.id) }}" hidden>
+                <input type="text" name="nombre" value="{{ grupo.nombre }}" maxlength="150" required>
+                <button type="submit" class="btn-solid btn-solid--ok">Guardar</button>
+            </form>
+            {% endif %}
+        </div>
+        {% if grupo.evaluacion_nombre %}
+        <p class="listado__cursada">{{ grupo.evaluacion_nombre }}</p>
+        {% endif %}
+
+        <table class="listado__tabla equipo__tabla">
+            <tbody>
+                {% for integrante in grupo.integrantes %}
+                <tr>
+                    <td data-label="Integrante">
+                        {{ integrante.apellido }} {{ integrante.nombre }}
+                        {% if integrante.owner %}<img class="equipo__corona" src="{{ url_for('static', filename='img/crown.svg') }}" alt="Owner">{% endif %}
+                    </td>
+                    <td data-label="Padrón">{{ integrante.padron }}</td>
+                    <td class="listado__acciones" data-label="">
+                        <span class="listado__icon-btn listado__icon-btn--off" title="El perfil todavía no está disponible">
+                            <img src="{{ url_for('static', filename='img/eye.svg') }}" alt="">
+                        </span>
+                        {% if puede_editar %}
+                        <button
+                            type="button"
+                            class="listado__icon-btn js-transferir"
+                            aria-label="Transferir integrante"
+                            data-nombre="{{ integrante.apellido }} {{ integrante.nombre }}"
+                            data-padron="{{ integrante.padron }}"
+                            data-url="{{ url_for('web.admin.grupos.transferir', grupo_id=grupo.id, estudiante_id=integrante.id) }}"
+                        >
+                            <img src="{{ url_for('static', filename='img/transfer.svg') }}" alt="">
+                        </button>
+                        <form method="POST" action="{{ url_for('web.admin.grupos.echar', grupo_id=grupo.id, estudiante_id=integrante.id) }}" class="equipo__echar">
+                            <button type="submit" class="listado__icon-btn" aria-label="Echar integrante">
+                                <img src="{{ url_for('static', filename='img/kick.svg') }}" alt="">
+                            </button>
+                        </form>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        {% if puede_editar and grupo.candidatos %}
+        <form class="equipo__agregar" method="POST" action="{{ url_for('web.admin.grupos.agregar', grupo_id=grupo.id) }}">
+            <div class="equipo__alumno">
+                <input
+                    type="search"
+                    id="equipo-alumno"
+                    placeholder="Buscar alumno por nombre o padrón"
+                    autocomplete="off"
+                    role="combobox"
+                    aria-expanded="false"
+                    aria-controls="equipo-alumno-lista"
+                >
+                <ul class="equipo__alumno-lista" id="equipo-alumno-lista" role="listbox" hidden></ul>
+                <input type="hidden" name="estudiante_id" id="equipo-alumno-id" required>
+            </div>
+            <button type="submit" class="btn-outline" id="equipo-alumno-agregar" disabled>+ Agregar integrante</button>
+            <script type="application/json" id="equipo-candidatos">{{ grupo.candidatos | tojson }}</script>
+        </form>
+        {% elif puede_editar %}
+        <p class="listado__vacio">No hay alumnos cursando fuera de un equipo.</p>
+        {% endif %}
+        {% else %}
+        <p class="listado__vacio">No se encontró el equipo.</p>
+        {% endif %}
+    </div>
+</section>
+
+{% if puede_editar and grupo.id %}
+<div class="modal" id="modal-transferir" aria-hidden="true">
+    <div class="modal__overlay" data-close></div>
+    <div class="modal__box modal__box--form" role="dialog" aria-labelledby="transferir-titulo">
+        <h2 id="transferir-titulo" class="modal__title">¿A dónde transferimos a <span id="transferir-alumno"></span>?</h2>
+        <form method="POST" id="form-transferir">
+            <label class="modal__field">Equipo
+                <select name="grupo_destino_id" required>
+                    {% for otro in grupo.otros_grupos %}
+                    <option value="{{ otro.id }}">{{ otro.nombre }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            {% if not grupo.otros_grupos %}
+            <p class="modal__hint">No hay otro equipo en esta evaluación.</p>
+            {% endif %}
+            <div class="modal__actions">
+                <button type="button" class="btn-cancel" data-close>Cancelar</button>
+                <button type="submit" class="btn-confirm" {% if not grupo.otros_grupos %}disabled{% endif %}>Confirmar</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/equipos.js') }}" defer></script>
+{% endblock %}
