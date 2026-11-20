@@ -187,6 +187,8 @@ Notas:
 | `/admin/asistencia`         | docente* | Toma de asistencia del día (QR / código / padrón).                   |
 | `/admin/asistencia/listado` | docente* | Asistencias por clase (filtros por estado y búsqueda).               |
 | `/admin/cursadas`           | docente* | Cursada: cuatrimestre vigente + historial (alta y edición).          |
+| `/admin/equipos`            | docente* | Equipos de las evaluaciones grupales de la cursada elegida (tutores).|
+| `/admin/equipos/{id}`       | docente* | Detalle del equipo: renombrar, sumar/echar/transferir integrantes.  |
 
 \* Las pantallas de docente están gateadas por permisos (`PERMISO_*` en `web/constants.py`); el
 sidebar solo muestra las solapas habilitadas. Solapas declaradas pero sin pantalla todavía:
