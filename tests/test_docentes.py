@@ -11,6 +11,7 @@ CATALOGO = [
         'asistencias.leer', 'asistencias.gestionar',
         'cursadas.leer', 'cursadas.crear', 'cursadas.modificar',
         'entregas.leer', 'permisos.asignar', 'roles.gestionar',
+        'registros.leer',
     ]
 ]
 
@@ -137,12 +138,14 @@ def test_ayudante_sin_permisos_de_gestion():
     assert 'roles.gestionar' not in ayudante
 
 
-def test_colaborador_igual_ayudante_menos_eliminar():
+def test_colaborador_igual_ayudante_menos_eliminar_y_registros():
     permisos_cargo = _permisos_por_cargo(CATALOGO)
     colaborador = permisos_cargo['Colaborador']
 
     assert 'estudiantes.eliminar' not in colaborador
-    assert colaborador == [c for c in permisos_cargo['Ayudante'] if c != 'estudiantes.eliminar']
+    assert 'registros.leer' not in colaborador
+    assert colaborador == [c for c in permisos_cargo['Ayudante']
+                           if c not in ('estudiantes.eliminar', 'registros.leer')]
 
 
 def test_body_overrides_marca_concedido_segun_codigos():
