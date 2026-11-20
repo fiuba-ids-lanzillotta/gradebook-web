@@ -208,6 +208,79 @@ html:has(.admin-body),
 .admin-sidebar__brand-text { display: flex; flex-direction: column; line-height: 1.15; }
 .admin-sidebar__name { font-family: var(--font-brand); font-weight: 700; font-size: 16px; color: #1f2937; }
 .admin-sidebar__sub { font-size: 11px; color: #6b7280; }
+.cursada-filtro { display: flex; flex-direction: column; gap: 4px; margin: 2px 0 12px; position: relative; }
+.cursada-filtro__titulo {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+    color: #6b7280;
+}
+.cursada-filtro__campo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    background: #fff;
+    cursor: text;
+}
+.cursada-filtro__marca {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #3d9a5a;
+    flex-shrink: 0;
+}
+.cursada-filtro input {
+    width: auto;
+    flex: 0 1 auto;
+    field-sizing: content;
+    max-width: calc(100% - 18px);
+    min-width: 4ch;
+    padding: 0;
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    color: #1f2937;
+}
+.cursada-filtro input:focus { outline: none; }
+.cursada-filtro__campo:focus-within { border-color: #3d6488; }
+.cursada-filtro__lista {
+    list-style: none;
+    margin: 4px 0 0;
+    padding: 4px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    background: #fff;
+    box-shadow: 0 8px 20px rgba(17, 24, 39, 0.08);
+}
+.cursada-filtro__opcion {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 8px;
+    width: 100%;
+    padding: 6px 8px;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    color: #1f2937;
+    text-align: left;
+    cursor: pointer;
+}
+.cursada-filtro__opcion:hover,
+.cursada-filtro__opcion.is-activa { background: #e8f4fb; }
+.cursada-filtro__vacio { padding: 6px 8px; color: #6b7280; font-size: 13px; }
 .admin-sidebar__nav { display: flex; flex-direction: column; gap: 4px; }
 .admin-sidebar__link {
     display: flex;
@@ -875,6 +948,71 @@ html:has(.admin-body),
 .cursada-actual__fechas { color: #374151; font-size: 14px; margin: 0; }
 .cursada-actual__vacio { color: #6b7280; margin: 0; }
 .cursada__nueva { display: block; margin: 22px auto 0; min-width: 240px; padding: 12px 22px; }
+.cursadas__filtros {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin: 0 0 14px;
+}
+.cursadas__filtros label {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+    font-size: 12px;
+    font-weight: 700;
+    color: #6b7280;
+}
+.cursadas__filtros input,
+.cursadas__filtros select {
+    min-width: 120px;
+    padding: 8px 10px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    background: #f9fafb;
+    font: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    color: #1f2937;
+}
+.cursadas__tabla tr[hidden] { display: none; }
+.cursada__marca {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    margin-left: 8px;
+    border-radius: 50%;
+    background: #3d9a5a;
+    vertical-align: 1px;
+}
+
+@media (min-width: 721px) {
+    .cursadas__tabla { border-collapse: separate; border-spacing: 0; }
+    .cursadas__tabla thead { display: none; }
+    .cursadas__tabla,
+    .cursadas__tabla tbody { display: block; }
+    .cursadas__tabla tr {
+        display: grid;
+        grid-template-columns: minmax(0, 1.5fr) 7.5rem minmax(10.5rem, auto) 36px;
+        align-items: center;
+        column-gap: 28px;
+        border: 1px solid #e3e9f0;
+        border-radius: 10px;
+        padding: 14px 16px;
+        margin-bottom: 12px;
+        background: #fff;
+    }
+    .cursadas__tabla td { border: none; padding: 0; }
+    .cursadas__tabla .cursada__materia { font-weight: 700; color: #1f2937; }
+    .cursadas__tabla .cursada__cuatri,
+    .cursadas__tabla .cursada__cuatri strong {
+        color: #3d6488;
+        font-weight: 600;
+        white-space: nowrap;
+    }
+    .cursadas__tabla .cursada__fechas { color: #6b7280; }
+    .cursadas__tabla .cursada__acciones { padding: 0; }
+}
 
 @media (max-width: 720px) {
     .cursada__nueva { width: 100%; min-width: 0; }

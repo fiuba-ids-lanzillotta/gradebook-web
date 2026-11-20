@@ -26,6 +26,22 @@
         </div>
 
         {% if cursadas %}
+        <form class="cursadas__filtros" id="cursadas-filtros">
+            <label>Código
+                <input type="search" id="filtro-codigo" placeholder="TB022" autocomplete="off">
+            </label>
+            <label>Cuatrimestre
+                <select id="filtro-cuatrimestre">
+                    <option value="">Todos</option>
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                </select>
+            </label>
+            <label>Año
+                <input type="number" id="filtro-anio" min="1900" max="9999" placeholder="2026" inputmode="numeric">
+            </label>
+        </form>
+        <p class="listado__vacio" id="cursadas-sin-resultado" hidden>Ninguna cursada coincide con el filtro.</p>
         <div class="listado__tabla-wrap">
             <table class="listado__tabla cursadas__tabla">
                 <thead>
@@ -38,9 +54,9 @@
                 </thead>
                 <tbody>
                     {% for cursada in cursadas %}
-                    <tr>
+                    <tr data-codigo="{{ cursada.codigo }}" data-cuatrimestre="{{ cursada.cuatrimestre }}" data-anio="{{ cursada.anio }}">
                         <td class="cursada__materia" data-label="Materia">{{ cursada.codigo }}{% if cursada.nombre %} · {{ cursada.nombre }}{% endif %}</td>
-                        <td class="cursada__cuatri" data-label="Cuatrimestre">{{ cursada.cuatrimestre }}C {{ cursada.anio }}{% if cursada.vigente %} <strong>(vigente)</strong>{% endif %}</td>
+                        <td class="cursada__cuatri" data-label="Cuatrimestre">{{ cursada.cuatrimestre }}C {{ cursada.anio }}{% if cursada.vigente %}<span class="cursada__marca" role="img" aria-label="Vigente" title="Vigente"></span>{% endif %}</td>
                         <td class="cursada__fechas" data-label="Fechas">{{ cursada.inicio_txt or '—' }} → {{ cursada.fin_txt or '—' }}</td>
                         <td class="listado__acciones cursada__acciones">
                             {% if puede_editar %}
@@ -121,28 +137,26 @@
     <div class="modal__overlay" data-close></div>
     <div class="modal__box modal__box--form" role="dialog" aria-labelledby="editar-cursada-titulo">
         <h2 id="editar-cursada-titulo" class="modal__title">Editar cursada</h2>
-        <form method="POST" id="form-editar-cursada">
+        <form method="POST" id="form-editar-cursada" novalidate>
+            <ul class="modal__errores" id="editar-cursada-errores" hidden></ul>
             <label class="modal__field">Código materia
                 <input type="text" name="codigo" id="editar-cursada-codigo" readonly>
             </label>
             <label class="modal__field">Nombre materia
-                <input type="text" name="nombre" id="editar-cursada-nombre" required>
+                <input type="text" name="nombre" id="editar-cursada-nombre">
             </label>
             <p class="modal__hint">Editar el nombre renombra la materia en todas sus cursadas.</p>
-            <label class="modal__field">Año
-                <input type="number" name="anio" id="editar-cursada-anio" min="2000" max="2100" required>
-            </label>
             <label class="modal__field">Cuatrimestre
-                <select name="cuatrimestre" id="editar-cursada-cuatrimestre" required>
+                <select name="cuatrimestre" id="editar-cursada-cuatrimestre">
                     <option value="1">1</option>
                     <option value="2">2</option>
                 </select>
             </label>
             <label class="modal__field">Fecha inicio
-                <input type="date" name="fecha_inicio" id="editar-cursada-inicio" required>
+                <input type="date" name="fecha_inicio" id="editar-cursada-inicio">
             </label>
             <label class="modal__field">Fecha fin
-                <input type="date" name="fecha_fin" id="editar-cursada-fin" required>
+                <input type="date" name="fecha_fin" id="editar-cursada-fin">
             </label>
             <div class="modal__actions">
                 <button type="button" class="btn-cancel" data-close>Cancelar</button>

@@ -151,13 +151,27 @@ def editar(cursada_id):
         return bloqueo
 
     resultado = servicio.actualizar_cursada(_token(), cursada_id, request.form)
+    responde_json = request.headers.get('X-Requested-With') == 'fetch'
 
     if resultado.get('unauthorized'):
+        if responde_json:
+            return jsonify({'ok': False, 'error': 'Sesión vencida.'}), 401
+
         return redirigir_a_login_sin_sesion()
 
     if resultado.get('ok'):
         flash('Cursada actualizada.', 'ok')
-    else:
-        flash(resultado.get('error') or 'No se pudo actualizar la cursada.', 'error')
+
+        if responde_json:
+            return jsonify({'ok': True})
+
+        return redirect(url_for('web.admin.cursadas.index'))
+
+    error = resultado.get('error') or 'No se pudo actualizar la cursada.'
+
+    if responde_json:
+        return jsonify({'ok': False, 'error': error}), 400
+
+    flash(error, 'error')
 
     return redirect(url_for('web.admin.cursadas.index'))

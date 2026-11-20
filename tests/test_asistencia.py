@@ -196,6 +196,21 @@ def test_listar_clases_usa_la_cursada_vigente(monkeypatch, respuesta_falsa):
     assert resultado['ok'] and resultado['clases'][0]['id'] == 1
 
 
+def test_listar_clases_usa_la_cursada_indicada(monkeypatch, respuesta_falsa):
+    monkeypatch.setattr(asistencia, 'obtener_cursada_vigente', lambda token: _cursada_vigente())
+    capturado = {}
+
+    def fake_request(method, url, **kwargs):
+        capturado['url'] = url
+        return respuesta_falsa(200, {'clases': []})
+
+    monkeypatch.setattr(requests, 'request', fake_request)
+
+    asistencia.listar_clases('token', cursada_id=4)
+
+    assert capturado['url'].endswith('/cursadas/4/clases')
+
+
 def test_listar_clases_sin_cursadas_devuelve_vacio(monkeypatch, respuesta_falsa):
     monkeypatch.setattr(asistencia, 'obtener_cursada_vigente', lambda token: {})
     monkeypatch.setattr(requests, 'request', lambda *a, **k: respuesta_falsa(204))

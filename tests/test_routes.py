@@ -500,7 +500,7 @@ def test_cerrar_clase_sin_permiso_no_llama_api(client, monkeypatch):
 def test_listado_asistencia_renderiza(client, monkeypatch):
     _sesion_docente(client, ['asistencias.leer'])
     monkeypatch.setattr(servicio_asistencia, 'listar_clases',
-                        lambda token: {'ok': True, 'clases': [{'id': 4, 'fecha': '2026-09-01', 'titulo': 'Clase 1'}]})
+                        lambda token, cursada_id=None: {'ok': True, 'clases': [{'id': 4, 'fecha': '2026-09-01', 'titulo': 'Clase 1'}]})
     monkeypatch.setattr(servicio_asistencia, 'listar_asistencias',
                         lambda token, clase_id, **kw: {'ok': True, 'asistencias': [], 'links': {}, 'offset': 0, 'limit': 10})
 
@@ -594,6 +594,40 @@ def test_desactivar_ayudante_llama_eliminar(client, monkeypatch):
 
 # --- cursadas (rutas) ---
 
+def test_seleccionar_cursada_guarda_la_elegida(client, monkeypatch):
+    _sesion_docente(client, ['cursadas.leer'])
+    monkeypatch.setattr('web.routes.admin.panel.opciones', lambda token: [
+        {'id': 4, 'anio': 2027, 'cuatrimestre': 1, 'codigo': 'TB022', 'vigente': False},
+        {'id': 1, 'anio': 2026, 'cuatrimestre': 2, 'codigo': 'TB022', 'vigente': True},
+    ])
+
+    respuesta = client.post('/admin/cursada-activa', data={
+        'cursada_id': '4',
+        'volver': '/admin/cursadas',
+    })
+
+    assert respuesta.status_code == 302
+    assert respuesta.headers['Location'].endswith('/admin/cursadas')
+
+    with client.session_transaction() as sesion:
+        assert str(sesion['cursada_id']) == '4'
+
+
+def test_seleccionar_cursada_rechaza_destino_externo(client, monkeypatch):
+    _sesion_docente(client, ['cursadas.leer'])
+    monkeypatch.setattr('web.routes.admin.panel.opciones', lambda token: [
+        {'id': 1, 'anio': 2026, 'cuatrimestre': 2, 'codigo': 'TB022', 'vigente': True},
+    ])
+
+    respuesta = client.post('/admin/cursada-activa', data={
+        'cursada_id': '1',
+        'volver': '//evil.example/robo',
+    })
+
+    assert respuesta.status_code == 302
+    assert 'evil.example' not in respuesta.headers['Location']
+
+
 def test_cursadas_requiere_login(client):
     respuesta = client.get('/admin/cursadas')
 
@@ -634,6 +668,8 @@ def test_cursadas_index_ok(client, monkeypatch):
     assert 'class="cursada__codigo"' not in html
     assert '2C 2026' in html
     assert 'data-label="Materia">TB022 · IDS</td>' in html
+    assert '(vigente)' not in html
+    assert html.count('class="cursada__marca"') == 1
     assert '+ Nueva cursada' not in html
     assert 'id="form-crear-cursada"' not in html
     # El datalist sale del catálogo real, no solo de materias con cursada
@@ -742,6 +778,25 @@ def test_editar_cursada_putea_a_api(client, monkeypatch, respuesta_falsa):
     assert respuesta.status_code == 302
     assert capturado['method'] == 'PUT'
     assert capturado['url'].endswith('/cursadas/9')
+
+
+def test_editar_cursada_fetch_muestra_error_sin_redirigir(client, monkeypatch):
+    _sesion_docente(client, ['cursadas.leer', 'cursadas.modificar'])
+    monkeypatch.setattr(
+        servicio_cursos,
+        'actualizar_cursada',
+        lambda token, cursada_id, datos: {'ok': False, 'error': 'Fechas fuera del cuatrimestre'},
+    )
+
+    respuesta = client.post(
+        '/admin/cursadas/9',
+        data={'codigo': 'TB022', 'nombre': 'IDS', 'cuatrimestre': '2',
+              'fecha_inicio': '2027-03-01', 'fecha_fin': '2027-06-30'},
+        headers={'X-Requested-With': 'fetch'},
+    )
+
+    assert respuesta.status_code == 400
+    assert respuesta.get_json()['error'] == 'Fechas fuera del cuatrimestre'
 
 
 def test_editar_cursada_sin_permiso_no_llama_api(client, monkeypatch):

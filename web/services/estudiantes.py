@@ -41,13 +41,15 @@ def interpretar_busqueda(q: str) -> dict:
     return {'q': consulta}
 
 
-def listar_de_cursada(token: str, q: str = '', offset: int = 0, limit: int = 10) -> dict:
-    """Lista alumnos de la cursada vigente (código MATERIA_CODIGO), con búsqueda y paginado.
+def listar_de_cursada(token: str, q: str = '', offset: int = 0, limit: int = 10,
+                       anio=None, cuatrimestre=None) -> dict:
+    """Lista alumnos de una cursada (código MATERIA_CODIGO), con búsqueda y paginado.
 
-    Resuelve año/cuatrimestre desde la cursada vigente que expone la API; si no hay,
-    usa el respaldo CURSADA_ANIO/CURSADA_CUATRIMESTRE.
+    Si no llegan año y cuatrimestre, usa la cursada vigente; si no hay, el respaldo
+    CURSADA_ANIO/CURSADA_CUATRIMESTRE.
     """
-    anio, cuatrimestre = _anio_cuatri_vigentes(token)
+    if anio is None or cuatrimestre is None:
+        anio, cuatrimestre = _anio_cuatri_vigentes(token)
 
     resultado = _pedir_pagina(token, interpretar_busqueda(q), offset, limit, anio, cuatrimestre)
     resultado['anio'] = anio
@@ -246,7 +248,7 @@ def importar_csv(token: str, archivo) -> dict:
     return {'ok': False, 'error': mensaje_error_api(response)}
 
 
-def exportar_csv(token: str) -> dict:
+def exportar_csv(token: str, anio=None, cuatrimestre=None) -> dict:
     """
     Descarga el padrón en el mismo formato SIU que el import (Legajo;Alumno;Email).
 
@@ -256,13 +258,17 @@ def exportar_csv(token: str) -> dict:
     try:
         response = requests.get(
             f'{API_BASE_URL}/estudiantes/csv',
-            params={'anio': CURSADA_ANIO, 'cuatrimestre': CURSADA_CUATRIMESTRE},
+            params={'anio': anio or CURSADA_ANIO, 'cuatrimestre': cuatrimestre or CURSADA_CUATRIMESTRE},
             headers=api_headers({'Authorization': f'Bearer {token}'}),
             timeout=30,
         )
 
         if response.status_code == 200 and (response.headers.get('Content-Type') or '').startswith('text/csv'):
-            return {'ok': True, 'contenido': response.content, 'nombre': _nombre_archivo()}
+            return {
+                'ok': True,
+                'contenido': response.content,
+                'nombre': _nombre_archivo(anio, cuatrimestre),
+            }
 
         no_autorizada = respuesta_no_autorizada(response)
 
@@ -274,7 +280,7 @@ def exportar_csv(token: str) -> dict:
     except Exception as error:
         logger.error(f"Error al pedir CSV a la API: {error}")
 
-    todos = _listar_todos(token)
+    todos = _listar_todos(token, anio or CURSADA_ANIO, cuatrimestre or CURSADA_CUATRIMESTRE)
 
     if not todos.get('ok'):
         return todos
@@ -282,22 +288,22 @@ def exportar_csv(token: str) -> dict:
     return {
         'ok': True,
         'contenido': _serializar_csv_siu(todos['estudiantes']).encode('utf-8-sig'),
-        'nombre': _nombre_archivo(),
+        'nombre': _nombre_archivo(anio, cuatrimestre),
     }
 
 
-def _nombre_archivo() -> str:
-    return f'alumnos-{CURSADA_ANIO}-C{CURSADA_CUATRIMESTRE}.csv'
+def _nombre_archivo(anio=None, cuatrimestre=None) -> str:
+    return f'alumnos-{anio or CURSADA_ANIO}-C{cuatrimestre or CURSADA_CUATRIMESTRE}.csv'
 
 
-def _listar_todos(token: str) -> dict:
+def _listar_todos(token: str, anio, cuatrimestre) -> dict:
     todos = []
     offset = 0
     limit = 100
     hay_mas_paginas = True
 
     while hay_mas_paginas:
-        pagina = _pedir_pagina(token, {}, offset, limit)
+        pagina = _pedir_pagina(token, {}, offset, limit, anio, cuatrimestre)
 
         if not pagina.get('ok'):
             return pagina

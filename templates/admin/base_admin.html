@@ -36,6 +36,30 @@
                     </span>
                 </a>
 
+                {% if cursadas_filtro %}
+                <form class="cursada-filtro" method="POST" action="{{ url_for('web.admin.panel.seleccionar_cursada') }}">
+                    <span class="cursada-filtro__titulo" id="cursada-filtro-etiqueta">Cursada</span>
+                    <div class="cursada-filtro__campo">
+                        <input
+                            type="text"
+                            id="cursada-filtro-buscar"
+                            autocomplete="off"
+                            role="combobox"
+                            aria-expanded="false"
+                            aria-controls="cursada-filtro-lista"
+                            aria-autocomplete="list"
+                            aria-labelledby="cursada-filtro-etiqueta"
+                            {% if cursada_filtro %}value="{{ cursada_filtro.cuatrimestre }}C {{ cursada_filtro.anio }}{% if cursada_filtro.codigo %} · {{ cursada_filtro.codigo }}{% endif %}"{% endif %}
+                        >
+                        <span class="cursada-filtro__marca" title="Vigente" {% if not cursada_filtro or not cursada_filtro.vigente %}hidden{% endif %}></span>
+                    </div>
+                    <ul class="cursada-filtro__lista" id="cursada-filtro-lista" role="listbox" hidden></ul>
+                    <input type="hidden" name="cursada_id" id="cursada-filtro-id" value="{{ cursada_filtro.id if cursada_filtro else '' }}">
+                    <input type="hidden" name="volver" value="{{ request.full_path if request.query_string else request.path }}">
+                </form>
+                <script type="application/json" id="cursadas-filtro-datos">{{ cursadas_filtro | tojson }}</script>
+                {% endif %}
+
                 <nav class="admin-sidebar__nav" aria-label="Panel docente">
                     {% for clave, etiqueta, icono, activa in solapas %}
                         <a
@@ -61,6 +85,7 @@
     </div>
 
     <script src="{{ url_for('static', filename='js/main.js') }}" defer></script>
+    <script src="{{ url_for('static', filename='js/cursada-filtro.js') }}" defer></script>
     {% block extra_js %}{% endblock %}
 </body>
 </html>

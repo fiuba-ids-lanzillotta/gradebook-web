@@ -13,7 +13,7 @@
         {% if clase %}
         <p class="listado__cursada">{{ clase.etiqueta }}{% if clase.estado %} · {{ clase.estado }}{% endif %}</p>
         {% else %}
-        <p class="listado__cursada">Cursada vigente</p>
+        <p class="listado__cursada">{% if cursada_filtro %}{{ cursada_filtro.cuatrimestre }}C {{ cursada_filtro.anio }}{% if cursada_filtro.codigo %} · {{ cursada_filtro.codigo }}{% endif %}{% else %}Cursada vigente{% endif %}</p>
         {% endif %}
 
         {% for categoria, mensaje in get_flashed_messages(with_categories=True) %}

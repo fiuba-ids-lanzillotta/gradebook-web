@@ -31,6 +31,7 @@ from web.constants import (
     PERMISO_ESTUDIANTES_MODIFICAR,
     PERMISO_ESTUDIANTES_REACTIVAR,
 )
+from web.cursada_filtro import elegida, guardar, opciones
 from web.services.docentes import obtener_docente
 from web.services import estudiantes as servicio
 
@@ -110,10 +111,26 @@ def _solapa_visible(clave: str) -> bool:
 
     return tiene_permiso(permiso)
 
+def _alumnos_de_la_cursada(**kwargs):
+    """Listado de la cursada elegida en el filtro. Si no hay, cae a la vigente."""
+    activa = elegida(_token())
+
+    return servicio.listar_de_cursada(
+        _token(),
+        anio=activa.get('anio'),
+        cuatrimestre=activa.get('cuatrimestre'),
+        **kwargs,
+    )
+
+
 def contexto_admin(solapa_activa: str) -> dict:
+    filas = opciones(_token()) if tiene_permiso(PERMISO_CURSADAS_LEER) else []
+
     return {
         'permisos': permisos_sesion(),
         'nombre_docente': _nombre_docente(),
+        'cursadas_filtro': filas,
+        'cursada_filtro': elegida(_token(), filas) if filas else {},
         'solapas': [
             (clave, etiqueta, icono, clave == solapa_activa)
             for clave, etiqueta, icono in SOLAPAS
@@ -140,6 +157,39 @@ def _contexto_listado(listado: dict, error=None, ok=None):
     })
 
     return contexto
+
+@panel_bp.route('/cursada-activa', methods=['POST'])
+@admin_required
+def seleccionar_cursada():
+    """Guarda la cursada del filtro global y vuelve a la pantalla de origen."""
+    cursada_id = (request.form.get('cursada_id') or '').strip()
+    conocida = _por_id_conocida(cursada_id)
+
+    if conocida:
+        guardar(conocida.get('id'))
+
+    return redirect(_volver_seguro())
+
+
+def _por_id_conocida(cursada_id: str) -> dict:
+    if not cursada_id.isdigit():
+        return {}
+
+    for fila in opciones(_token()):
+        if str(fila.get('id')) == cursada_id:
+            return fila
+
+    return {}
+
+
+def _volver_seguro() -> str:
+    destino = (request.form.get('volver') or '').strip()
+
+    if destino.startswith('/') and not destino.startswith('//'):
+        return destino
+
+    return url_for('web.admin.panel.index')
+
 
 @panel_bp.route('/')
 @admin_required
@@ -169,7 +219,7 @@ def index():
     except (TypeError, ValueError):
         limit = 10
 
-    listado = servicio.listar_de_cursada(_token(), q=q, offset=offset, limit=limit)
+    listado = _alumnos_de_la_cursada(q=q, offset=offset, limit=limit)
 
     if listado.get('unauthorized'):
         return redirigir_a_login_sin_sesion()
@@ -222,7 +272,7 @@ def publicar_csv():
 
         return redirect(url_for('web.admin.panel.index'))
 
-    listado = servicio.listar_de_cursada(_token())
+    listado = _alumnos_de_la_cursada()
 
     if listado.get('unauthorized'):
         return redirigir_a_login_sin_sesion()
@@ -233,7 +283,12 @@ def publicar_csv():
 @panel_bp.route('/alumnos/csv', methods=['GET'])
 @admin_required
 def descargar_csv():
-    resultado = servicio.exportar_csv(_token())
+    activa = elegida(_token())
+    resultado = servicio.exportar_csv(
+        _token(),
+        anio=activa.get('anio'),
+        cuatrimestre=activa.get('cuatrimestre'),
+    )
 
     if resultado.get('unauthorized'):
         return redirigir_a_login_sin_sesion()
@@ -261,7 +316,7 @@ def editar(estudiante_id):
             flash('Datos del alumno actualizados.', 'ok')
         return redireccion
 
-    listado = servicio.listar_de_cursada(_token())
+    listado = _alumnos_de_la_cursada()
 
     if listado.get('unauthorized'):
         return redirigir_a_login_sin_sesion()
@@ -280,7 +335,7 @@ def abandonar(estudiante_id):
             flash('Se marcó que el alumno abandonó la materia.', 'ok')
         return redireccion
 
-    listado = servicio.listar_de_cursada(_token())
+    listado = _alumnos_de_la_cursada()
 
     if listado.get('unauthorized'):
         return redirigir_a_login_sin_sesion()
@@ -306,7 +361,7 @@ def dar_de_baja(estudiante_id):
             flash('Alumno dado de baja.', 'ok')
         return redireccion
 
-    listado = servicio.listar_de_cursada(_token())
+    listado = _alumnos_de_la_cursada()
 
     if listado.get('unauthorized'):
         return redirigir_a_login_sin_sesion()
@@ -329,7 +384,7 @@ def dar_de_alta(estudiante_id):
 
         return redireccion
 
-    listado = servicio.listar_de_cursada(_token())
+    listado = _alumnos_de_la_cursada()
 
     if listado.get('unauthorized'):
         return redirigir_a_login_sin_sesion()

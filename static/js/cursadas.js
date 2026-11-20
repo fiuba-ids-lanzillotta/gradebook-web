@@ -1,4 +1,34 @@
 document.addEventListener('DOMContentLoaded', function () {
+    const filtroCodigo = document.getElementById('filtro-codigo');
+    const filtroCuatrimestre = document.getElementById('filtro-cuatrimestre');
+    const filtroAnio = document.getElementById('filtro-anio');
+    const avisoSinResultado = document.getElementById('cursadas-sin-resultado');
+
+    if (filtroCodigo && filtroCuatrimestre && filtroAnio) {
+        const aplicarFiltro = () => {
+            const codigo = filtroCodigo.value.trim().toLowerCase();
+            const cuatrimestre = filtroCuatrimestre.value;
+            const anio = filtroAnio.value.trim();
+            const filas = document.querySelectorAll('.cursadas__tabla tbody tr');
+            let visibles = 0;
+
+            filas.forEach((fila) => {
+                const coincideCodigo = !codigo || String(fila.dataset.codigo || '').toLowerCase().includes(codigo);
+                const coincideCuatrimestre = !cuatrimestre || String(fila.dataset.cuatrimestre || '') === cuatrimestre;
+                const coincideAnio = !anio || String(fila.dataset.anio || '') === anio;
+                const visible = coincideCodigo && coincideCuatrimestre && coincideAnio;
+                fila.hidden = !visible;
+                if (visible) visibles += 1;
+            });
+
+            if (avisoSinResultado) avisoSinResultado.hidden = visibles !== 0;
+        };
+
+        filtroCodigo.addEventListener('input', aplicarFiltro);
+        filtroCuatrimestre.addEventListener('change', aplicarFiltro);
+        filtroAnio.addEventListener('input', aplicarFiltro);
+    }
+
     const materiasEl = document.getElementById('materias-cursadas');
     let materias = {};
     if (materiasEl) {
@@ -36,7 +66,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const anioDe = (fecha) => Number(String(fecha || '').slice(0, 4));
     const mesDe = (fecha) => Number(String(fecha || '').slice(5, 7));
 
-    const validarAlta = (form) => {
+    const validarAlta = (form, anioOriginal) => {
         const errores = [];
         const codigo = form.codigo.value.trim();
         const nombre = form.nombre.value.trim();
@@ -44,6 +74,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const inicio = form.fecha_inicio.value;
         const fin = form.fecha_fin.value;
         const anioActual = new Date().getFullYear();
+        const anioGuardado = Number(anioOriginal) || 0;
 
         if (!codigo) errores.push('Ingresá el código de la materia.');
         if (!nombre) errores.push('Ingresá el nombre de la materia.');
@@ -56,8 +87,13 @@ document.addEventListener('DOMContentLoaded', function () {
         const anioInicio = anioDe(inicio);
         const anioFin = anioDe(fin);
 
-        if (anioInicio < anioActual || anioFin < anioActual) {
-            errores.push('Las fechas tienen que ser del año actual en adelante.');
+        const anioAnteriorAlActual = (anio) => anio < anioActual && anio !== anioGuardado;
+
+        if (anioAnteriorAlActual(anioInicio) || anioAnteriorAlActual(anioFin)) {
+            const texto = anioGuardado && anioGuardado < anioActual
+                ? `Las fechas tienen que ser de ${anioGuardado}, o del año actual en adelante.`
+                : 'Las fechas tienen que ser del año actual en adelante.';
+            errores.push(texto);
         }
         if (anioInicio !== anioFin) {
             errores.push('La fecha de inicio y la de fin tienen que ser del mismo año.');
@@ -77,6 +113,36 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         return errores;
+    };
+
+    const enviarFormulario = (form, listaErrores, anio) => {
+        const datos = new FormData(form);
+        datos.set('anio', String(anio));
+        const confirmar = form.querySelector('[type="submit"]');
+        if (confirmar) confirmar.disabled = true;
+
+        fetch(form.action, {
+            method: 'POST',
+            body: datos,
+            headers: { 'X-Requested-With': 'fetch' },
+        })
+            .then((respuesta) => respuesta.json().then((cuerpo) => ({ estado: respuesta.status, cuerpo })))
+            .then(({ estado, cuerpo }) => {
+                if (estado === 401) {
+                    window.location.assign('/admin/login');
+                    return;
+                }
+                if (cuerpo && cuerpo.ok) {
+                    window.location.assign(window.location.pathname);
+                    return;
+                }
+                mostrarErrores(listaErrores, [(cuerpo && cuerpo.error) || 'No se pudo guardar la cursada.']);
+                if (confirmar) confirmar.disabled = false;
+            })
+            .catch(() => {
+                mostrarErrores(listaErrores, ['No se pudo conectar con el servidor.']);
+                if (confirmar) confirmar.disabled = false;
+            });
     };
 
     const modalCrear = document.getElementById('modal-crear-cursada');
@@ -111,33 +177,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             if (errores.length) return;
 
-            const datos = new FormData(form);
-            datos.set('anio', String(anioDe(form.fecha_inicio.value)));
-            const confirmar = form.querySelector('[type="submit"]');
-            if (confirmar) confirmar.disabled = true;
-
-            fetch(form.action, {
-                method: 'POST',
-                body: datos,
-                headers: { 'X-Requested-With': 'fetch' },
-            })
-                .then((respuesta) => respuesta.json().then((cuerpo) => ({ estado: respuesta.status, cuerpo })))
-                .then(({ estado, cuerpo }) => {
-                    if (estado === 401) {
-                        window.location.assign('/admin/login');
-                        return;
-                    }
-                    if (cuerpo && cuerpo.ok) {
-                        window.location.assign(window.location.pathname);
-                        return;
-                    }
-                    mostrarErrores(listaErrores, [(cuerpo && cuerpo.error) || 'No se pudo crear la cursada.']);
-                    if (confirmar) confirmar.disabled = false;
-                })
-                .catch(() => {
-                    mostrarErrores(listaErrores, ['No se pudo conectar con el servidor.']);
-                    if (confirmar) confirmar.disabled = false;
-                });
+            enviarFormulario(form, listaErrores, anioDe(form.fecha_inicio.value));
         });
 
         if (inputCodigo && inputNombre) {
@@ -164,20 +204,38 @@ document.addEventListener('DOMContentLoaded', function () {
     if (modalEditar) {
         const titulo = document.getElementById('editar-cursada-titulo');
         const form = document.getElementById('form-editar-cursada');
+        const listaErrores = document.getElementById('editar-cursada-errores');
+        const anioActual = new Date().getFullYear();
         cablearCierre(modalEditar);
 
         document.querySelectorAll('.js-editar-cursada').forEach((btn) => {
             btn.addEventListener('click', () => {
+                const anioGuardado = Number(btn.dataset.anio) || anioActual;
+                const piso = Math.min(anioActual, anioGuardado);
                 document.getElementById('editar-cursada-codigo').value = btn.dataset.codigo || '';
                 document.getElementById('editar-cursada-nombre').value = btn.dataset.nombre || '';
-                document.getElementById('editar-cursada-anio').value = btn.dataset.anio || '';
                 document.getElementById('editar-cursada-cuatrimestre').value = btn.dataset.cuatrimestre || '1';
                 document.getElementById('editar-cursada-inicio').value = btn.dataset.inicio || '';
                 document.getElementById('editar-cursada-fin').value = btn.dataset.fin || '';
+                form.querySelectorAll('input[type="date"]').forEach((input) => {
+                    input.min = `${piso}-01-01`;
+                });
+                form.dataset.anioOriginal = String(anioGuardado);
                 titulo.textContent = `Editar cursada · ${btn.dataset.codigo || ''} ${btn.dataset.cuatrimestre || ''}C ${btn.dataset.anio || ''}`;
                 form.action = btn.dataset.url || '#';
+                mostrarErrores(listaErrores, []);
                 abrirModal(modalEditar);
             });
+        });
+
+        form.addEventListener('submit', (evento) => {
+            evento.preventDefault();
+            const errores = validarAlta(form, form.dataset.anioOriginal);
+            mostrarErrores(listaErrores, errores);
+
+            if (errores.length) return;
+
+            enviarFormulario(form, listaErrores, anioDe(form.fecha_inicio.value));
         });
     }
 });

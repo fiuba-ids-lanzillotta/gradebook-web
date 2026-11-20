@@ -41,6 +41,23 @@ def test_listar_de_cursada_usa_anio_cuatri_de_la_vigente(monkeypatch, respuesta_
     assert resultado['anio'] == 2027 and resultado['cuatrimestre'] == 1
 
 
+def test_listar_de_cursada_respeta_anio_explicito(monkeypatch, respuesta_falsa):
+    monkeypatch.setattr(estudiantes, 'obtener_cursada_vigente',
+                        lambda token: {'anio': 2026, 'cuatrimestre': 2, 'vigente': True})
+    capturado = {}
+
+    def fake_get(url, params=None, headers=None, timeout=None):
+        capturado['params'] = params
+        return respuesta_falsa(200, {'estudiantes': [], '_links': {}})
+
+    monkeypatch.setattr(requests, 'get', fake_get)
+
+    resultado = estudiantes.listar_de_cursada('token', anio=2027, cuatrimestre=1)
+
+    assert capturado['params']['anio'] == 2027 and capturado['params']['cuatrimestre'] == 1
+    assert resultado['anio'] == 2027
+
+
 def test_listar_de_cursada_sin_vigente_usa_respaldo(monkeypatch, respuesta_falsa):
     from web.constants import CURSADA_ANIO, CURSADA_CUATRIMESTRE
 

@@ -3,6 +3,7 @@ from flask import Blueprint, jsonify, render_template, request, redirect, url_fo
 
 from web.auth_sesion import admin_required, redirigir_a_login_sin_sesion, redirigir_sin_permiso, tiene_permiso
 from web.constants import PERMISO_ASISTENCIAS_GESTIONAR, PERMISO_ASISTENCIAS_LEER
+from web.cursada_filtro import elegida
 from web.routes.admin.panel import _token, contexto_admin
 from web.services import asistencia as servicio
 from web.services.estudiantes import paginas_desde_links
@@ -170,7 +171,7 @@ def listado():
         return redirigir_sin_permiso()
 
     token = _token()
-    clases_res = servicio.listar_clases(token)
+    clases_res = servicio.listar_clases(token, cursada_id=elegida(token).get('id'))
 
     if clases_res.get('unauthorized'):
         return redirigir_a_login_sin_sesion()

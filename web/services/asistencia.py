@@ -168,9 +168,12 @@ def marcar(token: str, clase_id: int, codigo: str = '', padron: str = '', manual
 
     return {'ok': True, **(resultado.get('datos') or {})}
 
-def listar_clases(token: str) -> dict:
-    """GET /cursadas/{id}/clases. En un cuatri hay pocas tomas: un solo pedido alcanza."""
-    cursada = _cursada_para_asistencia(token)
+def listar_clases(token: str, cursada_id: int | None = None) -> dict:
+    """GET /cursadas/{id}/clases. En un cuatri hay pocas tomas: un solo pedido alcanza.
+
+    Con cursada_id usa esa cursada. Si no, la vigente (o el respaldo).
+    """
+    cursada = {'id': cursada_id} if cursada_id else _cursada_para_asistencia(token)
 
     if cursada.get('unauthorized'):
         return cursada
