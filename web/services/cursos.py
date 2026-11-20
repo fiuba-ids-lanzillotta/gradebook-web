@@ -76,11 +76,29 @@ def _body_cursada(datos: dict) -> dict:
     return {
         'codigo': (datos.get('codigo') or '').strip().upper(),
         'nombre': (datos.get('nombre') or '').strip(),
-        'anio': _entero(datos.get('anio')),
+        'anio': _anio_cursada(datos),
         'cuatrimestre': _entero(datos.get('cuatrimestre')),
         'fecha_inicio': (datos.get('fecha_inicio') or '').strip(),
         'fecha_fin': (datos.get('fecha_fin') or '').strip(),
     }
+
+
+def _anio_cursada(datos: dict):
+    """Año explícito, o el de las fechas si inicio y fin caen en el mismo año."""
+    explicito = str(datos.get('anio') or '').strip()
+
+    if explicito:
+        return _entero(explicito)
+
+    inicio = (datos.get('fecha_inicio') or '').strip()
+    fin = (datos.get('fecha_fin') or '').strip()
+    anio_inicio = inicio[:4]
+    anio_fin = fin[:4]
+
+    if len(anio_inicio) == 4 and anio_inicio.isdigit() and anio_inicio == anio_fin:
+        return int(anio_inicio)
+
+    return None
 
 
 def _entero(valor):

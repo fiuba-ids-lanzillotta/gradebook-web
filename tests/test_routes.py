@@ -629,8 +629,13 @@ def test_cursadas_index_ok(client, monkeypatch):
     respuesta = client.get('/admin/cursadas')
 
     assert respuesta.status_code == 200
-    assert 'Cuatrimestre actual' in respuesta.get_data(as_text=True)
-    assert '2C 2026' in respuesta.get_data(as_text=True)
+    html = respuesta.get_data(as_text=True)
+    assert 'Cuatrimestre actual' in html
+    assert 'class="cursada__codigo"' not in html
+    assert '2C 2026' in html
+    assert 'data-label="Materia">TB022 · IDS</td>' in html
+    assert '+ Nueva cursada' not in html
+    assert 'id="form-crear-cursada"' not in html
     # El datalist sale del catálogo real, no solo de materias con cursada
     assert 'TB099' in respuesta.get_data(as_text=True)
 
@@ -653,14 +658,17 @@ def test_cursadas_index_sin_catalogo_usa_cursadas(client, monkeypatch):
 
 
 def test_cursadas_index_sin_vigente(client, monkeypatch):
-    _sesion_docente(client, ['cursadas.leer'])
+    _sesion_docente(client, ['cursadas.leer', 'cursadas.crear'])
     monkeypatch.setattr(servicio_cursos, 'listar_cursadas', lambda token: {'ok': True, 'cursadas': []})
     monkeypatch.setattr(servicio_materias, 'listar_materias', lambda token: [])
 
     respuesta = client.get('/admin/cursadas')
 
     assert respuesta.status_code == 200
-    assert 'No hay cursada vigente' in respuesta.get_data(as_text=True)
+    html = respuesta.get_data(as_text=True)
+    assert 'No hay cursada vigente' in html
+    assert '+ Nueva cursada' in html
+    assert 'id="form-crear-cursada"' in html
 
 
 def test_crear_cursada_postea_a_api(client, monkeypatch, respuesta_falsa):
@@ -683,6 +691,25 @@ def test_crear_cursada_postea_a_api(client, monkeypatch, respuesta_falsa):
     assert respuesta.status_code == 302
     assert capturado['url'].endswith('/cursadas')
     assert capturado['json']['codigo'] == 'TB022'
+
+
+def test_crear_cursada_fetch_muestra_error_sin_redirigir(client, monkeypatch):
+    _sesion_docente(client, ['cursadas.leer', 'cursadas.crear'])
+    monkeypatch.setattr(
+        servicio_cursos,
+        'crear_cursada',
+        lambda token, datos: {'ok': False, 'error': 'Cursada duplicada'},
+    )
+
+    respuesta = client.post(
+        '/admin/cursadas',
+        data={'codigo': 'TB022', 'nombre': 'IDS', 'anio': '2027', 'cuatrimestre': '1',
+              'fecha_inicio': '2027-03-01', 'fecha_fin': '2027-06-30'},
+        headers={'X-Requested-With': 'fetch'},
+    )
+
+    assert respuesta.status_code == 400
+    assert respuesta.get_json() == {'ok': False, 'error': 'Cursada duplicada'}
 
 
 def test_crear_cursada_sin_permiso_no_llama_api(client, monkeypatch):

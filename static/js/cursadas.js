@@ -22,12 +22,75 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     };
 
+    const mostrarErrores = (lista, errores) => {
+        if (!lista) return;
+        lista.replaceChildren();
+        errores.forEach((texto) => {
+            const item = document.createElement('li');
+            item.textContent = texto;
+            lista.appendChild(item);
+        });
+        lista.hidden = errores.length === 0;
+    };
+
+    const anioDe = (fecha) => Number(String(fecha || '').slice(0, 4));
+    const mesDe = (fecha) => Number(String(fecha || '').slice(5, 7));
+
+    const validarAlta = (form) => {
+        const errores = [];
+        const codigo = form.codigo.value.trim();
+        const nombre = form.nombre.value.trim();
+        const cuatrimestre = form.cuatrimestre.value;
+        const inicio = form.fecha_inicio.value;
+        const fin = form.fecha_fin.value;
+        const anioActual = new Date().getFullYear();
+
+        if (!codigo) errores.push('Ingresá el código de la materia.');
+        if (!nombre) errores.push('Ingresá el nombre de la materia.');
+        if (!cuatrimestre) errores.push('Elegí el cuatrimestre.');
+        if (!inicio || !fin) {
+            errores.push('Ingresá la fecha de inicio y la de fin.');
+            return errores;
+        }
+
+        const anioInicio = anioDe(inicio);
+        const anioFin = anioDe(fin);
+
+        if (anioInicio < anioActual || anioFin < anioActual) {
+            errores.push('Las fechas tienen que ser del año actual en adelante.');
+        }
+        if (anioInicio !== anioFin) {
+            errores.push('La fecha de inicio y la de fin tienen que ser del mismo año.');
+        }
+        if (inicio >= fin) {
+            errores.push('La fecha de inicio tiene que ser anterior a la fecha de fin.');
+        }
+
+        const cuatri = Number(cuatrimestre);
+        const fuera = (mes) => (cuatri === 1 ? mes < 1 || mes > 6 : mes < 7 || mes > 12);
+
+        if (cuatrimestre && (fuera(mesDe(inicio)) || fuera(mesDe(fin)))) {
+            const texto = cuatri === 1
+                ? 'El 1.er cuatrimestre admite fechas entre el 1 de enero y el 30 de junio.'
+                : 'El 2.º cuatrimestre admite fechas entre el 1 de julio y el 31 de diciembre.';
+            errores.push(texto);
+        }
+
+        return errores;
+    };
+
     const modalCrear = document.getElementById('modal-crear-cursada');
     if (modalCrear) {
         const form = document.getElementById('form-crear-cursada');
         const inputCodigo = document.getElementById('crear-codigo');
         const inputNombre = document.getElementById('crear-nombre');
         const hint = document.getElementById('crear-hint');
+        const listaErrores = document.getElementById('crear-cursada-errores');
+        const anioActual = new Date().getFullYear();
+        const minimo = `${anioActual}-01-01`;
+        form.querySelectorAll('input[type="date"]').forEach((input) => {
+            input.min = minimo;
+        });
         cablearCierre(modalCrear);
 
         document.querySelectorAll('.js-crear-cursada').forEach((btn) => {
@@ -35,8 +98,46 @@ document.addEventListener('DOMContentLoaded', function () {
                 form.reset();
                 inputNombre.readOnly = true;
                 if (hint) hint.hidden = true;
+                mostrarErrores(listaErrores, []);
+                if (inputCodigo) inputCodigo.dispatchEvent(new Event('input'));
                 abrirModal(modalCrear);
             });
+        });
+
+        form.addEventListener('submit', (evento) => {
+            evento.preventDefault();
+            const errores = validarAlta(form);
+            mostrarErrores(listaErrores, errores);
+
+            if (errores.length) return;
+
+            const datos = new FormData(form);
+            datos.set('anio', String(anioDe(form.fecha_inicio.value)));
+            const confirmar = form.querySelector('[type="submit"]');
+            if (confirmar) confirmar.disabled = true;
+
+            fetch(form.action, {
+                method: 'POST',
+                body: datos,
+                headers: { 'X-Requested-With': 'fetch' },
+            })
+                .then((respuesta) => respuesta.json().then((cuerpo) => ({ estado: respuesta.status, cuerpo })))
+                .then(({ estado, cuerpo }) => {
+                    if (estado === 401) {
+                        window.location.assign('/admin/login');
+                        return;
+                    }
+                    if (cuerpo && cuerpo.ok) {
+                        window.location.assign(window.location.pathname);
+                        return;
+                    }
+                    mostrarErrores(listaErrores, [(cuerpo && cuerpo.error) || 'No se pudo crear la cursada.']);
+                    if (confirmar) confirmar.disabled = false;
+                })
+                .catch(() => {
+                    mostrarErrores(listaErrores, ['No se pudo conectar con el servidor.']);
+                    if (confirmar) confirmar.disabled = false;
+                });
         });
 
         if (inputCodigo && inputNombre) {

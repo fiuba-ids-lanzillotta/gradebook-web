@@ -76,6 +76,24 @@ def test_crear_cursada_postea_body_normalizado(monkeypatch, respuesta_falsa):
     assert resultado['ok']
 
 
+def test_crear_cursada_sin_anio_lo_toma_de_las_fechas(monkeypatch, respuesta_falsa):
+    capturado = {}
+
+    def fake_request(method, url, json=None, **kwargs):
+        capturado['json'] = json
+        return respuesta_falsa(201, {'id': 9})
+
+    monkeypatch.setattr(requests, 'request', fake_request)
+
+    resultado = cursos.crear_cursada('token', {
+        'codigo': 'TB022', 'nombre': 'IDS', 'cuatrimestre': '1',
+        'fecha_inicio': '2027-03-01', 'fecha_fin': '2027-06-30',
+    })
+
+    assert resultado['ok']
+    assert capturado['json']['anio'] == 2027
+
+
 def test_actualizar_cursada_putea_body(monkeypatch, respuesta_falsa):
     capturado = {}
 

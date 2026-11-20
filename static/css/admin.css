@@ -446,6 +446,17 @@ html:has(.admin-body),
 }
 .modal__field { display: flex; flex-direction: column; gap: 4px; font-weight: 600; font-size: 14px; margin-bottom: 12px; }
 .modal__hint { margin: -6px 0 12px; font-size: 12px; color: #6b7280; }
+.modal__errores {
+    margin: 0 0 12px;
+    padding: 10px 12px 10px 28px;
+    border-radius: 8px;
+    background: #fde8e8;
+    color: #b42318;
+    border: 1px solid #f3c1c1;
+    text-align: left;
+    font-size: 14px;
+    font-weight: 600;
+}
 .modal__lista { list-style: none; display: flex; flex-direction: column; gap: 10px; margin: 0 0 16px; }
 .modal__lista li { background: #f3f4f6; border-radius: 8px; padding: 10px 12px; }
 .modal__lista strong { display: block; color: #3d6488; margin-bottom: 2px; }
@@ -863,10 +874,10 @@ html:has(.admin-body),
 .cursada-actual__periodo { color: #3d6488; font-weight: 700; margin: 0 0 2px; }
 .cursada-actual__fechas { color: #374151; font-size: 14px; margin: 0; }
 .cursada-actual__vacio { color: #6b7280; margin: 0; }
-.cursada__nueva { margin-bottom: 14px; }
+.cursada__nueva { display: block; margin: 22px auto 0; min-width: 240px; padding: 12px 22px; }
 
 @media (max-width: 720px) {
-    .cursada__nueva { width: 100%; }
+    .cursada__nueva { width: 100%; min-width: 0; }
     .cursadas__tabla,
     .cursadas__tabla tbody { display: block; }
     .cursadas__tabla tr {

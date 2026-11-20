@@ -2,6 +2,7 @@
 from flask import (
     Blueprint,
     flash,
+    jsonify,
     redirect,
     render_template,
     request,
@@ -15,6 +16,7 @@ from web.auth_sesion import (
     tiene_permiso,
 )
 from web.constants import (
+    MATERIA_CODIGO,
     PERMISO_CURSADAS_CREAR,
     PERMISO_CURSADAS_LEER,
     PERMISO_CURSADAS_MODIFICAR,
@@ -96,6 +98,8 @@ def index():
         cursadas=cursadas,
         vigente=vigente,
         materias=catalogo,
+        materia_codigo=MATERIA_CODIGO,
+        materia_nombre=catalogo.get(MATERIA_CODIGO) or '',
         puede_crear=tiene_permiso(PERMISO_CURSADAS_CREAR),
         puede_editar=tiene_permiso(PERMISO_CURSADAS_MODIFICAR),
         error=None if resultado.get('ok') else resultado.get('error'),
@@ -112,14 +116,28 @@ def crear():
         return bloqueo
 
     resultado = servicio.crear_cursada(_token(), request.form)
+    responde_json = request.headers.get('X-Requested-With') == 'fetch'
 
     if resultado.get('unauthorized'):
+        if responde_json:
+            return jsonify({'ok': False, 'error': 'Sesión vencida.'}), 401
+
         return redirigir_a_login_sin_sesion()
 
     if resultado.get('ok'):
         flash('Cursada creada.', 'ok')
-    else:
-        flash(resultado.get('error') or 'No se pudo crear la cursada.', 'error')
+
+        if responde_json:
+            return jsonify({'ok': True})
+
+        return redirect(url_for('web.admin.cursadas.index'))
+
+    error = resultado.get('error') or 'No se pudo crear la cursada.'
+
+    if responde_json:
+        return jsonify({'ok': False, 'error': error}), 400
+
+    flash(error, 'error')
 
     return redirect(url_for('web.admin.cursadas.index'))
 

@@ -25,10 +25,6 @@
             {% endif %}
         </div>
 
-        {% if puede_crear %}
-        <button type="button" class="btn-solid btn-solid--ok cursada__nueva js-crear-cursada">+ Nueva cursada</button>
-        {% endif %}
-
         {% if cursadas %}
         <div class="listado__tabla-wrap">
             <table class="listado__tabla cursadas__tabla">
@@ -72,18 +68,24 @@
         {% else %}
         <p class="listado__vacio">No hay cursadas cargadas.</p>
         {% endif %}
+
+        {% if puede_crear %}
+        <button type="button" class="btn-solid btn-solid--ok cursada__nueva js-crear-cursada">+ Nueva cursada</button>
+        {% endif %}
     </div>
 </section>
 
 <script type="application/json" id="materias-cursadas">{{ materias | tojson }}</script>
 
+{% if puede_crear %}
 <div class="modal" id="modal-crear-cursada" aria-hidden="true">
     <div class="modal__overlay" data-close></div>
     <div class="modal__box modal__box--form" role="dialog" aria-labelledby="crear-cursada-titulo">
         <h2 id="crear-cursada-titulo" class="modal__title">Crear cursada</h2>
-        <form method="POST" action="{{ url_for('web.admin.cursadas.crear') }}" id="form-crear-cursada">
+        <form method="POST" action="{{ url_for('web.admin.cursadas.crear') }}" id="form-crear-cursada" novalidate>
+            <ul class="modal__errores" id="crear-cursada-errores" hidden></ul>
             <label class="modal__field">Código materia
-                <input type="text" name="codigo" id="crear-codigo" list="codigos-materia" placeholder="TB022" required autocomplete="off">
+                <input type="text" name="codigo" id="crear-codigo" list="codigos-materia" value="{{ materia_codigo }}" placeholder="TB022" autocomplete="off">
                 <datalist id="codigos-materia">
                     {% for codigo in materias %}
                     <option value="{{ codigo }}">{{ codigo }} — {{ materias[codigo] }}</option>
@@ -92,22 +94,19 @@
             </label>
             <p class="modal__hint" id="crear-hint" hidden>Código nuevo: se dará de alta la materia con el nombre que cargues.</p>
             <label class="modal__field">Nombre materia
-                <input type="text" name="nombre" id="crear-nombre" required readonly>
-            </label>
-            <label class="modal__field">Año
-                <input type="number" name="anio" min="2000" max="2100" required>
+                <input type="text" name="nombre" id="crear-nombre" value="{{ materia_nombre }}" readonly>
             </label>
             <label class="modal__field">Cuatrimestre
-                <select name="cuatrimestre" required>
+                <select name="cuatrimestre">
                     <option value="1">1</option>
                     <option value="2">2</option>
                 </select>
             </label>
             <label class="modal__field">Fecha inicio
-                <input type="date" name="fecha_inicio" required>
+                <input type="date" name="fecha_inicio" id="crear-inicio">
             </label>
             <label class="modal__field">Fecha fin
-                <input type="date" name="fecha_fin" required>
+                <input type="date" name="fecha_fin" id="crear-fin">
             </label>
             <div class="modal__actions">
                 <button type="button" class="btn-cancel" data-close>Cancelar</button>
@@ -116,6 +115,7 @@
         </form>
     </div>
 </div>
+{% endif %}
 
 <div class="modal" id="modal-editar-cursada" aria-hidden="true">
     <div class="modal__overlay" data-close></div>
