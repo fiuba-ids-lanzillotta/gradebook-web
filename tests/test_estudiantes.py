@@ -96,6 +96,20 @@ def test_cambiar_estado_baja_usa_endpoint_baja(monkeypatch, respuesta_falsa):
     assert resultado['ok']
 
 
+def test_cambiar_estado_envia_cursada_id(monkeypatch, respuesta_falsa):
+    capturado = {}
+
+    def fake_post(url, json=None, headers=None, timeout=None):
+        capturado['json'] = json
+        return respuesta_falsa(200, {'estado': 'abandono'})
+
+    monkeypatch.setattr(requests, 'post', fake_post)
+
+    estudiantes.cambiar_estado('token', 7, 'abandono', cursada_id=42)
+
+    assert capturado['json'] == {'estado': 'abandono', 'cursada_id': 42}
+
+
 def test_reactivar_usa_nuevo_endpoint(monkeypatch, respuesta_falsa):
     capturado = {}
 
@@ -111,6 +125,73 @@ def test_reactivar_usa_nuevo_endpoint(monkeypatch, respuesta_falsa):
     assert capturado['url'].endswith('/estudiantes/7/reactivacion')
     assert capturado['json'] == {}
     assert resultado['ok']
+
+
+def test_reactivar_envia_cursada_id(monkeypatch, respuesta_falsa):
+    capturado = {}
+
+    def fake_post(url, json=None, headers=None, timeout=None):
+        capturado['json'] = json
+        return respuesta_falsa(200, {'estado': 'cursando'})
+
+    monkeypatch.setattr(requests, 'post', fake_post)
+
+    estudiantes.reactivar('token', 7, cursada_id=42)
+
+    assert capturado['json'] == {'cursada_id': 42}
+
+
+def test_crear_estudiante_envia_cursada_id(monkeypatch, respuesta_falsa):
+    capturado = {}
+
+    def fake_post(url, json=None, headers=None, timeout=None):
+        capturado['json'] = json
+        return respuesta_falsa(201, {'id': 7})
+
+    monkeypatch.setattr(requests, 'post', fake_post)
+
+    estudiantes.crear_estudiante(
+        'token',
+        {'nombre': 'Ana', 'apellido': 'Perez', 'padron': '100', 'email': 'a@fi.uba.ar'},
+        cursada_id=42,
+    )
+
+    assert capturado['json']['cursada_id'] == 42
+    assert capturado['json']['password'] == '100'
+
+
+def test_crear_estudiante_sin_cursada_no_envia_el_campo(monkeypatch, respuesta_falsa):
+    capturado = {}
+
+    def fake_post(url, json=None, headers=None, timeout=None):
+        capturado['json'] = json
+        return respuesta_falsa(201, {'id': 7})
+
+    monkeypatch.setattr(requests, 'post', fake_post)
+
+    estudiantes.crear_estudiante(
+        'token',
+        {'nombre': 'Ana', 'apellido': 'Perez', 'padron': '100', 'email': 'a@fi.uba.ar'},
+    )
+
+    assert 'cursada_id' not in capturado['json']
+
+
+def test_importar_csv_envia_cursada_id_en_el_form(monkeypatch, respuesta_falsa):
+    from types import SimpleNamespace
+
+    capturado = {}
+
+    def fake_post(url, files=None, data=None, headers=None, timeout=None):
+        capturado['data'] = data
+        return respuesta_falsa(201, {'inscriptos': 1})
+
+    monkeypatch.setattr(requests, 'post', fake_post)
+
+    archivo = SimpleNamespace(filename='alumnos.csv', stream=None, mimetype='text/csv')
+    estudiantes.importar_csv('token', archivo, cursada_id=42)
+
+    assert capturado['data'] == {'cursada_id': '42'}
 
 
 # --- ventana de paginacion ---

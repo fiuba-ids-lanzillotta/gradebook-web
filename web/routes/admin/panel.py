@@ -234,13 +234,15 @@ def index():
 @panel_bp.route('/alumnos', methods=['POST'])
 @admin_required
 def agregar():
-    resultado = servicio.crear_estudiante(_token(), request.form)
+    activa = elegida(_token())
+    resultado = servicio.crear_estudiante(_token(), request.form, activa.get('id'))
 
     if resultado.get('unauthorized'):
         return redirigir_a_login_sin_sesion()
 
     if resultado.get('ok'):
-        flash('Alumno agregado e inscripto en el cuatrimestre vigente.', 'ok')
+        destino = f" en {activa['anio']}-C{activa['cuatrimestre']}" if activa.get('anio') else ''
+        flash(f'Alumno agregado e inscripto{destino}.', 'ok')
         padron = (request.form.get('padron') or '').strip()
 
         return redirect(url_for('web.admin.panel.index', q=padron))
@@ -259,7 +261,7 @@ def publicar_csv():
 
         return redirect(url_for('web.admin.panel.index'))
 
-    resultado = servicio.importar_csv(_token(), archivo)
+    resultado = servicio.importar_csv(_token(), archivo, elegida(_token()).get('id'))
 
     if resultado.get('unauthorized'):
         return redirigir_a_login_sin_sesion()
@@ -329,7 +331,8 @@ def editar(estudiante_id):
 @panel_bp.route('/alumnos/<int:estudiante_id>/abandonar', methods=['POST'])
 @admin_required
 def abandonar(estudiante_id):
-    resultado = servicio.cambiar_estado(_token(), estudiante_id, 'abandono')
+    resultado = servicio.cambiar_estado(_token(), estudiante_id, 'abandono',
+                                        cursada_id=elegida(_token()).get('id'))
     redireccion = _resultado_o_redirect(resultado)
 
     if redireccion:
@@ -355,7 +358,8 @@ def dar_de_baja(estudiante_id):
 
         return redirect(url_for('web.admin.panel.index'))
 
-    resultado = servicio.cambiar_estado(_token(), estudiante_id, 'baja', motivo)
+    resultado = servicio.cambiar_estado(_token(), estudiante_id, 'baja', motivo,
+                                        cursada_id=elegida(_token()).get('id'))
     redireccion = _resultado_o_redirect(resultado)
 
     if redireccion:
@@ -377,7 +381,7 @@ def dar_de_alta(estudiante_id):
     if not tiene_permiso(PERMISO_ESTUDIANTES_CREAR):
         return redirigir_sin_permiso()
 
-    resultado = servicio.reactivar(_token(), estudiante_id)
+    resultado = servicio.reactivar(_token(), estudiante_id, elegida(_token()).get('id'))
     redireccion = _resultado_o_redirect(resultado)
 
     if redireccion:

@@ -1,6 +1,7 @@
 """Cursada elegida en el panel. Filtro global, guardado en la sesión."""
 from flask import g, session
 
+from web.constants import MATERIA_CODIGO
 from web.services.cursos import listar_cursadas, obtener_cursada_vigente
 
 CLAVE = 'cursada_id'
@@ -24,7 +25,10 @@ def opciones(token: str) -> list[dict]:
 
 
 def elegida(token: str, cursadas: list[dict] | None = None) -> dict:
-    """La cursada del filtro, o la vigente, o la primera del historial."""
+    """
+    La cursada del filtro, o la vigente, o la primera del historial.
+    Con varias materias vigentes, gana la de la cátedra (MATERIA_CODIGO).
+    """
     filas = opciones(token) if cursadas is None else cursadas
     buscada = session.get(CLAVE)
     coincidente = _por_id(filas, buscada)
@@ -32,22 +36,27 @@ def elegida(token: str, cursadas: list[dict] | None = None) -> dict:
     if coincidente:
         return coincidente
 
-    for fila in filas:
-        if fila.get('vigente'):
-            session[CLAVE] = fila.get('id')
+    preferida = _vigente(filas, MATERIA_CODIGO) or _vigente(filas) or (filas[0] if filas else {})
 
-            return fila
+    if preferida:
+        session[CLAVE] = preferida.get('id')
 
-    if filas:
-        session[CLAVE] = filas[0].get('id')
-
-        return filas[0]
+        return preferida
 
     return obtener_cursada_vigente(token) if token else {}
 
 
 def guardar(cursada_id) -> None:
     session[CLAVE] = cursada_id
+
+
+def _vigente(filas: list[dict], codigo=None) -> dict:
+    """La primera cursada vigente de `codigo` (o de cualquier materia si es None)."""
+    for fila in filas:
+        if fila.get('vigente') and (codigo is None or fila.get('codigo') == codigo):
+            return fila
+
+    return {}
 
 
 def _por_id(filas: list[dict], cursada_id) -> dict:

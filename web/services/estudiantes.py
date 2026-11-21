@@ -181,7 +181,7 @@ def _offset_de_link(link) -> int | None:
     return int(valores[0])
 
 
-def crear_estudiante(token: str, datos: dict) -> dict:
+def crear_estudiante(token: str, datos: dict, cursada_id=None) -> dict:
     """POST /estudiantes. Password inicial = padrón (igual que el CSV)."""
     body = {
         'nombre': datos.get('nombre', '').strip(),
@@ -190,6 +190,9 @@ def crear_estudiante(token: str, datos: dict) -> dict:
         'email': datos.get('email', '').strip(),
         'password': datos.get('padron', '').strip(),
     }
+
+    if cursada_id:
+        body['cursada_id'] = cursada_id
 
     return _escribir('post', f'{API_BASE_URL}/estudiantes', token, json=body, ok=201)
 
@@ -206,27 +209,34 @@ def actualizar_estudiante(token: str, estudiante_id: int, datos: dict) -> dict:
     return _escribir('put', f'{API_BASE_URL}/estudiantes/{estudiante_id}', token, json=body, ok=200)
 
 
-def cambiar_estado(token: str, estudiante_id: int, estado: str, motivo: str | None = None) -> dict:
+def cambiar_estado(token: str, estudiante_id: int, estado: str,
+                   motivo: str | None = None, cursada_id=None) -> dict:
     """POST /estudiantes/{id}/baja  {estado, motivo?}. Solo baja o abandono."""
     body = {'estado': estado}
 
     if estado == 'baja':
         body['motivo'] = (motivo or '').strip()
 
+    if cursada_id:
+        body['cursada_id'] = cursada_id
+
     return _escribir('post', f'{API_BASE_URL}/estudiantes/{estudiante_id}/baja', token, json=body, ok=200)
 
 
-def reactivar(token: str, estudiante_id: int) -> dict:
+def reactivar(token: str, estudiante_id: int, cursada_id=None) -> dict:
     """POST /estudiantes/{id}/reactivacion. Reactiva una inscripción dada de baja."""
-    return _escribir('post', f'{API_BASE_URL}/estudiantes/{estudiante_id}/reactivacion', token, json={}, ok=200)
+    body = {'cursada_id': cursada_id} if cursada_id else {}
+
+    return _escribir('post', f'{API_BASE_URL}/estudiantes/{estudiante_id}/reactivacion', token, json=body, ok=200)
 
 
-def importar_csv(token: str, archivo) -> dict:
+def importar_csv(token: str, archivo, cursada_id=None) -> dict:
     """POST /estudiantes/csv (multipart, campo archivo)."""
     try:
         response = requests.post(
             f'{API_BASE_URL}/estudiantes/csv',
             files={'archivo': (archivo.filename, archivo.stream, archivo.mimetype or 'text/csv')},
+            data={'cursada_id': str(cursada_id)} if cursada_id else {},
             headers=api_headers({'Authorization': f'Bearer {token}'}),
             timeout=60,
         )

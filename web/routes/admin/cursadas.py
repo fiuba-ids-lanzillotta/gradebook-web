@@ -80,7 +80,13 @@ def index():
         return redirigir_a_login_sin_sesion()
 
     cursadas = _ordenar(resultado.get('cursadas') or [])
-    vigente = next((fila for fila in cursadas if fila.get('vigente')), None)
+    # "Cuatrimestre actual" es la cursada vigente de la cátedra; si otra materia
+    # tiene una vigente no la muestra (sigue figurando en el historial).
+    vigente = next(
+        (fila for fila in cursadas
+         if fila.get('vigente') and fila.get('codigo') == MATERIA_CODIGO),
+        None,
+    )
 
     for fila in cursadas:
         fila['inicio_txt'] = _fecha_txt(fila.get('fecha_inicio'))

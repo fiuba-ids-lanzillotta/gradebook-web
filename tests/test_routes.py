@@ -676,6 +676,50 @@ def test_cursadas_index_ok(client, monkeypatch):
     assert 'TB099' in respuesta.get_data(as_text=True)
 
 
+def test_cursadas_index_vigente_es_la_de_la_catedra(client, monkeypatch):
+    # Con dos materias vigentes, la tarjeta muestra la de la cátedra (TB022) y no
+    # la primera del orden, aunque TB099 sea más reciente.
+    _sesion_docente(client, ['cursadas.leer'])
+    monkeypatch.setattr(servicio_cursos, 'listar_cursadas', lambda token: {
+        'ok': True,
+        'cursadas': [
+            {'id': 9, 'codigo': 'TB022', 'nombre': 'IDS', 'anio': 2026, 'cuatrimestre': 2,
+             'fecha_inicio': '2026-08-01', 'fecha_fin': '2026-12-15', 'vigente': True},
+            {'id': 8, 'codigo': 'TB099', 'nombre': 'Otra', 'anio': 2027, 'cuatrimestre': 1,
+             'fecha_inicio': '2027-03-01', 'fecha_fin': '2027-07-15', 'vigente': True},
+        ],
+    })
+    monkeypatch.setattr(servicio_materias, 'listar_materias', lambda token: [])
+
+    respuesta = client.get('/admin/cursadas')
+
+    assert respuesta.status_code == 200
+    html = respuesta.get_data(as_text=True)
+    assert 'cursada-actual__materia">TB022' in html
+    assert 'cursada-actual__periodo">2C 2026' in html
+    # La otra vigente sigue en el historial, con su marca de vigente.
+    assert 'TB099' in html
+    assert html.count('class="cursada__marca"') == 2
+
+
+def test_cursadas_index_sin_vigente_de_catedra_muestra_vacio(client, monkeypatch):
+    # Solo otra materia tiene cursada vigente: la tarjeta queda vacía.
+    _sesion_docente(client, ['cursadas.leer'])
+    monkeypatch.setattr(servicio_cursos, 'listar_cursadas', lambda token: {
+        'ok': True,
+        'cursadas': [
+            {'id': 8, 'codigo': 'TB099', 'nombre': 'Otra', 'anio': 2027, 'cuatrimestre': 1,
+             'fecha_inicio': '2027-03-01', 'fecha_fin': '2027-07-15', 'vigente': True},
+        ],
+    })
+    monkeypatch.setattr(servicio_materias, 'listar_materias', lambda token: [])
+
+    respuesta = client.get('/admin/cursadas')
+
+    assert respuesta.status_code == 200
+    assert 'No hay cursada vigente' in respuesta.get_data(as_text=True)
+
+
 def test_cursadas_index_sin_catalogo_usa_cursadas(client, monkeypatch):
     _sesion_docente(client, ['cursadas.leer'])
     monkeypatch.setattr(servicio_cursos, 'listar_cursadas', lambda token: {
