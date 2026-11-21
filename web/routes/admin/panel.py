@@ -30,6 +30,7 @@ from web.constants import (
     PERMISO_ESTUDIANTES_LEER,
     PERMISO_ESTUDIANTES_MODIFICAR,
     PERMISO_ESTUDIANTES_REACTIVAR,
+    PERMISO_EVALUACIONES_LEER,
 )
 from web.cursada_filtro import elegida, guardar, opciones
 from web.services.docentes import obtener_docente
@@ -59,6 +60,7 @@ SOLAPA_PERMISO = {
     'cursada': PERMISO_CURSADAS_LEER,
     'listado': PERMISO_ESTUDIANTES_LEER,
     'equipos': PERMISO_ESTUDIANTES_LEER,
+    'categorias': PERMISO_EVALUACIONES_LEER,
     'asistencia': PERMISO_ASISTENCIAS_LEER,
     'docentes': PERMISO_DOCENTES_LEER,
 }

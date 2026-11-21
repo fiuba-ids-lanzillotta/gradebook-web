@@ -1,0 +1,143 @@
+{% extends "admin/base_admin.html" %}
+
+{% block title %}Categorías · Gradebook{% endblock %}
+
+{% block content %}
+{% set tipos = {'obligatorio': 'Obligatoria', 'opcional': 'Opcional'} %}
+{% set criterios = {'nota': 'Nota', 'aprobado_desaprobado': 'Aprobado/Desaprobado', 'entregado_no_entregado': 'Entregado/N.E'} %}
+{% set modalidades = {'individual': 'Individual', 'grupal': 'Grupal'} %}
+{% set visibilidades = {'habilitado': 'Habilitada', 'deshabilitado': 'Deshabilitada', 'sin_entrega': 'No tiene'} %}
+<section class="listado categorias">
+    <div class="listado__card">
+        <h1 class="listado__title">Categoría</h1>
+        {% if cursada_filtro %}
+        <p class="listado__cursada">{{ cursada_filtro.cuatrimestre }}C {{ cursada_filtro.anio }}{% if cursada_filtro.codigo %} · {{ cursada_filtro.codigo }}{% endif %}</p>
+        {% endif %}
+
+        {% for categoria, mensaje in get_flashed_messages(with_categories=True) %}
+        <p class="listado__flash listado__flash--{{ categoria }}">{{ mensaje }}</p>
+        {% endfor %}
+        {% if error %}
+        <p class="listado__flash listado__flash--error">{{ error }}</p>
+        {% endif %}
+
+        {% if puede_crear %}
+        <form class="listado__alta" method="POST" action="{{ url_for('web.admin.categorias.crear') }}">
+            <p class="listado__alta-title">Agregar categoría</p>
+            <div class="listado__alta-grid categorias__alta-grid">
+                <label>Título
+                    <input type="text" name="nombre" placeholder="Título" maxlength="150" required>
+                </label>
+                <label>Tipo
+                    <select name="tipo" required>
+                        <option value="" disabled selected>Tipo</option>
+                        <option value="obligatorio">Obligatoria</option>
+                        <option value="opcional">Opcional</option>
+                    </select>
+                </label>
+                <label>Criterio
+                    <select name="criterio" required>
+                        <option value="" disabled selected>Criterio</option>
+                        <option value="nota">Nota</option>
+                        <option value="aprobado_desaprobado">Aprobado/Desaprobado</option>
+                        <option value="entregado_no_entregado">Entregado/N.E</option>
+                    </select>
+                </label>
+                <label>Peso
+                    <input type="number" name="peso" min="0" max="10" step="0.5" placeholder="0-10" required>
+                </label>
+                <label>Instancias
+                    <input type="number" name="instancias" min="0" max="20" step="1" placeholder="0" required>
+                </label>
+                <label>Modalidad
+                    <select name="modalidad" required>
+                        <option value="" disabled selected>Modalidad</option>
+                        <option value="individual">Individual</option>
+                        <option value="grupal">Grupal</option>
+                    </select>
+                </label>
+                <label>Requiere corrector
+                    <select name="requiere_corrector" required>
+                        <option value="1" selected>Sí</option>
+                        <option value="0">No</option>
+                    </select>
+                </label>
+                <button type="submit" class="btn-outline listado__alta-btn">+ Agregar</button>
+            </div>
+        </form>
+        {% endif %}
+
+        <div class="listado__tabla-wrap">
+            <table class="listado__tabla">
+                <thead>
+                    <tr>
+                        <th class="categorias__centro">Evaluación</th>
+                        <th class="categorias__centro">Tipo</th>
+                        <th class="categorias__centro">Criterio</th>
+                        <th class="categorias__centro">Peso</th>
+                        <th class="categorias__centro">Modalidad</th>
+                        <th>Visibilidad</th>
+                        <th class="categorias__centro">Instancias</th>
+                        <th class="categorias__centro">Corrector</th>
+                        <th>Crear grupos</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% set hay_activa = evaluaciones | selectattr('permite_crear_grupos') | list %}
+                    {% for ev in evaluaciones %}
+                    <tr>
+                        <td class="categorias__centro">{{ ev.nombre }}</td>
+                        <td class="categorias__centro">{{ tipos.get(ev.tipo, ev.tipo) }}</td>
+                        <td class="categorias__centro">{{ criterios.get(ev.criterio, ev.criterio) }}</td>
+                        <td class="categorias__centro">{{ ev.peso if ev.peso != ev.peso|int else ev.peso|int }}</td>
+                        <td class="categorias__centro">{{ modalidades.get(ev.modalidad, ev.modalidad) }}</td>
+                        <td>{{ visibilidades.get(ev.visibilidad, ev.visibilidad) }}</td>
+                        <td class="categorias__centro categorias__instancias">{{ ev.instancias }}</td>
+                        <td class="categorias__centro">
+                            {% if ev.requiere_corrector %}
+                            <span class="categorias__tick" title="Requiere corrector" aria-label="Requiere corrector">
+                                <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.2 8.2 6.4 11.4 12.8 4.6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            </span>
+                            {% else %}
+                            <span class="categorias__no">—</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if ev.modalidad == 'grupal' %}
+                            {% set ocupada = hay_activa and not ev.permite_crear_grupos %}
+                            <form method="POST" action="{{ url_for('web.admin.categorias.grupos', evaluacion_id=ev.id) }}">
+                                <label class="categorias__check {% if ocupada %}categorias__check--off{% endif %}">
+                                    <input
+                                        type="checkbox"
+                                        name="habilitado"
+                                        value="1"
+                                        {% if ev.permite_crear_grupos %}checked{% endif %}
+                                        {% if not puede_habilitar or ocupada %}disabled{% endif %}
+                                        {% if ocupada %}title="Ya hay otra categoría con la creación de equipos activa"{% endif %}
+                                        onchange="this.form.submit()"
+                                    >
+                                    {% if ev.permite_crear_grupos %}Activo{% endif %}
+                                </label>
+                            </form>
+                            {% else %}
+                            <span class="categorias__no">—</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="listado__icon-btn listado__icon-btn--off" title="Editar todavía no está disponible">
+                                <img src="{{ url_for('static', filename='img/edit.svg') }}" alt="">
+                            </span>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="10" class="listado__vacio">Todavía no hay categorías en esta cursada.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+{% endblock %}
