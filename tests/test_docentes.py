@@ -11,7 +11,7 @@ CATALOGO = [
         'asistencias.leer', 'asistencias.gestionar',
         'cursadas.leer', 'cursadas.crear', 'cursadas.modificar',
         'entregas.leer', 'permisos.asignar', 'roles.gestionar',
-        'registros.leer',
+        'registros.leer', 'grupos.habilitar',
     ]
 ]
 
@@ -136,6 +136,7 @@ def test_ayudante_sin_permisos_de_gestion():
     assert 'docentes.gestionar' not in ayudante
     assert 'permisos.asignar' not in ayudante
     assert 'roles.gestionar' not in ayudante
+    assert 'grupos.habilitar' not in ayudante
 
 
 def test_colaborador_igual_ayudante_menos_eliminar_y_registros():

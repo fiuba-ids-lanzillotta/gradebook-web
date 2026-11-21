@@ -43,6 +43,7 @@ def _permisos_por_cargo(catalogo: list[dict]) -> dict:
         'cursadas.crear',
         'cursadas.modificar',
         'roles.gestionar',
+        'grupos.habilitar',
     )
     sin_colaborador = sin_ayudante + ('estudiantes.eliminar', 'registros.leer')
 
