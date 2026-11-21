@@ -1172,6 +1172,87 @@ html:has(.admin-body),
 .categorias__check--off input,
 .categorias__check--off input:disabled { cursor: not-allowed; }
 .categorias__no { color: #9ca3af; }
+.registros__horario { white-space: nowrap; }
+.listado.registros .listado__tabla th {
+    color: #3d6488;
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+.listado.registros .listado__tabla td { border-bottom-color: #eef2f6; }
+.listado.registros .listado__tabla tbody tr:hover td { background: #f4f9fd; }
+.listado.registros .listado__tabla th:nth-child(2),
+.listado.registros .listado__tabla td:nth-child(2) {
+    white-space: nowrap;
+    text-align: center;
+    width: 8.5rem;
+}
+.listado.registros .listado__title { margin-bottom: 28px; }
+.listado.registros .equipos__buscar { margin-top: 8px; }
+.listado.registros .listado__card { padding-bottom: 36px; }
+.registros__usuario { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.registros__avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: #e7f0f8;
+    color: #3d6488;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    flex-shrink: 0;
+}
+.registros__avatar--profesor { background: linear-gradient(160deg, #1d4e78, #122f4a); color: #fff; }
+.registros__avatar--ayudante { background: #3d6488; color: #fff; }
+.registros__avatar--colaborador { background: #d5e4f2; color: #1d4e78; }
+.registros__avatar--alumno { background: #e7f4fb; color: #1d6f96; }
+.registros__email {
+    color: #122f4a;
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.registros__rol {
+    display: inline-block;
+    padding: 2px 9px;
+    border-radius: 999px;
+    background: #eef3f8;
+    color: #3d6488;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+.registros__rol--profesor { background: #122f4a; color: #fff; }
+.registros__rol--ayudante { background: #e7f0f8; color: #1d4e78; }
+.registros__rol--colaborador { background: #f3f7fb; color: #5d7c99; border: 1px solid #d5e2ee; }
+.registros__rol--alumno { background: #e7f4fb; color: #1d6f96; }
+.registros__accion { color: #1f2937; }
+.registros__cuando {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 8px;
+    background: #f4f8fb;
+    color: #3d6488;
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+    font-size: 13px;
+    white-space: nowrap;
+}
+.registros__orden {
+    display: inline-flex;
+    flex-direction: column;
+    margin-left: 6px;
+    vertical-align: middle;
+    line-height: 0.85;
+    text-transform: none;
+    letter-spacing: 0;
+}
+.registros__orden a { color: #9ca3af; text-decoration: none; font-size: 11px; }
+.registros__orden a.is-actual { color: #00A0E3; }
 @media (max-width: 980px) {
     .categorias__alta-grid { grid-template-columns: 1fr 1fr; }
 }
