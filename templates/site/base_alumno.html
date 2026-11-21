@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Gradebook{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/common.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/alumno.css') }}?v=12">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Afacad:wght@400;500;600;700&family=Akatab:wght@400;500;700&display=swap" rel="stylesheet">
+</head>
+<body class="alumno-body">
+    <header class="alumno-nav">
+        <a href="{{ url_for('web.site.home.index') }}" class="alumno-nav__marca">
+            <img src="{{ url_for('static', filename='img/logo.png') }}" alt="" class="alumno-nav__logo">
+            <span>
+                <span class="alumno-nav__nombre">Lanzillotta</span>
+                <span class="alumno-nav__sub">Intro. Desarrollo de Software</span>
+            </span>
+        </a>
+        <nav class="alumno-nav__links" aria-label="Alumno">
+            <span class="alumno-nav__link alumno-nav__link--soon" title="Todavía no está disponible">Entregas</span>
+            <a class="alumno-nav__link {% if request.endpoint == 'web.site.equipo.index' %}alumno-nav__link--active{% endif %}" href="{{ url_for('web.site.equipo.index') }}">Equipo</a>
+        </nav>
+        {% set cuenta = (nombre or 'Alumno').strip() %}
+        {% set partes = cuenta.split() %}
+        {% set iniciales = ((partes[0][0] ~ partes[-1][0]) if partes|length > 1 else cuenta[:2])|upper %}
+        {% set email = (session.get('usuario') or {}).get('email') or '' %}
+        <details class="alumno-cuenta">
+            <summary class="alumno-cuenta__boton">
+                <span class="alumno-cuenta__avatar" aria-hidden="true">{{ iniciales }}</span>
+                <span class="alumno-cuenta__nombre">{{ cuenta }}</span>
+                <svg class="alumno-cuenta__flecha" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 6l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </summary>
+            <div class="alumno-cuenta__panel">
+                <div class="alumno-cuenta__cabecera">
+                    <span class="alumno-cuenta__avatar alumno-cuenta__avatar--lg" aria-hidden="true">{{ iniciales }}</span>
+                    <span class="alumno-cuenta__datos">
+                        <strong>{{ cuenta }}</strong>
+                        {% if email %}<span class="alumno-cuenta__email">{{ email }}</span>{% endif %}
+                        <span class="alumno-cuenta__rol">Alumno</span>
+                    </span>
+                </div>
+                <span class="alumno-cuenta__item alumno-cuenta__item--off" title="El perfil todavía no está disponible">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.2" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M5.5 19.2c1.4-3 3.6-4.4 6.5-4.4s5.1 1.4 6.5 4.4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+                    Ver perfil
+                </span>
+                <a class="alumno-cuenta__item alumno-cuenta__item--salir" href="{{ url_for('web.admin.auth.logout') }}">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 7V5.8A1.8 1.8 0 0 1 11.8 4h6.4A1.8 1.8 0 0 1 20 5.8v12.4a1.8 1.8 0 0 1-1.8 1.8h-6.4A1.8 1.8 0 0 1 10 18.2V17" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M4 12h10M11 8.5 14.5 12 11 15.5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    Cerrar sesión
+                </a>
+            </div>
+        </details>
+    </header>
+    <main class="alumno-main">
+        {% block content %}{% endblock %}
+    </main>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

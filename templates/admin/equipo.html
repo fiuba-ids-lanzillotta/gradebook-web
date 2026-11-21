@@ -25,49 +25,53 @@
             </button>
             <form class="equipo__renombrar" id="equipo-renombrar" method="POST" action="{{ url_for('web.admin.grupos.renombrar', grupo_id=grupo.id) }}" hidden>
                 <input type="text" name="nombre" value="{{ grupo.nombre }}" maxlength="150" required>
-                <button type="submit" class="btn-solid btn-solid--ok">Guardar</button>
+                <button type="submit" class="listado__icon-btn" aria-label="Guardar nombre">
+                    <img src="{{ url_for('static', filename='img/save.svg') }}" alt="">
+                </button>
             </form>
             {% endif %}
         </div>
         {% if grupo.evaluacion_nombre %}
-        <p class="listado__cursada">{{ grupo.evaluacion_nombre }}</p>
+        <p class="equipo__eval"><span>{{ grupo.evaluacion_nombre }}</span></p>
         {% endif %}
 
-        <table class="listado__tabla equipo__tabla">
-            <tbody>
-                {% for integrante in grupo.integrantes %}
-                <tr>
-                    <td data-label="Integrante">
+        <ul class="equipo__miembros">
+            {% for integrante in grupo.integrantes %}
+            {% set ini = ((integrante.apellido or '?')[:1] ~ (integrante.nombre or '')[:1])|upper %}
+            <li>
+                <span class="equipo__miembro">
+                    <span class="equipo__avatar {% if integrante.owner %}equipo__avatar--owner{% endif %}" aria-hidden="true">{{ ini }}</span>
+                    <span class="equipo__miembro-nombre">
                         {{ integrante.apellido }} {{ integrante.nombre }}
                         {% if integrante.owner %}<img class="equipo__corona" src="{{ url_for('static', filename='img/crown.svg') }}" alt="Owner">{% endif %}
-                    </td>
-                    <td data-label="Padrón">{{ integrante.padron }}</td>
-                    <td class="listado__acciones" data-label="">
-                        <span class="listado__icon-btn listado__icon-btn--off" title="El perfil todavía no está disponible">
-                            <img src="{{ url_for('static', filename='img/eye.svg') }}" alt="">
-                        </span>
-                        {% if puede_editar %}
-                        <button
-                            type="button"
-                            class="listado__icon-btn js-transferir"
-                            aria-label="Transferir integrante"
-                            data-nombre="{{ integrante.apellido }} {{ integrante.nombre }}"
-                            data-padron="{{ integrante.padron }}"
-                            data-url="{{ url_for('web.admin.grupos.transferir', grupo_id=grupo.id, estudiante_id=integrante.id) }}"
-                        >
-                            <img src="{{ url_for('static', filename='img/transfer.svg') }}" alt="">
+                    </span>
+                </span>
+                <span class="equipo__padron">{{ integrante.padron }}</span>
+                <span class="equipo__acciones">
+                    <span class="listado__icon-btn listado__icon-btn--off" title="El perfil todavía no está disponible">
+                        <img src="{{ url_for('static', filename='img/eye.svg') }}" alt="">
+                    </span>
+                    {% if puede_editar %}
+                    <button
+                        type="button"
+                        class="listado__icon-btn js-transferir"
+                        aria-label="Transferir integrante"
+                        data-nombre="{{ integrante.apellido }} {{ integrante.nombre }}"
+                        data-padron="{{ integrante.padron }}"
+                        data-url="{{ url_for('web.admin.grupos.transferir', grupo_id=grupo.id, estudiante_id=integrante.id) }}"
+                    >
+                        <img src="{{ url_for('static', filename='img/transfer.svg') }}" alt="">
+                    </button>
+                    <form method="POST" action="{{ url_for('web.admin.grupos.echar', grupo_id=grupo.id, estudiante_id=integrante.id) }}" class="equipo__echar">
+                        <button type="submit" class="listado__icon-btn" aria-label="Echar integrante">
+                            <img src="{{ url_for('static', filename='img/kick.svg') }}" alt="">
                         </button>
-                        <form method="POST" action="{{ url_for('web.admin.grupos.echar', grupo_id=grupo.id, estudiante_id=integrante.id) }}" class="equipo__echar">
-                            <button type="submit" class="listado__icon-btn" aria-label="Echar integrante">
-                                <img src="{{ url_for('static', filename='img/kick.svg') }}" alt="">
-                            </button>
-                        </form>
-                        {% endif %}
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+                    </form>
+                    {% endif %}
+                </span>
+            </li>
+            {% endfor %}
+        </ul>
 
         {% if puede_editar and grupo.candidatos %}
         <form class="equipo__agregar" method="POST" action="{{ url_for('web.admin.grupos.agregar', grupo_id=grupo.id) }}">

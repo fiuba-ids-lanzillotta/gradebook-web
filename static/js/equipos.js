@@ -49,9 +49,10 @@ document.addEventListener('DOMContentLoaded', function () {
     const buscarAlumno = document.getElementById('equipo-alumno');
     const listaAlumnos = document.getElementById('equipo-alumno-lista');
     const alumnoId = document.getElementById('equipo-alumno-id');
+    const alumnoPadron = document.getElementById('equipo-alumno-padron');
     const agregarAlumno = document.getElementById('equipo-alumno-agregar');
 
-    if (datosAlumnos && buscarAlumno && listaAlumnos && alumnoId) {
+    if (datosAlumnos && buscarAlumno && listaAlumnos && (alumnoId || alumnoPadron)) {
         const LIMITE = 6;
         let candidatos = [];
         let indiceActivo = 0;
@@ -78,7 +79,8 @@ document.addEventListener('DOMContentLoaded', function () {
         };
 
         const elegir = (fila) => {
-            alumnoId.value = fila.id;
+            if (alumnoId) alumnoId.value = fila.id;
+            if (alumnoPadron) alumnoPadron.value = fila.padron || '';
             buscarAlumno.value = etiqueta(fila);
             if (agregarAlumno) agregarAlumno.disabled = false;
             cerrarLista();
@@ -129,7 +131,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
         buscarAlumno.addEventListener('input', () => {
             consultaPropia = true;
-            alumnoId.value = '';
+            if (alumnoId) alumnoId.value = '';
+            if (alumnoPadron) alumnoPadron.value = '';
             if (agregarAlumno) agregarAlumno.disabled = true;
             pintar();
         });

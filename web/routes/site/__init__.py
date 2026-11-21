@@ -7,7 +7,9 @@ from flask import Blueprint
 
 from web.routes.site.home import home_bp
 from web.routes.site.items import items_bp
+from web.routes.site.equipo import equipo_bp
 
 site_bp = Blueprint('site', __name__)
 site_bp.register_blueprint(home_bp)
 site_bp.register_blueprint(items_bp)
+site_bp.register_blueprint(equipo_bp)

@@ -9,6 +9,29 @@ from web.services.respuestas_api import mensaje_error_api, respuesta_no_autoriza
 logger = logging.getLogger(__name__)
 
 
+def mi_equipo(token: str) -> dict:
+    return _pedir(token, 'GET', '/me/equipo', ok=(200,))
+
+
+def crear_mi_equipo(token: str, nombre: str, padrones: list[str]) -> dict:
+    return _pedir(
+        token, 'POST', '/me/equipo',
+        json_body={'nombre': nombre, 'padrones': padrones}, ok=(201,),
+    )
+
+
+def renombrar_mi_equipo(token: str, nombre: str) -> dict:
+    return _pedir(token, 'PUT', '/me/equipo', json_body={'nombre': nombre}, ok=(200,))
+
+
+def agregar_padron(token: str, padron: str) -> dict:
+    return _pedir(token, 'POST', '/me/equipo/integrantes', json_body={'padron': padron}, ok=(201,))
+
+
+def salir_de_mi_equipo(token: str) -> dict:
+    return _pedir(token, 'POST', '/me/equipo/salir', ok=(200,))
+
+
 def listar(token: str, cursada_id: int) -> dict:
     return _pedir(token, 'GET', f'/cursadas/{cursada_id}/grupos', ok=(200,))
 

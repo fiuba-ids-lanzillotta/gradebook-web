@@ -1,35 +1,13 @@
-{% extends "base.html" %}
+{% extends "site/base_alumno.html" %}
 
-{% block title %}Inicio · Gradebook{% endblock %}
+{% block title %}Novedades · Gradebook{% endblock %}
 
 {% block content %}
-    <section class="hero">
-        <div class="hero__inner">
-            <h1 class="hero__title">Gradebook</h1>
-            <p class="hero__subtitle">
-                Frontend base en Flask + Jinja que consume <code>gradebook-api</code>.
-                Usalo como punto de partida para tu propia aplicación web.
-            </p>
-            <div class="hero__actions">
-                <a href="{{ url_for('web.site.items.index') }}" class="btn btn--primary">Ver items</a>
-            </div>
-        </div>
-    </section>
-
-    <section class="features">
-        <div class="features__inner">
-            <article class="feature-card">
-                <h3 class="feature-card__title">Páginas públicas</h3>
-                <p class="feature-card__text">Lecturas que degradan con gracia si la API no responde.</p>
-            </article>
-            <article class="feature-card">
-                <h3 class="feature-card__title">Panel de admin</h3>
-                <p class="feature-card__text">Login con JWT y CRUD del recurso de ejemplo <code>items</code>.</p>
-            </article>
-            <article class="feature-card">
-                <h3 class="feature-card__title">Arquitectura en capas</h3>
-                <p class="feature-card__text">Rutas (blueprints) → services (HTTP a la API). Sin base de datos propia.</p>
-            </article>
-        </div>
-    </section>
+<section class="alumno-card alumno-novedades">
+    <span class="alumno-novedades__icono" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><path d="M6.2 9.2a5.8 5.8 0 0 1 11.6 0c0 4.2 1.4 5.6 1.4 5.6H4.8s1.4-1.4 1.4-5.6z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M10 18.2a2 2 0 0 0 4 0" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+    </span>
+    <h1>Novedades</h1>
+    <p>Cuando la cátedra publique algo, va a aparecer acá.</p>
+</section>
 {% endblock %}

@@ -1,0 +1,122 @@
+{% extends "site/base_alumno.html" %}
+
+{% block title %}Equipo · Gradebook{% endblock %}
+
+{% block content %}
+<section class="alumno-card">
+    {% for categoria, mensaje in get_flashed_messages(with_categories=True) %}
+    <p class="alumno-flash alumno-flash--{{ categoria }}">{{ mensaje }}</p>
+    {% endfor %}
+    {% if error %}
+    <p class="alumno-flash alumno-flash--error">{{ error }}</p>
+    {% endif %}
+
+    {% if grupo.id %}
+    <div class="alumno-equipo__titulo">
+        <h1 id="equipo-nombre">{{ grupo.nombre }}</h1>
+        {% if puede_editar %}
+        <button type="button" class="alumno-icono" id="equipo-editar" aria-label="Editar nombre">
+            <img src="{{ url_for('static', filename='img/edit.svg') }}" alt="">
+        </button>
+        <form class="alumno-renombrar" id="equipo-renombrar" method="POST" action="{{ url_for('web.site.equipo.renombrar') }}" hidden>
+            <input type="text" name="nombre" value="{{ grupo.nombre }}" maxlength="150" required>
+            <button type="submit" class="alumno-icono" aria-label="Guardar nombre">
+                <img src="{{ url_for('static', filename='img/save.svg') }}" alt="">
+            </button>
+        </form>
+        {% endif %}
+    </div>
+    {% if evaluacion.nombre %}
+    <p class="alumno-equipo__eval"><span>{{ evaluacion.nombre }}</span></p>
+    {% endif %}
+    <ul class="alumno-miembros">
+        {% for integrante in grupo.integrantes %}
+        {% set ini = ((integrante.apellido or '?')[:1] ~ (integrante.nombre or '')[:1])|upper %}
+        <li>
+            <span class="alumno-miembro">
+                <span class="alumno-miembro__avatar {% if integrante.owner %}alumno-miembro__avatar--owner{% endif %}" aria-hidden="true">{{ ini }}</span>
+                <span class="alumno-miembro__nombre">
+                    {{ integrante.apellido }} {{ integrante.nombre }}
+                    {% if integrante.owner %}<img class="alumno-corona" src="{{ url_for('static', filename='img/crown.svg') }}" alt="Owner">{% endif %}
+                </span>
+            </span>
+            <span class="alumno-miembro__padron">{{ integrante.padron }}</span>
+        </li>
+        {% endfor %}
+    </ul>
+    {% if puede_editar and grupo.candidatos %}
+    <form class="alumno-sumar" method="POST" action="{{ url_for('web.site.equipo.agregar') }}">
+        <div class="alumno-buscar">
+            <input
+                type="search"
+                id="equipo-alumno"
+                placeholder="Buscar alumno por nombre o padrón"
+                autocomplete="off"
+                role="combobox"
+                aria-expanded="false"
+                aria-controls="equipo-alumno-lista"
+            >
+            <ul class="equipo__alumno-lista" id="equipo-alumno-lista" role="listbox" hidden></ul>
+            <input type="hidden" name="padron" id="equipo-alumno-padron" required>
+        </div>
+        <button type="submit" class="alumno-btn alumno-btn--linea" id="equipo-alumno-agregar" disabled>+ Agregar integrante</button>
+        <script type="application/json" id="equipo-candidatos">{{ grupo.candidatos | tojson }}</script>
+    </form>
+    {% elif puede_editar %}
+    <p class="alumno-vacio alumno-vacio--equipo">No hay alumnos cursando fuera de un equipo.</p>
+    {% endif %}
+    <div class="alumno-salir">
+        <button type="button" class="alumno-btn alumno-btn--gris" id="abrir-salir">Salir del equipo</button>
+    </div>
+    {% set unico = grupo.soy_owner and grupo.integrantes|length < 2 %}
+    <div class="alumno-modal" id="modal-salir" hidden>
+        <div class="alumno-modal__caja" role="dialog" aria-labelledby="salir-titulo">
+            <h2 id="salir-titulo">¿Deseás salir del equipo?</h2>
+            {% if unico %}
+            <p class="alumno-modal__aviso">Si sos el único integrante, no podés salir.</p>
+            {% elif grupo.soy_owner %}
+            <p class="alumno-modal__aviso">La corona pasa a otro integrante.</p>
+            {% endif %}
+            <form method="POST" action="{{ url_for('web.site.equipo.salir') }}">
+                <div class="alumno-crear__acciones">
+                    <button type="button" class="alumno-btn alumno-btn--gris" id="cerrar-salir">Cancelar</button>
+                    <button type="submit" class="alumno-btn alumno-btn--salir" id="confirmar-salir" {% if unico %}disabled title="Si sos el único integrante, no podés salir del equipo"{% endif %}>Confirmar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {% elif puede_crear %}
+    <div id="equipo-vacio">
+        <h1 class="alumno-card__titulo alumno-card__titulo--izq">Todavía no tenés equipo, ¿deseás crear uno?</h1>
+        <button type="button" class="alumno-crear__tarjeta" id="mostrar-crear">
+            <img src="{{ url_for('static', filename='img/nav-equipos.svg') }}" alt="">
+            Crear equipo
+        </button>
+    </div>
+    <form class="alumno-crear" id="equipo-crear" method="POST" action="{{ url_for('web.site.equipo.crear') }}" hidden>
+        <label>Nombre del equipo
+            <input type="text" name="nombre" placeholder="Inserte nombre creativo" maxlength="150" required>
+        </label>
+        <label>Integrante 1
+            <input type="text" value="{{ yo.padron }} (owner)" readonly>
+        </label>
+        <div id="padrones"></div>
+        <button type="button" class="alumno-btn alumno-btn--linea" id="sumar-padron">+ Agregar integrante</button>
+        <div class="alumno-crear__acciones">
+            <a class="alumno-btn alumno-btn--gris" href="{{ url_for('web.site.equipo.index') }}">Cancelar</a>
+            <button type="submit" class="alumno-btn alumno-btn--ok">Confirmar</button>
+        </div>
+    </form>
+
+    {% else %}
+    <h1 class="alumno-card__titulo">Todavía no podés crear un equipo</h1>
+    <p class="alumno-vacio">La cátedra no habilitó la creación de equipos.</p>
+    {% endif %}
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/equipos.js') }}" defer></script>
+<script src="{{ url_for('static', filename='js/alumno-equipo.js') }}" defer></script>
+{% endblock %}
