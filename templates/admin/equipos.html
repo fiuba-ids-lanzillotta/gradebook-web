@@ -57,9 +57,11 @@
                                 {{ grupo.nombre }}
                                 {% if grupo.evaluacion_nombre %}<span class="equipos__eval">{{ grupo.evaluacion_nombre }}</span>{% endif %}
                             </td>
-                            <td data-label="Integrantes">Integrantes: {{ grupo.integrantes }}</td>
+                            <td data-label="Integrantes">{{ grupo.integrantes }}</td>
                             <td data-label="Tutor">
-                                {% if puede_editar %}
+                                {% if not grupo.requiere_corrector %}
+                                —
+                                {% elif puede_editar %}
                                 <label class="equipos__tutor">
                                     <select name="tutor_{{ grupo.id }}" aria-label="Tutor de {{ grupo.nombre }}">
                                         <option value="">Sin asignar</option>
