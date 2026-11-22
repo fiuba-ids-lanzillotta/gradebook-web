@@ -86,24 +86,14 @@
             </div>
             <p class="listado__vacio" id="equipos-sin-resultado" hidden>Ningún equipo coincide con el filtro.</p>
 
+            {% if puede_editar %}
             <div class="equipos__pie">
-                <label class="equipos__cerrar" title="Todavía no está disponible">
-                    <input type="checkbox" disabled>
-                    Cerrar grupos
-                </label>
-                {% if puede_editar %}
                 <button type="submit" class="btn-solid btn-solid--ok">Guardar</button>
-                {% endif %}
             </div>
+            {% endif %}
         </form>
         {% else %}
         <p class="listado__vacio">No hay equipos en esta cursada. Los alumnos los arman desde su pantalla.</p>
-        <div class="equipos__pie">
-            <label class="equipos__cerrar" title="Todavía no está disponible">
-                <input type="checkbox" disabled>
-                Cerrar grupos
-            </label>
-        </div>
         {% endif %}
     </div>
 </section>

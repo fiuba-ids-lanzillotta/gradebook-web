@@ -60,7 +60,7 @@ def _horario(valor) -> str:
 
 
 def _usuario(email: str) -> str:
-    return (email or '').strip()
+    return (email or '').strip().split('@', 1)[0]
 
 
 def _iniciales(email: str) -> str:

@@ -1009,12 +1009,10 @@ html:has(.admin-body),
 .equipos__pie {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: flex-end;
     gap: 12px;
     margin-top: 18px;
 }
-.equipos__cerrar { display: flex; align-items: center; gap: 8px; color: #6b7280; font-size: 14px; }
-.equipos__cerrar input { accent-color: #c43c3c; }
 .equipo__titulo { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
 .equipo__titulo + .listado__cursada { text-align: left; margin-top: 0; }
 .equipo__nombre { margin: 0; font-size: 26px; color: #122f4a; }

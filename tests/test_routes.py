@@ -873,5 +873,5 @@ def test_equipos_lista_los_de_la_cursada_elegida(client, monkeypatch):
     assert respuesta.status_code == 200
     html = respuesta.get_data(as_text=True)
     assert 'Equipo1' in html
-    assert 'Cerrar grupos' in html
+    assert 'Cerrar grupos' not in html
     assert 'cursada_id' not in html or '1' in html
