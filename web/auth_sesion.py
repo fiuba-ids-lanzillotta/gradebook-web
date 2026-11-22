@@ -8,6 +8,8 @@ from web.constants import (
     PERMISO_CURSADAS_LEER,
     PERMISO_DOCENTES_LEER,
     PERMISO_ESTUDIANTES_LEER,
+    PERMISO_EVALUACIONES_LEER,
+    PERMISO_REGISTROS_LEER,
 )
 
 TIPO_DOCENTE = 'docente'
@@ -62,6 +64,12 @@ def url_primera_solapa() -> str:
     if tiene_permiso(PERMISO_ASISTENCIAS_LEER) or tiene_permiso(PERMISO_ASISTENCIAS_GESTIONAR):
         return url_for('web.admin.asistencia.index')
 
+    if tiene_permiso(PERMISO_EVALUACIONES_LEER):
+        return url_for('web.admin.categorias.index')
+
+    if tiene_permiso(PERMISO_REGISTROS_LEER):
+        return url_for('web.admin.registros.index')
+
     if tiene_permiso(PERMISO_DOCENTES_LEER):
         return url_for('web.admin.docentes.index')
 
@@ -75,6 +83,27 @@ def url_post_login() -> str:
         return url_primera_solapa()
 
     return url_for('web.site.home.index')
+
+def exige_permiso(*permisos: str):
+    """None si el docente tiene alguno de los permisos; un redirect a la primera solapa si no."""
+    if any(tiene_permiso(permiso) for permiso in permisos):
+        return None
+
+    return redirigir_sin_permiso()
+
+
+def volver_con_mensaje(resultado: dict, mensaje_ok: str, destino: str):
+    """Redirect tras una acción: flash ok/error, o a login si la sesión expiró."""
+    if resultado.get('unauthorized'):
+        return redirigir_a_login_sin_sesion()
+
+    if resultado.get('ok'):
+        flash(mensaje_ok, 'ok')
+    else:
+        flash(resultado.get('error') or 'No se pudo completar.', 'error')
+
+    return redirect(destino)
+
 
 def redirigir_sin_permiso(mensaje='No tenés permiso para esta acción.'):
     flash(mensaje, 'error')

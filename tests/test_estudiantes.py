@@ -29,11 +29,11 @@ def test_listar_de_cursada_usa_anio_cuatri_de_la_vigente(monkeypatch, respuesta_
                         lambda token: {'anio': 2027, 'cuatrimestre': 1, 'vigente': True})
     capturado = {}
 
-    def fake_get(url, params=None, headers=None, timeout=None):
+    def fake_request(method, url, params=None, json=None, headers=None, timeout=None):
         capturado['params'] = params
         return respuesta_falsa(200, {'estudiantes': [], '_links': {}})
 
-    monkeypatch.setattr(requests, 'get', fake_get)
+    monkeypatch.setattr(requests, 'request', fake_request)
 
     resultado = estudiantes.listar_de_cursada('token', q='', offset=0, limit=10)
 
@@ -46,11 +46,11 @@ def test_listar_de_cursada_respeta_anio_explicito(monkeypatch, respuesta_falsa):
                         lambda token: {'anio': 2026, 'cuatrimestre': 2, 'vigente': True})
     capturado = {}
 
-    def fake_get(url, params=None, headers=None, timeout=None):
+    def fake_request(method, url, params=None, json=None, headers=None, timeout=None):
         capturado['params'] = params
         return respuesta_falsa(200, {'estudiantes': [], '_links': {}})
 
-    monkeypatch.setattr(requests, 'get', fake_get)
+    monkeypatch.setattr(requests, 'request', fake_request)
 
     resultado = estudiantes.listar_de_cursada('token', anio=2027, cuatrimestre=1)
 
@@ -64,11 +64,11 @@ def test_listar_de_cursada_sin_vigente_usa_respaldo(monkeypatch, respuesta_falsa
     monkeypatch.setattr(estudiantes, 'obtener_cursada_vigente', lambda token: {})
     capturado = {}
 
-    def fake_get(url, params=None, headers=None, timeout=None):
+    def fake_request(method, url, params=None, json=None, headers=None, timeout=None):
         capturado['params'] = params
         return respuesta_falsa(200, {'estudiantes': [], '_links': {}})
 
-    monkeypatch.setattr(requests, 'get', fake_get)
+    monkeypatch.setattr(requests, 'request', fake_request)
 
     resultado = estudiantes.listar_de_cursada('token')
 
@@ -82,12 +82,12 @@ def test_listar_de_cursada_sin_vigente_usa_respaldo(monkeypatch, respuesta_falsa
 def test_cambiar_estado_baja_usa_endpoint_baja(monkeypatch, respuesta_falsa):
     capturado = {}
 
-    def fake_post(url, json=None, headers=None, timeout=None):
+    def fake_request(method, url, params=None, json=None, headers=None, timeout=None):
         capturado['url'] = url
         capturado['json'] = json
         return respuesta_falsa(200, {'estado': 'baja'})
 
-    monkeypatch.setattr(requests, 'post', fake_post)
+    monkeypatch.setattr(requests, 'request', fake_request)
 
     resultado = estudiantes.cambiar_estado('token', 7, 'baja', 'motivo x')
 
@@ -99,11 +99,11 @@ def test_cambiar_estado_baja_usa_endpoint_baja(monkeypatch, respuesta_falsa):
 def test_cambiar_estado_envia_cursada_id(monkeypatch, respuesta_falsa):
     capturado = {}
 
-    def fake_post(url, json=None, headers=None, timeout=None):
+    def fake_request(method, url, params=None, json=None, headers=None, timeout=None):
         capturado['json'] = json
         return respuesta_falsa(200, {'estado': 'abandono'})
 
-    monkeypatch.setattr(requests, 'post', fake_post)
+    monkeypatch.setattr(requests, 'request', fake_request)
 
     estudiantes.cambiar_estado('token', 7, 'abandono', cursada_id=42)
 
@@ -113,12 +113,12 @@ def test_cambiar_estado_envia_cursada_id(monkeypatch, respuesta_falsa):
 def test_reactivar_usa_nuevo_endpoint(monkeypatch, respuesta_falsa):
     capturado = {}
 
-    def fake_post(url, json=None, headers=None, timeout=None):
+    def fake_request(method, url, params=None, json=None, headers=None, timeout=None):
         capturado['url'] = url
         capturado['json'] = json
         return respuesta_falsa(200, {'estado': 'cursando'})
 
-    monkeypatch.setattr(requests, 'post', fake_post)
+    monkeypatch.setattr(requests, 'request', fake_request)
 
     resultado = estudiantes.reactivar('token', 7)
 
@@ -130,11 +130,11 @@ def test_reactivar_usa_nuevo_endpoint(monkeypatch, respuesta_falsa):
 def test_reactivar_envia_cursada_id(monkeypatch, respuesta_falsa):
     capturado = {}
 
-    def fake_post(url, json=None, headers=None, timeout=None):
+    def fake_request(method, url, params=None, json=None, headers=None, timeout=None):
         capturado['json'] = json
         return respuesta_falsa(200, {'estado': 'cursando'})
 
-    monkeypatch.setattr(requests, 'post', fake_post)
+    monkeypatch.setattr(requests, 'request', fake_request)
 
     estudiantes.reactivar('token', 7, cursada_id=42)
 
@@ -144,11 +144,11 @@ def test_reactivar_envia_cursada_id(monkeypatch, respuesta_falsa):
 def test_crear_estudiante_envia_cursada_id(monkeypatch, respuesta_falsa):
     capturado = {}
 
-    def fake_post(url, json=None, headers=None, timeout=None):
+    def fake_request(method, url, params=None, json=None, headers=None, timeout=None):
         capturado['json'] = json
         return respuesta_falsa(201, {'id': 7})
 
-    monkeypatch.setattr(requests, 'post', fake_post)
+    monkeypatch.setattr(requests, 'request', fake_request)
 
     estudiantes.crear_estudiante(
         'token',
@@ -163,11 +163,11 @@ def test_crear_estudiante_envia_cursada_id(monkeypatch, respuesta_falsa):
 def test_crear_estudiante_sin_cursada_no_envia_el_campo(monkeypatch, respuesta_falsa):
     capturado = {}
 
-    def fake_post(url, json=None, headers=None, timeout=None):
+    def fake_request(method, url, params=None, json=None, headers=None, timeout=None):
         capturado['json'] = json
         return respuesta_falsa(201, {'id': 7})
 
-    monkeypatch.setattr(requests, 'post', fake_post)
+    monkeypatch.setattr(requests, 'request', fake_request)
 
     estudiantes.crear_estudiante(
         'token',

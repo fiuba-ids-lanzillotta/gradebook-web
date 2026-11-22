@@ -12,8 +12,8 @@ from flask import (
 
 from web.auth_sesion import (
     admin_required,
+    exige_permiso,
     redirigir_a_login_sin_sesion,
-    redirigir_sin_permiso,
     tiene_permiso,
     url_primera_solapa,
     permisos_sesion,
@@ -93,10 +93,7 @@ def _nombre_docente() -> str:
     if not docente_id:
         return usuario.get('email') or ''
 
-    docente = obtener_docente(_token(), docente_id)
-
-    if docente.get('_unauthorized'):
-        return usuario.get('email') or ''
+    docente = obtener_docente(_token(), docente_id).get('datos') or {}
 
     if docente.get('nombre') or docente.get('apellido'):
         nombre = f"{docente.get('nombre') or ''} {docente.get('apellido') or ''}".strip()
@@ -382,8 +379,10 @@ def dar_de_baja(estudiante_id):
 @panel_bp.route('/alumnos/<int:estudiante_id>/alta', methods=['POST'])
 @admin_required
 def dar_de_alta(estudiante_id):
-    if not tiene_permiso(PERMISO_ESTUDIANTES_CREAR):
-        return redirigir_sin_permiso()
+    bloqueo = exige_permiso(PERMISO_ESTUDIANTES_CREAR)
+
+    if bloqueo:
+        return bloqueo
 
     resultado = servicio.reactivar(_token(), estudiante_id, elegida(_token()).get('id'))
     redireccion = _resultado_o_redirect(resultado)

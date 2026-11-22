@@ -61,7 +61,7 @@ requieren `gradebook-api` corriendo. Las respuestas de la API se guardan como **
   `base.html`; `templates/admin/` panel pages extend `admin/base_admin.html` (sidebar), auth pages
   extend `base.html`.
 - **Admin permissions**: each sidebar section is declared in `SOLAPAS`/`SOLAPA_PERMISO`
-  (`web/routes/admin/panel.py`) and gated with `tiene_permiso(PERMISO_*)` + `redirigir_sin_permiso()`;
+  (`web/routes/admin/panel.py`) and gated with `exige_permiso(PERMISO_*)` (`web/auth_sesion.py`);
   permission codes live in `web/constants.py`.
 - **All calls to `gradebook-api`** go through `web/services/*.py` and MUST include the API key via
   `api_headers()` (`web/constants.py`). **Reads degrade gracefully**: on any non-200,
@@ -73,8 +73,8 @@ requieren `gradebook-api` corriendo. Las respuestas de la API se guardan como **
 ## How to add a new section/resource
 
 See `.agents/skills/add-page` for the full checklist. In short, mirror the `items` pattern:
-1. `web/services/<recurso>.py`: HTTP calls to the API (reads degrade gracefully; writes return
-   `{'ok': ...}` and use `respuesta_no_autorizada` / `mensaje_error_api` from `respuestas_api.py`).
+1. `web/services/<recurso>.py`: HTTP calls to the API through `pedir_api` (`respuestas_api.py`;
+   reads degrade gracefully, writes return `{'ok': ...}`/`{'unauthorized': ...}`).
 2. `web/routes/site/<recurso>.py` and/or `web/routes/admin/<recurso>.py`: thin blueprints; register
    them in the corresponding `__init__.py`.
 3. `templates/site/<recurso>.html` / `templates/admin/<recurso>.html` extending `base.html`.

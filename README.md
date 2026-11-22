@@ -53,9 +53,10 @@ gradebook-web/
 │   │                            #   MATERIA_CODIGO, fallbacks CURSADA_*, códigos PERMISO_*
 │   ├── auth_sesion.py            # Helpers de sesión: login_required, admin_required, tiene_permiso
 │   ├── routes/                  # Blueprints (presentación / flujo)
-│   │   ├── site/                #   Zona alumno (sin prefijo, login): home, items (ejemplo)
+│   │   ├── site/                #   Zona alumno (sin prefijo, login): home, equipo, items (ejemplo)
 │   │   └── admin/               #   Backoffice docente (/admin): auth, panel, asistencia,
-│   │                            #   docentes, cursadas, items (ejemplo)
+│   │                            #   docentes, cursadas, grupos, categorias, registros,
+│   │                            #   items (ejemplo)
 │   └── services/                # Llamadas HTTP a gradebook-api
 │       ├── auth.py              #   login, recuperación de contraseña, identidad
 │       ├── docentes.py          #   CRUD de docentes (listar, crear, actualizar, eliminar, permisos)
@@ -64,24 +65,30 @@ gradebook-web/
 │       ├── asistencia.py        #   Gestión de asistencia
 │       ├── cursos.py            #   Cursadas
 │       ├── materias.py          #   Catálogo de materias
+│       ├── grupos.py            #   Equipo del alumno (mi equipo, crear/renombrar/salir)
+│       ├── evaluaciones.py      #   Categorías/evaluaciones y habilitación de equipos
+│       ├── registros.py         #   Auditoría del backoffice
 │       ├── items.py            #   Recurso de ejemplo
-│       └── respuestas_api.py    #   helpers para interpretar errores / 401-403
+│       └── respuestas_api.py    #   pedir_api + helpers para errores / 401-403
 │
 ├── templates/
 │   ├── base.html                # Layout base (navbar, bloques) — site + auth
 │   ├── 404.html
-│   ├── site/                    # inicio.html, items.html
+│   ├── site/                    # base_alumno.html (navbar del alumno), inicio.html,
+│   │                            #   equipo.html, items.html
 │   └── admin/                   # base_admin.html (layout con sidebar de solapas), login.html,
 │                                #   recuperar.html, cambiar_contrasena.html, panel.html,
 │                                #   asistencia.html, asistencia_listado.html, docentes.html,
-│                                #   cursadas.html, items.html
+│                                #   cursadas.html, equipos.html, equipo.html, categorias.html,
+│                                #   registros.html, items.html
 ├── static/
-│   ├── css/                     # common.css, site.css, admin.css
+│   ├── css/                     # common.css, site.css, admin.css, alumno.css
 │   ├── img/                     # Íconos del sidebar (nav-*.svg) e imágenes
 │   └── js/                      # main.js + un script por sección (asistencia, asistencia_listado,
-│                                #   cursadas, docentes)
+│                                #   cursadas, cursada-filtro, docentes, equipos, alumno-equipo)
 ├── tests/                       # Tests (pytest): auth, cursos, materias, estudiantes, docentes,
-│                                #   asistencia, permisos, items, rutas, respuestas_api
+│                                #   asistencia, permisos, items, rutas, respuestas_api,
+│                                #   cursada_filtro, nuevas_solapas
 │   └── resources/json/          #   mocks JSON de las respuestas de la API
 └── .agents/skills/              # Skills para agentes (add-page, verify, sync-docs, ...)
 ```

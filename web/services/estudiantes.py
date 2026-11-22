@@ -8,7 +8,7 @@ import requests
 
 from web.constants import API_BASE_URL, CURSADA_ANIO, CURSADA_CUATRIMESTRE, api_headers
 from web.services.cursos import obtener_cursada_vigente
-from web.services.respuestas_api import mensaje_error_api, respuesta_no_autorizada
+from web.services.respuestas_api import mensaje_error_api, pedir_api, respuesta_no_autorizada
 
 logger = logging.getLogger(__name__)
 
@@ -80,35 +80,15 @@ def _pedir_pagina(token: str, filtros: dict, offset: int, limit: int, anio, cuat
         if filtros.get(clave):
             params[clave] = filtros[clave]
 
-    try:
-        response = requests.get(
-            f'{API_BASE_URL}/estudiantes',
-            params=params,
-            headers=api_headers({'Authorization': f'Bearer {token}'}),
-            timeout=15,
-        )
-    except requests.exceptions.ConnectionError:
-        logger.error(f"No se pudo conectar con la API en {API_BASE_URL}")
+    resultado = pedir_api(token, 'GET', '/estudiantes', params=params, ok=(200, 204))
 
-        return {'ok': False, 'error': 'No se pudo conectar con el servidor. Intentá más tarde.'}
+    if not resultado.get('ok'):
+        return resultado
 
-    except Exception as error:
-        logger.error(f"Error al listar estudiantes: {error}")
-
-        return {'ok': False, 'error': 'Ocurrió un error al cargar el listado.'}
-
-    no_autorizada = respuesta_no_autorizada(response)
-
-    if no_autorizada:
-        return no_autorizada
-
-    if response.status_code == 204:
+    if resultado.get('vacio'):
         return {'ok': True, 'estudiantes': [], 'links': {}, 'offset': offset, 'limit': limit}
 
-    if response.status_code != 200:
-        return {'ok': False, 'error': mensaje_error_api(response)}
-
-    datos = response.json() or {}
+    datos = resultado.get('datos') or {}
 
     return {
         'ok': True,
@@ -343,28 +323,7 @@ def _serializar_csv_siu(estudiantes: list[dict]) -> str:
 
 
 def _escribir(metodo: str, url: str, token: str, json=None, ok: int = 200) -> dict:
-    try:
-        cliente = getattr(requests, metodo)
-        response = cliente(
-            url,
-            json=json,
-            headers=api_headers({'Authorization': f'Bearer {token}'}),
-            timeout=15,
-        )
-    except requests.exceptions.ConnectionError:
-        return {'ok': False, 'error': 'No se pudo conectar con el servidor. Intentá más tarde.'}
-
-    except Exception as error:
-        logger.error(f"Error al escribir {url}: {error}")
-
-        return {'ok': False, 'error': 'Ocurrió un error al guardar.'}
-
-    no_autorizada = respuesta_no_autorizada(response)
-    
-    if no_autorizada:
-        return no_autorizada
-
-    if response.status_code == ok:
-        return {'ok': True, 'datos': response.json() if response.content else {}}
-
-    return {'ok': False, 'error': mensaje_error_api(response)}
+    return pedir_api(
+        token, metodo.upper(), url.removeprefix(API_BASE_URL),
+        json_body=json, ok=(ok,),
+    )

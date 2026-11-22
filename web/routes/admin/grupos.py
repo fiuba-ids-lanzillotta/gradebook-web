@@ -10,9 +10,10 @@ from flask import (
 
 from web.auth_sesion import (
     admin_required,
+    exige_permiso,
     redirigir_a_login_sin_sesion,
-    redirigir_sin_permiso,
     tiene_permiso,
+    volver_con_mensaje,
 )
 from web.constants import PERMISO_ESTUDIANTES_LEER, PERMISO_ESTUDIANTES_MODIFICAR
 from web.cursada_filtro import elegida
@@ -23,15 +24,9 @@ from web.services.docentes import listar_docentes
 grupos_bp = Blueprint('grupos', __name__)
 
 
-def _exige(permiso: str):
-    if tiene_permiso(permiso):
-        return None
-
-    return redirigir_sin_permiso()
-
-
 def _docentes_activos() -> list[dict]:
-    filas = listar_docentes(_token())
+    resultado = listar_docentes(_token())
+    filas = (resultado.get('docentes') or []) if resultado.get('ok') else []
 
     return sorted(
         [fila for fila in filas if fila.get('activo') is not False],
@@ -46,7 +41,7 @@ def _cursada_id():
 @grupos_bp.route('/equipos')
 @admin_required
 def index():
-    bloqueo = _exige(PERMISO_ESTUDIANTES_LEER)
+    bloqueo = exige_permiso(PERMISO_ESTUDIANTES_LEER)
 
     if bloqueo:
         return bloqueo
@@ -80,7 +75,7 @@ def index():
 @grupos_bp.route('/equipos/tutores', methods=['POST'])
 @admin_required
 def guardar_tutores():
-    bloqueo = _exige(PERMISO_ESTUDIANTES_MODIFICAR)
+    bloqueo = exige_permiso(PERMISO_ESTUDIANTES_MODIFICAR)
 
     if bloqueo:
         return bloqueo
@@ -116,7 +111,7 @@ def guardar_tutores():
 @grupos_bp.route('/equipos/<int:grupo_id>')
 @admin_required
 def detalle(grupo_id):
-    bloqueo = _exige(PERMISO_ESTUDIANTES_LEER)
+    bloqueo = exige_permiso(PERMISO_ESTUDIANTES_LEER)
 
     if bloqueo:
         return bloqueo
@@ -140,7 +135,7 @@ def detalle(grupo_id):
 @grupos_bp.route('/equipos/<int:grupo_id>/nombre', methods=['POST'])
 @admin_required
 def renombrar(grupo_id):
-    bloqueo = _exige(PERMISO_ESTUDIANTES_MODIFICAR)
+    bloqueo = exige_permiso(PERMISO_ESTUDIANTES_MODIFICAR)
 
     if bloqueo:
         return bloqueo
@@ -153,7 +148,7 @@ def renombrar(grupo_id):
 @grupos_bp.route('/equipos/<int:grupo_id>/integrantes', methods=['POST'])
 @admin_required
 def agregar(grupo_id):
-    bloqueo = _exige(PERMISO_ESTUDIANTES_MODIFICAR)
+    bloqueo = exige_permiso(PERMISO_ESTUDIANTES_MODIFICAR)
 
     if bloqueo:
         return bloqueo
@@ -169,7 +164,7 @@ def agregar(grupo_id):
 @grupos_bp.route('/equipos/<int:grupo_id>/integrantes/<int:estudiante_id>/echar', methods=['POST'])
 @admin_required
 def echar(grupo_id, estudiante_id):
-    bloqueo = _exige(PERMISO_ESTUDIANTES_MODIFICAR)
+    bloqueo = exige_permiso(PERMISO_ESTUDIANTES_MODIFICAR)
 
     if bloqueo:
         return bloqueo
@@ -182,7 +177,7 @@ def echar(grupo_id, estudiante_id):
 @grupos_bp.route('/equipos/<int:grupo_id>/integrantes/<int:estudiante_id>/transferir', methods=['POST'])
 @admin_required
 def transferir(grupo_id, estudiante_id):
-    bloqueo = _exige(PERMISO_ESTUDIANTES_MODIFICAR)
+    bloqueo = exige_permiso(PERMISO_ESTUDIANTES_MODIFICAR)
 
     if bloqueo:
         return bloqueo
@@ -196,12 +191,7 @@ def transferir(grupo_id, estudiante_id):
 
 
 def _volver(resultado: dict, grupo_id: int, mensaje_ok: str):
-    if resultado.get('unauthorized'):
-        return redirigir_a_login_sin_sesion()
-
-    if resultado.get('ok'):
-        flash(mensaje_ok, 'ok')
-    else:
-        flash(resultado.get('error') or 'No se pudo completar.', 'error')
-
-    return redirect(url_for('web.admin.grupos.detalle', grupo_id=grupo_id))
+    return volver_con_mensaje(
+        resultado, mensaje_ok,
+        url_for('web.admin.grupos.detalle', grupo_id=grupo_id),
+    )

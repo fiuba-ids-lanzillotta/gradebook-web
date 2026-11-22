@@ -66,7 +66,7 @@
     <p class="alumno-vacio alumno-vacio--equipo">No hay alumnos cursando fuera de un equipo.</p>
     {% endif %}
     <div class="alumno-salir">
-        <button type="button" class="alumno-btn alumno-btn--gris" id="abrir-salir">Salir del equipo</button>
+        <button type="button" class="alumno-btn alumno-btn--salir" id="abrir-salir">Salir del equipo</button>
     </div>
     {% set unico = grupo.soy_owner and grupo.integrantes|length < 2 %}
     <div class="alumno-modal" id="modal-salir" hidden>

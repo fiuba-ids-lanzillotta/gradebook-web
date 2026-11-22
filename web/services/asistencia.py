@@ -1,15 +1,10 @@
 """Consumo de gradebook-api para tomar y marcar asistencia (QR / código / padrón)."""
-import logging
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
-import requests
-
-from web.constants import API_BASE_URL, CURSADA_ANIO, CURSADA_CUATRIMESTRE, MATERIA_CODIGO, api_headers
+from web.constants import CURSADA_ANIO, CURSADA_CUATRIMESTRE, MATERIA_CODIGO
 from web.services.cursos import obtener_cursada_vigente
-from web.services.respuestas_api import mensaje_error_api, respuesta_no_autorizada
-
-logger = logging.getLogger(__name__)
+from web.services.respuestas_api import pedir_api
 
 TZ_CATEDRA = ZoneInfo('America/Argentina/Buenos_Aires')
 
@@ -264,42 +259,7 @@ def etiqueta_clase(clase: dict) -> str:
     return f'{fecha_txt} · {titulo}' if titulo else fecha_txt
 
 def _pedir(token: str, method: str, path: str, *, json_body=None, params=None, ok=(200,), timeout=20) -> dict:
-    try:
-        response = requests.request(
-            method,
-            f'{API_BASE_URL}{path}',
-            json=json_body,
-            params=params,
-            headers=api_headers({'Authorization': f'Bearer {token}'}),
-            timeout=timeout,
-        )
-    except requests.exceptions.ConnectionError:
-        logger.error(f"No se pudo conectar con la API en {API_BASE_URL}")
-
-        return {'ok': False, 'error': 'No se pudo conectar con el servidor. Intentá más tarde.'}
-    except Exception as error:
-        logger.error(f"Error en {method} {path}: {error}")
-
-        return {'ok': False, 'error': 'Ocurrió un error al hablar con el servidor.'}
-
-    no_autorizada = respuesta_no_autorizada(response)
-
-    if no_autorizada:
-        return no_autorizada
-
-    if response.status_code == 204:
-        return {'ok': True, 'vacio': True, 'datos': {}}
-
-    if response.status_code not in ok:
-        return {
-            'ok': False,
-            'error': mensaje_error_api(response),
-            'status': response.status_code,
-        }
-
-    try:
-        datos = response.json() or {}
-    except Exception:
-        datos = {}
-        
-    return {'ok': True, 'datos': datos}
+    return pedir_api(
+        token, method, path,
+        json_body=json_body, params=params, ok=ok, timeout=timeout,
+    )

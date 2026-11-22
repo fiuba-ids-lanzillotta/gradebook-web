@@ -20,98 +20,112 @@ CATALOGO = [
 
 def test_obtener_docente_devuelve_dict(monkeypatch, respuesta_falsa):
     capturado = {}
-    monkeypatch.setattr(requests, 'get',
-                        lambda url, **k: capturado.update(url=url) or respuesta_falsa(200, {'id': 7, 'nombre': 'Ana'}))
+    monkeypatch.setattr(requests, 'request',
+                        lambda metodo, url, **k: capturado.update(url=url) or respuesta_falsa(200, {'id': 7, 'nombre': 'Ana'}))
 
-    assert docentes.obtener_docente('token', 7) == {'id': 7, 'nombre': 'Ana'}
+    assert docentes.obtener_docente('token', 7) == {'ok': True, 'datos': {'id': 7, 'nombre': 'Ana'}}
     assert capturado['url'].endswith('/docentes/7')
 
 
-def test_obtener_docente_error_devuelve_vacio(monkeypatch, respuesta_falsa):
-    monkeypatch.setattr(requests, 'get', lambda *a, **k: respuesta_falsa(500))
+def test_obtener_docente_error_devuelve_fallo(monkeypatch, respuesta_falsa):
+    monkeypatch.setattr(requests, 'request', lambda *a, **k: respuesta_falsa(500))
 
-    assert docentes.obtener_docente('token', 7) == {}
+    resultado = docentes.obtener_docente('token', 7)
+
+    assert resultado['ok'] is False
+    assert resultado['status'] == 500
 
 
 def test_listar_docentes_devuelve_lista(monkeypatch, respuesta_falsa):
-    monkeypatch.setattr(requests, 'get', lambda *a, **k: respuesta_falsa(200, [{'id': 1, 'nombre': 'Ana'}]))
+    monkeypatch.setattr(requests, 'request', lambda *a, **k: respuesta_falsa(200, [{'id': 1, 'nombre': 'Ana'}]))
 
-    assert docentes.listar_docentes('token') == [{'id': 1, 'nombre': 'Ana'}]
+    assert docentes.listar_docentes('token') == {'ok': True, 'docentes': [{'id': 1, 'nombre': 'Ana'}]}
 
 
-def test_listar_docentes_error_devuelve_vacio(monkeypatch, respuesta_falsa):
-    monkeypatch.setattr(requests, 'get', lambda *a, **k: respuesta_falsa(500))
+def test_listar_docentes_error_propaga_fallo(monkeypatch, respuesta_falsa):
+    monkeypatch.setattr(requests, 'request', lambda *a, **k: respuesta_falsa(500))
 
-    assert docentes.listar_docentes('token') == []
+    resultado = docentes.listar_docentes('token')
+
+    assert resultado['ok'] is False
+    assert resultado['status'] == 500
 
 
 def test_crear_docente_postea_campos(monkeypatch, respuesta_falsa):
     capturado = {}
 
-    def fake_post(url, json=None, **kwargs):
+    def fake_request(metodo, url, json=None, **kwargs):
+        capturado['metodo'] = metodo
         capturado['url'] = url
         capturado['json'] = json
         return respuesta_falsa(201, {'id': 5})
 
-    monkeypatch.setattr(requests, 'post', fake_post)
+    monkeypatch.setattr(requests, 'request', fake_request)
 
     resultado = docentes.crear_docente('token', 'Ana', 'Garcia', 'a@fi.uba.ar', 'Ayudante')
 
+    assert capturado['metodo'] == 'POST'
     assert capturado['url'].endswith('/docentes')
     assert capturado['json'] == {'nombre': 'Ana', 'apellido': 'Garcia', 'email': 'a@fi.uba.ar', 'rol': 'Ayudante'}
-    assert resultado == {'id': 5}
+    assert resultado == {'ok': True, 'datos': {'id': 5}}
 
 
-def test_crear_docente_error_devuelve_none(monkeypatch, respuesta_falsa):
-    monkeypatch.setattr(requests, 'post', lambda *a, **k: respuesta_falsa(400))
+def test_crear_docente_error_propaga_fallo(monkeypatch, respuesta_falsa):
+    monkeypatch.setattr(requests, 'request', lambda *a, **k: respuesta_falsa(400, {'errors': [{'message': 'email duplicado'}]}))
 
-    assert docentes.crear_docente('token', 'Ana', 'Garcia', 'a@fi.uba.ar', 'Ayudante') is None
+    resultado = docentes.crear_docente('token', 'Ana', 'Garcia', 'a@fi.uba.ar', 'Ayudante')
+
+    assert resultado['ok'] is False
+    assert 'duplicado' in resultado['error']
 
 
 def test_actualizar_docente_putea_campos(monkeypatch, respuesta_falsa):
     capturado = {}
 
-    def fake_put(url, json=None, **kwargs):
+    def fake_request(metodo, url, json=None, **kwargs):
+        capturado['metodo'] = metodo
         capturado['url'] = url
         capturado['json'] = json
         return respuesta_falsa(200, {'id': 7})
 
-    monkeypatch.setattr(requests, 'put', fake_put)
+    monkeypatch.setattr(requests, 'request', fake_request)
 
     resultado = docentes.actualizar_docente('token', 7, 'Ana', 'Garcia', 'a@fi.uba.ar', 'Profesor')
 
+    assert capturado['metodo'] == 'PUT'
     assert capturado['url'].endswith('/docentes/7')
     assert capturado['json']['rol'] == 'Profesor'
-    assert resultado == {'id': 7}
+    assert resultado == {'ok': True, 'datos': {'id': 7}}
 
 
-def test_eliminar_docente_true_si_200(monkeypatch, respuesta_falsa):
+def test_eliminar_docente_ok_si_200(monkeypatch, respuesta_falsa):
     capturado = {}
-    monkeypatch.setattr(requests, 'delete',
-                        lambda url, **k: capturado.update(url=url) or respuesta_falsa(200))
+    monkeypatch.setattr(requests, 'request',
+                        lambda metodo, url, **k: capturado.update(metodo=metodo, url=url) or respuesta_falsa(200))
 
-    assert docentes.eliminar_docente('token', 7) is True
+    assert docentes.eliminar_docente('token', 7)['ok'] is True
+    assert capturado['metodo'] == 'DELETE'
     assert capturado['url'].endswith('/docentes/7')
 
 
-def test_eliminar_docente_false_si_error(monkeypatch, respuesta_falsa):
-    monkeypatch.setattr(requests, 'delete', lambda *a, **k: respuesta_falsa(500))
+def test_eliminar_docente_falla_si_error(monkeypatch, respuesta_falsa):
+    monkeypatch.setattr(requests, 'request', lambda *a, **k: respuesta_falsa(500))
 
-    assert docentes.eliminar_docente('token', 7) is False
+    assert docentes.eliminar_docente('token', 7)['ok'] is False
 
 
 def test_actualizar_permisos_envia_overrides(monkeypatch, respuesta_falsa):
     capturado = {}
 
-    def fake_put(url, json=None, **kwargs):
+    def fake_request(metodo, url, json=None, **kwargs):
         capturado['url'] = url
         capturado['json'] = json
         return respuesta_falsa(200)
 
-    monkeypatch.setattr(requests, 'put', fake_put)
+    monkeypatch.setattr(requests, 'request', fake_request)
 
     overrides = [{'permiso': 'asistencias.gestionar', 'concedido': False}]
-    assert docentes.actualizar_permisos_docente('token', 7, overrides) is True
+    assert docentes.actualizar_permisos_docente('token', 7, overrides)['ok'] is True
     assert capturado['url'].endswith('/docentes/7/permisos')
     assert capturado['json'] == {'permisos': overrides}
 

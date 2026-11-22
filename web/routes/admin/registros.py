@@ -5,7 +5,7 @@ from zoneinfo import ZoneInfo
 
 from flask import Blueprint, render_template, request
 
-from web.auth_sesion import admin_required, redirigir_a_login_sin_sesion, redirigir_sin_permiso, tiene_permiso
+from web.auth_sesion import admin_required, exige_permiso, redirigir_a_login_sin_sesion
 from web.constants import PERMISO_REGISTROS_LEER
 from web.routes.admin.panel import _token, contexto_admin
 from web.services import registros as servicio
@@ -83,8 +83,10 @@ _ROL_CLASE = {
 @registros_bp.route('/registros')
 @admin_required
 def index():
-    if not tiene_permiso(PERMISO_REGISTROS_LEER):
-        return redirigir_sin_permiso()
+    bloqueo = exige_permiso(PERMISO_REGISTROS_LEER)
+
+    if bloqueo:
+        return bloqueo
 
     email = (request.args.get('email') or '').strip()
     accion = (request.args.get('accion') or '').strip()

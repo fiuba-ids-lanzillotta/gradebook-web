@@ -185,11 +185,11 @@ def test_dar_de_alta_usa_endpoint_reactivacion(client, monkeypatch, respuesta_fa
     _sesion_docente_superadmin(client)
     capturado = {}
 
-    def fake_post(url, json=None, headers=None, timeout=None):
+    def fake_request(method, url, json=None, params=None, headers=None, timeout=None):
         capturado['url'] = url
         return respuesta_falsa(200, {'estado': 'cursando'})
 
-    monkeypatch.setattr(requests, 'post', fake_post)
+    monkeypatch.setattr(requests, 'request', fake_request)
 
     respuesta = client.post('/admin/alumnos/7/alta')
 
@@ -232,7 +232,7 @@ def test_admin_sin_ningun_permiso_muestra_error(client):
 def test_admin_panel_lista_alumnos(client, monkeypatch, respuesta_falsa):
     _sesion_docente(client, ['estudiantes.leer'])
 
-    def fake_get(url, params=None, **kwargs):
+    def fake_request(method, url, params=None, json=None, **kwargs):
         if url.endswith('/cursadas'):
             return respuesta_falsa(200, {'cursadas': [{'id': 1, 'anio': 2026, 'cuatrimestre': 2, 'vigente': True}]})
 
@@ -243,7 +243,7 @@ def test_admin_panel_lista_alumnos(client, monkeypatch, respuesta_falsa):
             '_links': {},
         })
 
-    monkeypatch.setattr(requests, 'get', fake_get)
+    monkeypatch.setattr(requests, 'request', fake_request)
 
     respuesta = client.get('/admin/')
 
@@ -257,12 +257,12 @@ def test_agregar_alumno_postea_y_redirige_a_busqueda(client, monkeypatch, respue
     _sesion_docente(client, ['estudiantes.leer', 'estudiantes.crear'])
     capturado = {}
 
-    def fake_post(url, json=None, **kwargs):
+    def fake_request(method, url, json=None, **kwargs):
         capturado['url'] = url
         capturado['json'] = json
         return respuesta_falsa(201, {'id': 9})
 
-    monkeypatch.setattr(requests, 'post', fake_post)
+    monkeypatch.setattr(requests, 'request', fake_request)
 
     respuesta = client.post('/admin/alumnos', data={
         'nombre': 'Ana', 'apellido': 'Garcia', 'padron': '123456', 'email': 'a@fi.uba.ar',
@@ -278,12 +278,12 @@ def test_editar_alumno_putea_cambios(client, monkeypatch, respuesta_falsa):
     _sesion_docente(client, ['estudiantes.leer', 'estudiantes.modificar'])
     capturado = {}
 
-    def fake_put(url, json=None, **kwargs):
+    def fake_request(method, url, json=None, **kwargs):
         capturado['url'] = url
         capturado['json'] = json
         return respuesta_falsa(200, {})
 
-    monkeypatch.setattr(requests, 'put', fake_put)
+    monkeypatch.setattr(requests, 'request', fake_request)
 
     respuesta = client.post('/admin/alumnos/7/editar', data={
         'nombre': 'Ana', 'apellido': 'Garcia', 'padron': '123', 'email': 'a@fi.uba.ar',
@@ -298,12 +298,12 @@ def test_abandonar_postea_estado_abandono(client, monkeypatch, respuesta_falsa):
     _sesion_docente(client, ['estudiantes.leer'])
     capturado = {}
 
-    def fake_post(url, json=None, **kwargs):
+    def fake_request(method, url, json=None, **kwargs):
         capturado['url'] = url
         capturado['json'] = json
         return respuesta_falsa(200, {})
 
-    monkeypatch.setattr(requests, 'post', fake_post)
+    monkeypatch.setattr(requests, 'request', fake_request)
 
     respuesta = client.post('/admin/alumnos/7/abandonar')
 
@@ -332,12 +332,12 @@ def test_baja_con_motivo_postea_estado(client, monkeypatch, respuesta_falsa):
     _sesion_docente(client, ['estudiantes.leer'])
     capturado = {}
 
-    def fake_post(url, json=None, **kwargs):
+    def fake_request(method, url, json=None, **kwargs):
         capturado['url'] = url
         capturado['json'] = json
         return respuesta_falsa(200, {})
 
-    monkeypatch.setattr(requests, 'post', fake_post)
+    monkeypatch.setattr(requests, 'request', fake_request)
 
     respuesta = client.post('/admin/alumnos/7/baja', data={'motivo': 'no rinde'})
 
@@ -523,7 +523,7 @@ def test_docentes_requiere_permiso_lectura(client):
 def test_docentes_lista_ok(client, monkeypatch):
     _sesion_docente(client, ['docentes.leer'])
     monkeypatch.setattr(rutas_docentes, 'listar_docentes',
-                        lambda token: [{'id': 1, 'nombre': 'Ana', 'apellido': 'Garcia', 'rol': 'Ayudante', 'email': 'a@fi.uba.ar'}])
+                        lambda token: {'ok': True, 'docentes': [{'id': 1, 'nombre': 'Ana', 'apellido': 'Garcia', 'rol': 'Ayudante', 'email': 'a@fi.uba.ar'}]})
     monkeypatch.setattr(rutas_docentes, 'obtener_catalogo_permisos', lambda token: [])
 
     respuesta = client.get('/admin/docentes')
@@ -548,7 +548,7 @@ def test_crear_docente_ok_asigna_permisos_por_rol(client, monkeypatch):
     catalogo = [{'codigo': 'estudiantes.leer'}, {'codigo': 'docentes.gestionar'}]
 
     monkeypatch.setattr(rutas_docentes, 'crear_docente',
-                        lambda token, nombre, apellido, email, rol: {'id': 5})
+                        lambda token, nombre, apellido, email, rol: {'ok': True, 'datos': {'id': 5}})
     monkeypatch.setattr(rutas_docentes, 'obtener_catalogo_permisos', lambda token: catalogo)
     monkeypatch.setattr(rutas_docentes, 'actualizar_permisos_docente',
                         lambda token, docente_id, permisos: capturado.update(docente_id=docente_id, permisos=permisos) or True)
@@ -568,7 +568,7 @@ def test_crear_docente_ok_asigna_permisos_por_rol(client, monkeypatch):
 def test_desactivar_profesor_no_llama_api(client, monkeypatch):
     _sesion_docente(client, ['docentes.gestionar'])
     monkeypatch.setattr(rutas_docentes, 'listar_docentes',
-                        lambda token: [{'id': 7, 'nombre': 'Ana', 'apellido': 'Garcia', 'rol': 'Profesor'}])
+                        lambda token: {'ok': True, 'docentes': [{'id': 7, 'nombre': 'Ana', 'apellido': 'Garcia', 'rol': 'Profesor'}]})
     llamadas = []
     monkeypatch.setattr(rutas_docentes, 'eliminar_docente', lambda *a, **k: llamadas.append(a))
 
@@ -582,9 +582,9 @@ def test_desactivar_ayudante_llama_eliminar(client, monkeypatch):
     _sesion_docente(client, ['docentes.gestionar'])
     capturado = {}
     monkeypatch.setattr(rutas_docentes, 'listar_docentes',
-                        lambda token: [{'id': 7, 'nombre': 'Ana', 'apellido': 'Garcia', 'rol': 'Ayudante'}])
+                        lambda token: {'ok': True, 'docentes': [{'id': 7, 'nombre': 'Ana', 'apellido': 'Garcia', 'rol': 'Ayudante'}]})
     monkeypatch.setattr(rutas_docentes, 'eliminar_docente',
-                        lambda token, docente_id: capturado.update(docente_id=docente_id) or True)
+                        lambda token, docente_id: capturado.update(docente_id=docente_id) or {'ok': True})
 
     respuesta = client.post('/admin/docentes/7/desactivar')
 
@@ -866,7 +866,7 @@ def test_equipos_lista_los_de_la_cursada_elegida(client, monkeypatch):
             'tutor_nombre': '', 'evaluacion_nombre': 'TP1',
         }]},
     })
-    monkeypatch.setattr('web.routes.admin.grupos.listar_docentes', lambda token: [])
+    monkeypatch.setattr('web.routes.admin.grupos.listar_docentes', lambda token: {'ok': True, 'docentes': []})
 
     respuesta = client.get('/admin/equipos')
 

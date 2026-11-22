@@ -11,8 +11,8 @@ from flask import (
 
 from web.auth_sesion import (
     admin_required,
+    exige_permiso,
     redirigir_a_login_sin_sesion,
-    redirigir_sin_permiso,
     tiene_permiso,
 )
 from web.constants import (
@@ -26,13 +26,6 @@ from web.services import cursos as servicio
 from web.services import materias as servicio_materias
 
 cursadas_bp = Blueprint('cursadas', __name__)
-
-
-def _exige(permiso: str):
-    if tiene_permiso(permiso):
-        return None
-
-    return redirigir_sin_permiso()
 
 
 def _fecha_txt(fecha: str) -> str:
@@ -69,7 +62,7 @@ def _materias(cursadas: list[dict]) -> dict:
 @cursadas_bp.route('/cursadas')
 @admin_required
 def index():
-    bloqueo = _exige(PERMISO_CURSADAS_LEER)
+    bloqueo = exige_permiso(PERMISO_CURSADAS_LEER)
 
     if bloqueo:
         return bloqueo
@@ -116,47 +109,31 @@ def index():
 @cursadas_bp.route('/cursadas', methods=['POST'])
 @admin_required
 def crear():
-    bloqueo = _exige(PERMISO_CURSADAS_CREAR)
+    bloqueo = exige_permiso(PERMISO_CURSADAS_CREAR)
 
     if bloqueo:
         return bloqueo
 
     resultado = servicio.crear_cursada(_token(), request.form)
-    responde_json = request.headers.get('X-Requested-With') == 'fetch'
 
-    if resultado.get('unauthorized'):
-        if responde_json:
-            return jsonify({'ok': False, 'error': 'Sesión vencida.'}), 401
-
-        return redirigir_a_login_sin_sesion()
-
-    if resultado.get('ok'):
-        flash('Cursada creada.', 'ok')
-
-        if responde_json:
-            return jsonify({'ok': True})
-
-        return redirect(url_for('web.admin.cursadas.index'))
-
-    error = resultado.get('error') or 'No se pudo crear la cursada.'
-
-    if responde_json:
-        return jsonify({'ok': False, 'error': error}), 400
-
-    flash(error, 'error')
-
-    return redirect(url_for('web.admin.cursadas.index'))
+    return _responder(resultado, 'Cursada creada.', 'No se pudo crear la cursada.')
 
 
 @cursadas_bp.route('/cursadas/<int:cursada_id>', methods=['POST'])
 @admin_required
 def editar(cursada_id):
-    bloqueo = _exige(PERMISO_CURSADAS_MODIFICAR)
+    bloqueo = exige_permiso(PERMISO_CURSADAS_MODIFICAR)
 
     if bloqueo:
         return bloqueo
 
     resultado = servicio.actualizar_cursada(_token(), cursada_id, request.form)
+
+    return _responder(resultado, 'Cursada actualizada.', 'No se pudo actualizar la cursada.')
+
+
+def _responder(resultado: dict, mensaje_ok: str, mensaje_error: str):
+    """Responde JSON al fetch del modal o redirect al index según el pedido."""
     responde_json = request.headers.get('X-Requested-With') == 'fetch'
 
     if resultado.get('unauthorized'):
@@ -165,19 +142,17 @@ def editar(cursada_id):
 
         return redirigir_a_login_sin_sesion()
 
-    if resultado.get('ok'):
-        flash('Cursada actualizada.', 'ok')
+    if responde_json:
+        if resultado.get('ok'):
+            flash(mensaje_ok, 'ok')
 
-        if responde_json:
             return jsonify({'ok': True})
 
-        return redirect(url_for('web.admin.cursadas.index'))
+        return jsonify({'ok': False, 'error': resultado.get('error') or mensaje_error}), 400
 
-    error = resultado.get('error') or 'No se pudo actualizar la cursada.'
-
-    if responde_json:
-        return jsonify({'ok': False, 'error': error}), 400
-
-    flash(error, 'error')
+    if resultado.get('ok'):
+        flash(mensaje_ok, 'ok')
+    else:
+        flash(resultado.get('error') or mensaje_error, 'error')
 
     return redirect(url_for('web.admin.cursadas.index'))

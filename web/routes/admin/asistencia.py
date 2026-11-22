@@ -1,7 +1,7 @@
 """Pantalla admin: tomar asistencia de hoy y marcar presente (QR / código / padrón)."""
 from flask import Blueprint, jsonify, render_template, request, redirect, url_for, flash
 
-from web.auth_sesion import admin_required, redirigir_a_login_sin_sesion, redirigir_sin_permiso, tiene_permiso
+from web.auth_sesion import admin_required, exige_permiso, redirigir_a_login_sin_sesion, tiene_permiso
 from web.constants import PERMISO_ASISTENCIAS_GESTIONAR, PERMISO_ASISTENCIAS_LEER
 from web.cursada_filtro import elegida
 from web.routes.admin.panel import _token, contexto_admin
@@ -56,8 +56,10 @@ def _exige_json(permiso: str):
 @asistencia_bp.route('/asistencia')
 @admin_required
 def index():
-    if not (tiene_permiso(PERMISO_ASISTENCIAS_LEER) or tiene_permiso(PERMISO_ASISTENCIAS_GESTIONAR)):
-        return redirigir_sin_permiso()
+    bloqueo = exige_permiso(PERMISO_ASISTENCIAS_LEER, PERMISO_ASISTENCIAS_GESTIONAR)
+
+    if bloqueo:
+        return bloqueo
 
     clase = {}
 
@@ -167,8 +169,10 @@ def marcar(clase_id):
 @asistencia_bp.route('/asistencia/listado')
 @admin_required
 def listado():
-    if not tiene_permiso(PERMISO_ASISTENCIAS_LEER):
-        return redirigir_sin_permiso()
+    bloqueo = exige_permiso(PERMISO_ASISTENCIAS_LEER)
+
+    if bloqueo:
+        return bloqueo
 
     token = _token()
     clases_res = servicio.listar_clases(token, cursada_id=elegida(token).get('id'))
@@ -254,8 +258,10 @@ def listado():
 @asistencia_bp.route('/asistencia/clases/<int:clase_id>/cerrar', methods=['POST'])
 @admin_required
 def cerrar(clase_id):
-    if not tiene_permiso(PERMISO_ASISTENCIAS_GESTIONAR):
-        return redirigir_sin_permiso()
+    bloqueo = exige_permiso(PERMISO_ASISTENCIAS_GESTIONAR)
+
+    if bloqueo:
+        return bloqueo
 
     resultado = servicio.cerrar_clase(_token(), clase_id)
 

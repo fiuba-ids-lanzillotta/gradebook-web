@@ -3,9 +3,10 @@ from flask import Blueprint, flash, redirect, render_template, request, url_for
 
 from web.auth_sesion import (
     admin_required,
+    exige_permiso,
     redirigir_a_login_sin_sesion,
-    redirigir_sin_permiso,
     tiene_permiso,
+    volver_con_mensaje,
 )
 from web.constants import (
     PERMISO_EVALUACIONES_GESTIONAR,
@@ -19,29 +20,14 @@ from web.services import evaluaciones as servicio
 categorias_bp = Blueprint('categorias', __name__)
 
 
-def _exige(permiso: str):
-    if tiene_permiso(permiso):
-        return None
-
-    return redirigir_sin_permiso()
-
-
 def _volver(resultado: dict, mensaje_ok: str):
-    if resultado.get('unauthorized'):
-        return redirigir_a_login_sin_sesion()
-
-    if resultado.get('ok'):
-        flash(mensaje_ok, 'ok')
-    else:
-        flash(resultado.get('error') or 'No se pudo completar.', 'error')
-
-    return redirect(url_for('web.admin.categorias.index'))
+    return volver_con_mensaje(resultado, mensaje_ok, url_for('web.admin.categorias.index'))
 
 
 @categorias_bp.route('/categorias')
 @admin_required
 def index():
-    bloqueo = _exige(PERMISO_EVALUACIONES_LEER)
+    bloqueo = exige_permiso(PERMISO_EVALUACIONES_LEER)
 
     if bloqueo:
         return bloqueo
@@ -65,7 +51,7 @@ def index():
 @categorias_bp.route('/categorias', methods=['POST'])
 @admin_required
 def crear():
-    bloqueo = _exige(PERMISO_EVALUACIONES_GESTIONAR)
+    bloqueo = exige_permiso(PERMISO_EVALUACIONES_GESTIONAR)
 
     if bloqueo:
         return bloqueo
@@ -93,7 +79,7 @@ def crear():
 @categorias_bp.route('/categorias/<int:evaluacion_id>/grupos', methods=['POST'])
 @admin_required
 def grupos(evaluacion_id):
-    bloqueo = _exige(PERMISO_GRUPOS_HABILITAR)
+    bloqueo = exige_permiso(PERMISO_GRUPOS_HABILITAR)
 
     if bloqueo:
         return bloqueo

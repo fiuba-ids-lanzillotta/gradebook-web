@@ -1,7 +1,7 @@
 """Pantalla del alumno: su equipo en la evaluación con creación habilitada."""
-from flask import Blueprint, flash, redirect, render_template, request, session, url_for
+from flask import Blueprint, render_template, request, session, url_for
 
-from web.auth_sesion import login_required, redirigir_a_login_sin_sesion
+from web.auth_sesion import login_required, redirigir_a_login_sin_sesion, volver_con_mensaje
 from web.services import grupos as servicio
 
 equipo_bp = Blueprint('equipo', __name__)
@@ -82,12 +82,4 @@ def salir():
 
 
 def _volver(resultado: dict, mensaje_ok: str):
-    if resultado.get('unauthorized'):
-        return redirigir_a_login_sin_sesion()
-
-    if resultado.get('ok'):
-        flash(mensaje_ok, 'ok')
-    else:
-        flash(resultado.get('error') or 'No se pudo completar.', 'error')
-
-    return redirect(url_for('web.site.equipo.index'))
+    return volver_con_mensaje(resultado, mensaje_ok, url_for('web.site.equipo.index'))
