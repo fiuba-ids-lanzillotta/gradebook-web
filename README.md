@@ -177,6 +177,7 @@ Notas:
 | Ruta                        | Auth     | Descripción                                                          |
 |-----------------------------|----------|----------------------------------------------------------------------|
 | `/`                         | alumno   | Inicio de la zona alumno (hoy: landing base, pendiente "Novedades").   |
+| `/equipo`                   | alumno   | Su equipo en la evaluación con creación habilitada: crear, renombrar (owner), sumar integrantes por padrón y salir. |
 | `/items`                    | alumno   | Recurso de ejemplo `items`.                                          |
 | `/admin/login`              | —        | Login compartido (valida contra `POST /login` de la API + reCAPTCHA). |
 | `/admin/logout`             | —        | Cierra la sesión.                                                    |
@@ -189,10 +190,12 @@ Notas:
 | `/admin/cursadas`           | docente* | Cursada: cuatrimestre vigente + historial (alta y edición).          |
 | `/admin/equipos`            | docente* | Equipos de las evaluaciones grupales de la cursada elegida (tutores).|
 | `/admin/equipos/{id}`       | docente* | Detalle del equipo: renombrar, sumar/echar/transferir integrantes.  |
+| `/admin/categorias`         | docente* | Categorías (evaluaciones) de la cursada elegida: alta y habilitar la creación de equipos. |
+| `/admin/registros`          | docente* | Auditoría del backoffice: filtros por mail, acción, Admin/Alumno y orden por horario. |
 
 \* Las pantallas de docente están gateadas por permisos (`PERMISO_*` en `web/constants.py`); el
 sidebar solo muestra las solapas habilitadas. Solapas declaradas pero sin pantalla todavía:
-dashboards, categorías, registros, entregas, vista general (ver `.agents/skills/add-page`).
+dashboards, entregas, vista general (ver `.agents/skills/add-page`).
 
 ## Tests
 
