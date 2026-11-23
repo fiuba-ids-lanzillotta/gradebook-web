@@ -10,6 +10,13 @@ def crear(token: str, cursada_id: int, datos: dict) -> dict:
     return pedir_api(token, 'POST', f'/cursadas/{cursada_id}/evaluaciones', json_body=datos, ok=(201,))
 
 
+def cambiar_visibilidad(token: str, evaluacion_id: int, visibilidad: str) -> dict:
+    return pedir_api(
+        token, 'PUT', f'/evaluaciones/{evaluacion_id}/visibilidad',
+        json_body={'visibilidad': visibilidad}, ok=(200,),
+    )
+
+
 def habilitar_grupos(token: str, evaluacion_id: int, habilitado: bool) -> dict:
     return pedir_api(
         token, 'PUT', f'/evaluaciones/{evaluacion_id}/crear-grupos',

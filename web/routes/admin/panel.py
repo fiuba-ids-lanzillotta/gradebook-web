@@ -30,12 +30,15 @@ from web.constants import (
     PERMISO_ESTUDIANTES_LEER,
     PERMISO_ESTUDIANTES_MODIFICAR,
     PERMISO_ESTUDIANTES_REACTIVAR,
+    PERMISO_EVALUACIONES_GESTIONAR,
     PERMISO_EVALUACIONES_LEER,
+    PERMISO_NOTAS_LEER,
     PERMISO_REGISTROS_LEER,
 )
 from web.cursada_filtro import elegida, guardar, opciones
 from web.services.docentes import obtener_docente
 from web.services import estudiantes as servicio
+from web.services import notas as notas_servicio
 
 panel_bp = Blueprint('panel', __name__)
 
@@ -401,8 +404,177 @@ def dar_de_alta(estudiante_id):
     return render_template('admin/panel.html', **_contexto_listado(listado, error=resultado.get('error'))), 400
 
 
+ESTADOS = {
+    'aprobado_desaprobado': (('aprobado', 'Aprobado'), ('desaprobado', 'Desaprobado')),
+    'entregado_no_entregado': (('entregado', 'Entregado'), ('no_entregado', 'No entregado')),
+}
+ETIQUETAS_ESTADO = {
+    'aprobado': 'Aprobado',
+    'desaprobado': 'Desaprobado',
+    'entregado': 'Entregado',
+    'no_entregado': 'No entregado',
+}
+ETIQUETAS_CRITERIO = {
+    'nota': 'Nota',
+    'aprobado_desaprobado': 'Aprobado / desaprobado',
+    'entregado_no_entregado': 'Entregado / no entregado',
+}
+
+
+def _nota_visible(valor) -> str:
+    if valor is None or valor == '':
+        return ''
+
+    numero = float(valor)
+
+    if numero == int(numero):
+        return str(int(numero))
+
+    return f'{numero:.2f}'.rstrip('0').rstrip('.')
+
+
 @panel_bp.route('/alumnos/<int:estudiante_id>')
 @admin_required
 def perfil(estudiante_id):
-    """Placeholder: el perfil con notas del cuatrimestre actual se arma después."""
-    return redirect(url_for('web.admin.panel.index'))
+    """Notas del alumno en las categorías habilitadas de la cursada elegida."""
+    bloqueo = exige_permiso(PERMISO_NOTAS_LEER)
+
+    if bloqueo:
+        return bloqueo
+
+    cursada = elegida(_token())
+
+    if not cursada.get('id'):
+        flash('Elegí una cursada para ver el perfil.', 'error')
+
+        return redirect(url_for('web.admin.panel.index'))
+
+    resultado = notas_servicio.calificaciones(_token(), cursada['id'], estudiante_id)
+
+    if resultado.get('unauthorized'):
+        return redirigir_a_login_sin_sesion()
+
+    if not resultado.get('ok'):
+        flash(resultado.get('error') or 'No se pudo abrir el perfil.', 'error')
+
+        return redirect(url_for('web.admin.panel.index'))
+
+    datos = resultado.get('datos') or {}
+    puede_cargar = tiene_permiso(PERMISO_EVALUACIONES_GESTIONAR)
+    categorias = _categorias_perfil(datos.get('categorias') or [], puede_cargar)
+
+    return render_template(
+        'admin/perfil.html',
+        estudiante=datos.get('estudiante') or {},
+        categorias=categorias,
+        puede_editar=any(categoria['editable'] for categoria in categorias),
+        **contexto_admin('listado'),
+    )
+
+
+def _categorias_perfil(categorias: list, puede_cargar: bool) -> list:
+    for categoria in categorias:
+        categoria['criterio_etiqueta'] = ETIQUETAS_CRITERIO.get(categoria.get('criterio'), categoria.get('criterio'))
+        categoria['opciones'] = ESTADOS.get(categoria.get('criterio'), ())
+        categoria['editable'] = bool(
+            puede_cargar and categoria.get('requiere_corrector')
+            and (categoria.get('modalidad') != 'grupal' or categoria.get('equipo'))
+        )
+
+        for instancia in categoria.get('instancias') or []:
+            instancia['nota_texto'] = _nota_visible(instancia.get('nota'))
+            instancia['estado_etiqueta'] = ETIQUETAS_ESTADO.get(instancia.get('estado') or '', '')
+
+    return categorias
+
+
+@panel_bp.route('/alumnos/<int:estudiante_id>/notas', methods=['POST'])
+@admin_required
+def guardar_nota(estudiante_id):
+    """Guarda una nota de una instancia. El corrector queda como el docente logueado."""
+    bloqueo = exige_permiso(PERMISO_EVALUACIONES_GESTIONAR)
+
+    if bloqueo:
+        return bloqueo
+
+    destino = url_for('web.admin.panel.perfil', estudiante_id=estudiante_id)
+    filas = _filas_nota(request.form)
+
+    if filas is None:
+        flash('No se pudieron leer las notas.', 'error')
+
+        return redirect(destino)
+
+    guardadas = 0
+
+    for fila in filas:
+        if fila['valor'] == fila['original'] or not fila['valor']:
+            continue
+
+        entrada = {}
+
+        if fila['modalidad'] == 'grupal':
+            if not fila['grupo_id']:
+                flash('El alumno no tiene equipo en una de las categorías.', 'error')
+
+                return redirect(destino)
+
+            entrada['grupo_id'] = fila['grupo_id']
+        else:
+            entrada['estudiante_id'] = estudiante_id
+
+        if fila['criterio'] == 'nota':
+            try:
+                entrada['nota'] = float(fila['valor'].replace(',', '.'))
+            except ValueError:
+                flash('La nota tiene que ser un número.', 'error')
+
+                return redirect(destino)
+        else:
+            entrada['estado'] = fila['valor']
+
+        resultado = notas_servicio.cargar(_token(), fila['instancia_id'], [entrada])
+
+        if resultado.get('unauthorized'):
+            return redirigir_a_login_sin_sesion()
+
+        if not resultado.get('ok'):
+            flash(resultado.get('error') or 'No se pudo guardar la nota.', 'error')
+
+            return redirect(destino)
+
+        guardadas += 1
+
+    flash('Notas guardadas.' if guardadas else 'No hay cambios para guardar.', 'ok' if guardadas else 'error')
+
+    return redirect(destino)
+
+
+def _filas_nota(form) -> list | None:
+    """Alinea las listas del formulario. None si no coinciden."""
+    claves = ('instancia_id', 'modalidad', 'criterio', 'grupo_id', 'valor', 'original')
+    columnas = {clave: form.getlist(clave) for clave in claves}
+    largo = len(columnas['instancia_id'])
+
+    if not largo or any(len(columna) != largo for columna in columnas.values()):
+        return None
+
+    filas = []
+
+    for indice in range(largo):
+        try:
+            instancia_id = int(columnas['instancia_id'][indice])
+            grupo_id = int(columnas['grupo_id'][indice]) if columnas['grupo_id'][indice] else None
+        except ValueError:
+            return None
+
+        filas.append({
+            'instancia_id': instancia_id,
+            'modalidad': columnas['modalidad'][indice],
+            'criterio': columnas['criterio'][indice],
+            'grupo_id': grupo_id,
+            'valor': columnas['valor'][indice].strip(),
+            'original': columnas['original'][indice].strip(),
+        })
+
+    return filas

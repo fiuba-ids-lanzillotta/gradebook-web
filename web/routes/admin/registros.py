@@ -18,6 +18,7 @@ LIMITE = 8
 ACCIONES = (
     ('evaluaciones.crear', 'Crear categoría'),
     ('evaluaciones.grupos', 'Habilitar creación de equipos'),
+    ('evaluaciones.visibilidad', 'Cambiar visibilidad'),
     ('grupos.crear', 'Crear equipo'),
     ('grupos.renombrar', 'Renombrar equipo'),
     ('grupos.integrante.agregar', 'Agregar integrante'),

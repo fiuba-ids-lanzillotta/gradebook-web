@@ -1125,6 +1125,66 @@ html:has(.admin-body),
 .listado.categorias .listado__tabla th.categorias__centro,
 .listado.categorias .listado__tabla td.categorias__centro { text-align: center; }
 .categorias__instancias { font-variant-numeric: tabular-nums; font-weight: 700; color: #3d6488; }
+.categorias__visibilidad {
+    width: 100%;
+    padding: 6px 8px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    background: #f9fafb;
+    font: inherit;
+    font-size: 13px;
+    color: #122f4a;
+}
+.perfil__volver { color: #3d6488; font-weight: 700; text-decoration: none; }
+.perfil__tope { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
+.perfil__acciones { display: flex; gap: 8px; margin-top: 14px; }
+.perfil__form:not(.is-editando) .perfil__guardar,
+.perfil__form:not(.is-editando) .perfil__control { display: none; }
+.perfil__form.is-editando .perfil__editar,
+.perfil__form.is-editando .perfil__valor { display: none; }
+.perfil__titulo { margin: 10px 0 8px; color: #122f4a; font-size: 28px; }
+.perfil__padron {
+    display: inline-block;
+    margin: 0 0 8px;
+    padding: 3px 12px;
+    border-radius: 999px;
+    background: #e7f4fb;
+    color: #1d6f96;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+}
+.perfil__categoria { margin-top: 22px; padding-top: 16px; border-top: 1px solid #eef2f6; }
+.perfil__cabecera h2 { margin: 0; color: #122f4a; font-size: 18px; }
+.perfil__cabecera p { margin: 4px 0 0; color: #3d6488; font-size: 13px; font-weight: 700; }
+.perfil__instancias { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 12px; }
+.perfil__instancia {
+    flex: 1 1 180px;
+    max-width: 240px;
+    padding: 12px;
+    border: 1px solid #e3ebf3;
+    border-radius: 12px;
+    background: #f8fbfe;
+}
+.perfil__instancia-nombre {
+    display: block;
+    color: #3d6488;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+.perfil__valor { display: block; margin-top: 4px; color: #122f4a; font-size: 22px; font-weight: 700; }
+.perfil__corrector { display: block; margin-top: 4px; color: #6b7280; font-size: 12px; }
+.perfil__control {
+    width: 100%;
+    margin-top: 6px;
+    padding: 6px 8px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    background: #fff;
+    font: inherit;
+}
+.perfil__vacio { margin: 8px 0 0; color: #6b7280; }
 .categorias__tick {
     display: inline-flex;
     color: #17663a;

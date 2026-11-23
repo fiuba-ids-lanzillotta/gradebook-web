@@ -6,7 +6,6 @@
 {% set tipos = {'obligatorio': 'Obligatoria', 'opcional': 'Opcional'} %}
 {% set criterios = {'nota': 'Nota', 'aprobado_desaprobado': 'Aprobado/Desaprobado', 'entregado_no_entregado': 'Entregado/N.E'} %}
 {% set modalidades = {'individual': 'Individual', 'grupal': 'Grupal'} %}
-{% set visibilidades = {'habilitado': 'Habilitada', 'deshabilitado': 'Deshabilitada', 'sin_entrega': 'No tiene'} %}
 <section class="listado categorias">
     <div class="listado__card">
         <h1 class="listado__title">Categoría</h1>
@@ -92,7 +91,18 @@
                         <td class="categorias__centro">{{ criterios.get(ev.criterio, ev.criterio) }}</td>
                         <td class="categorias__centro">{{ ev.peso if ev.peso != ev.peso|int else ev.peso|int }}</td>
                         <td class="categorias__centro">{{ modalidades.get(ev.modalidad, ev.modalidad) }}</td>
-                        <td>{{ visibilidades.get(ev.visibilidad, ev.visibilidad) }}</td>
+                        <td>
+                            {% if puede_crear %}
+                            <form method="POST" action="{{ url_for('web.admin.categorias.visibilidad', evaluacion_id=ev.id) }}">
+                                <select class="categorias__visibilidad" name="visibilidad" aria-label="Visibilidad de {{ ev.nombre }}" onchange="this.form.submit()">
+                                    <option value="deshabilitado" {% if ev.visibilidad != 'habilitado' %}selected{% endif %}>Deshabilitada</option>
+                                    <option value="habilitado" {% if ev.visibilidad == 'habilitado' %}selected{% endif %}>Habilitada</option>
+                                </select>
+                            </form>
+                            {% else %}
+                            {{ 'Habilitada' if ev.visibilidad == 'habilitado' else 'Deshabilitada' }}
+                            {% endif %}
+                        </td>
                         <td class="categorias__centro categorias__instancias">{{ ev.instancias }}</td>
                         <td class="categorias__centro">
                             {% if ev.requiere_corrector %}

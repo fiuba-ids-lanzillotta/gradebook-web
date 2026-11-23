@@ -76,6 +76,20 @@ def crear():
     return _volver(resultado, 'Categoría agregada.')
 
 
+@categorias_bp.route('/categorias/<int:evaluacion_id>/visibilidad', methods=['POST'])
+@admin_required
+def visibilidad(evaluacion_id):
+    bloqueo = exige_permiso(PERMISO_EVALUACIONES_GESTIONAR)
+
+    if bloqueo:
+        return bloqueo
+
+    resultado = servicio.cambiar_visibilidad(_token(), evaluacion_id, request.form.get('visibilidad') or '')
+    etiqueta = 'habilitada' if request.form.get('visibilidad') == 'habilitado' else 'deshabilitada'
+
+    return _volver(resultado, f'Categoría {etiqueta}.')
+
+
 @categorias_bp.route('/categorias/<int:evaluacion_id>/grupos', methods=['POST'])
 @admin_required
 def grupos(evaluacion_id):
