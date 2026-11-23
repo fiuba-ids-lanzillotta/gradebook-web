@@ -48,9 +48,13 @@
                 </span>
                 <span class="equipo__padron">{{ integrante.padron }}</span>
                 <span class="equipo__acciones">
-                    <span class="listado__icon-btn listado__icon-btn--off" title="El perfil todavía no está disponible">
+                    <a
+                        class="listado__icon-btn"
+                        href="{{ url_for('web.admin.panel.perfil', estudiante_id=integrante.id, equipo=grupo.id) }}"
+                        aria-label="Ver perfil de {{ integrante.apellido }} {{ integrante.nombre }}"
+                    >
                         <img src="{{ url_for('static', filename='img/eye.svg') }}" alt="">
-                    </span>
+                    </a>
                     {% if puede_editar %}
                     <button
                         type="button"

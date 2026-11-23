@@ -9,9 +9,14 @@
 {% block content %}
 <section class="listado perfil">
     <div class="listado__card">
+        {% if volver_equipo %}
+        <a class="perfil__volver" href="{{ url_for('web.admin.grupos.detalle', grupo_id=volver_equipo) }}">‹ Equipo</a>
+        {% else %}
         <a class="perfil__volver" href="{{ url_for('web.admin.panel.index') }}">‹ Listado</a>
+        {% endif %}
 
         <form class="perfil__form" method="POST" action="{{ url_for('web.admin.panel.guardar_nota', estudiante_id=estudiante.id) }}">
+            {% if volver_equipo %}<input type="hidden" name="equipo" value="{{ volver_equipo }}">{% endif %}
             {% for categoria, mensaje in get_flashed_messages(with_categories=True) %}
             <p class="listado__flash listado__flash--{{ categoria }}">{{ mensaje }}</p>
             {% endfor %}

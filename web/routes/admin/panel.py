@@ -406,6 +406,25 @@ def dar_de_alta(estudiante_id):
     return render_template('admin/panel.html', **_contexto_listado(listado, error=resultado.get('error'))), 400
 
 
+def _equipo_de_vuelta():
+    """Id de equipo si el perfil se abrió desde ese equipo. None si no es un id."""
+    bruto = (request.values.get('equipo') or '').strip()
+
+    if not bruto.isdigit():
+        return None
+
+    return int(bruto) or None
+
+
+def _url_perfil(estudiante_id):
+    equipo = _equipo_de_vuelta()
+
+    if equipo:
+        return url_for('web.admin.panel.perfil', estudiante_id=estudiante_id, equipo=equipo)
+
+    return url_for('web.admin.panel.perfil', estudiante_id=estudiante_id)
+
+
 @panel_bp.route('/alumnos/<int:estudiante_id>')
 @admin_required
 def perfil(estudiante_id):
@@ -441,6 +460,7 @@ def perfil(estudiante_id):
         estudiante=datos.get('estudiante') or {},
         categorias=categorias,
         puede_editar=any(categoria['editable'] for categoria in categorias),
+        volver_equipo=_equipo_de_vuelta(),
         **contexto_admin('listado'),
     )
 
@@ -454,7 +474,7 @@ def guardar_nota(estudiante_id):
     if bloqueo:
         return bloqueo
 
-    destino = url_for('web.admin.panel.perfil', estudiante_id=estudiante_id)
+    destino = _url_perfil(estudiante_id)
     filas = _filas_nota(request.form)
 
     if filas is None:
