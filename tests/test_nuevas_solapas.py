@@ -133,3 +133,66 @@ def test_salir_de_mi_equipo_post(monkeypatch, respuesta_falsa):
 
     assert capturado['method'] == 'POST'
     assert capturado['url'].endswith('/me/equipo/salir')
+
+
+# --- notas (perfil del alumno) ---
+
+def test_notas_mias_get(monkeypatch, respuesta_falsa):
+    from web.services import notas
+
+    capturado = _capturar_post_o_get(monkeypatch, respuesta_falsa, 200,
+                                     {'estudiante': {}, 'categorias': []})
+
+    resultado = notas.mias('token')
+
+    assert capturado['method'] == 'GET'
+    assert capturado['url'].endswith('/me/calificaciones')
+    assert resultado['ok']
+
+
+# --- notas_vista: preparar_categorias ---
+
+def test_preparar_categorias_etiquetas_y_notas():
+    from web.notas_vista import preparar_categorias
+
+    categorias = preparar_categorias([
+        {'nombre': 'Parcial', 'criterio': 'nota', 'modalidad': 'individual',
+         'requiere_corrector': True,
+         'instancias': [{'nombre': '1er parcial', 'nota': 8.0, 'estado': None},
+                        {'nombre': 'Recup', 'nota': 7.25, 'estado': None}]},
+        {'nombre': 'TP', 'criterio': 'aprobado_desaprobado', 'modalidad': 'grupal',
+         'requiere_corrector': True, 'equipo': {'id': 9, 'nombre': 'Halcones'},
+         'instancias': [{'nombre': 'Entrega', 'nota': None, 'estado': 'aprobado'}]},
+    ], puede_cargar=True)
+
+    parcial, tp = categorias
+    assert parcial['criterio_etiqueta'] == 'Nota'
+    assert parcial['opciones'] == ()
+    assert parcial['editable'] is True
+    assert [i['nota_texto'] for i in parcial['instancias']] == ['8', '7.25']
+
+    assert tp['editable'] is True
+    assert tp['opciones'] == (('aprobado', 'Aprobado'), ('desaprobado', 'Desaprobado'))
+    assert tp['instancias'][0]['estado_etiqueta'] == 'Aprobado'
+
+
+def test_preparar_categorias_grupal_sin_equipo_no_editable():
+    from web.notas_vista import preparar_categorias
+
+    categorias = preparar_categorias([
+        {'criterio': 'nota', 'modalidad': 'grupal', 'requiere_corrector': True,
+         'equipo': None, 'instancias': []},
+    ], puede_cargar=True)
+
+    assert categorias[0]['editable'] is False
+
+
+def test_preparar_categorias_sin_permiso_nunca_editable():
+    from web.notas_vista import preparar_categorias
+
+    categorias = preparar_categorias([
+        {'criterio': 'nota', 'modalidad': 'individual', 'requiere_corrector': True,
+         'instancias': []},
+    ], puede_cargar=False)
+
+    assert categorias[0]['editable'] is False

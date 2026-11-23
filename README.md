@@ -52,8 +52,9 @@ gradebook-web/
 │   ├── constants.py             # API_BASE_URL, API_KEY, api_headers(), RECAPTCHA_SITE_KEY,
 │   │                            #   MATERIA_CODIGO, fallbacks CURSADA_*, códigos PERMISO_*
 │   ├── auth_sesion.py            # Helpers de sesión: login_required, admin_required, tiene_permiso
+│   ├── notas_vista.py           # Etiquetas/editable del perfil de notas (docente y alumno)
 │   ├── routes/                  # Blueprints (presentación / flujo)
-│   │   ├── site/                #   Zona alumno (sin prefijo, login): home, equipo, items (ejemplo)
+│   │   ├── site/                #   Zona alumno (sin prefijo, login): home, equipo, perfil, items (ejemplo)
 │   │   └── admin/               #   Backoffice docente (/admin): auth, panel, asistencia,
 │   │                            #   docentes, cursadas, grupos, categorias, registros,
 │   │                            #   items (ejemplo)
@@ -67,22 +68,24 @@ gradebook-web/
 │       ├── materias.py          #   Catálogo de materias
 │       ├── grupos.py            #   Equipo del alumno (mi equipo, crear/renombrar/salir)
 │       ├── evaluaciones.py      #   Categorías/evaluaciones y habilitación de equipos
+│       ├── notas.py             #   Calificaciones (perfil del alumno, carga docente)
 │       ├── registros.py         #   Auditoría del backoffice
 │       ├── items.py            #   Recurso de ejemplo
 │       └── respuestas_api.py    #   pedir_api + helpers para errores / 401-403
 │
 ├── templates/
-│   ├── base.html                # Layout base (navbar, bloques) — site + auth
+│   ├── base.html                # Layout base (bloques) — site + auth
+│   ├── components/              #   perfil_notas.html (perfil de notas compartido)
 │   ├── 404.html
 │   ├── site/                    # base_alumno.html (navbar del alumno), inicio.html,
-│   │                            #   equipo.html, items.html
+│   │                            #   equipo.html, perfil.html, items.html
 │   └── admin/                   # base_admin.html (layout con sidebar de solapas), login.html,
 │                                #   recuperar.html, cambiar_contrasena.html, panel.html,
 │                                #   asistencia.html, asistencia_listado.html, docentes.html,
 │                                #   cursadas.html, equipos.html, equipo.html, categorias.html,
-│                                #   registros.html, items.html
+│                                #   registros.html, perfil.html, items.html
 ├── static/
-│   ├── css/                     # common.css, site.css, admin.css, alumno.css
+│   ├── css/                     # common.css, site.css, admin.css, alumno.css, perfil.css
 │   ├── img/                     # Íconos del sidebar (nav-*.svg) e imágenes
 │   └── js/                      # main.js + un script por sección (asistencia, asistencia_listado,
 │                                #   cursadas, cursada-filtro, docentes, equipos, alumno-equipo)
@@ -185,12 +188,14 @@ Notas:
 |-----------------------------|----------|----------------------------------------------------------------------|
 | `/`                         | alumno   | Inicio de la zona alumno (hoy: landing base, pendiente "Novedades").   |
 | `/equipo`                   | alumno   | Su equipo en la evaluación con creación habilitada: crear, renombrar (owner), sumar integrantes por padrón y salir. |
+| `/perfil`                   | alumno   | Su perfil de notas (mismas categorías/instancias que ve el docente), solo lectura. |
 | `/items`                    | alumno   | Recurso de ejemplo `items`.                                          |
 | `/admin/login`              | —        | Login compartido (valida contra `POST /login` de la API + reCAPTCHA). |
 | `/admin/logout`             | —        | Cierra la sesión.                                                    |
 | `/admin/recuperar`          | —        | Solicita mail de recuperación de contraseña.                         |
 | `/admin/cambiar-contrasena` | —        | Define contraseña nueva desde el link del mail (`?token=`).          |
 | `/admin/`                   | docente  | Listado de alumnos del cuatrimestre: alta, edición, baja/abandono, CSV.|
+| `/admin/alumnos/{id}`       | docente* | Perfil de notas del alumno (categorías habilitadas, instancias, corrección).|
 | `/admin/docentes`           | docente* | Gestión de docentes (listar, crear, editar, desactivar, permisos).    |
 | `/admin/asistencia`         | docente* | Toma de asistencia del día (QR / código / padrón).                   |
 | `/admin/asistencia/listado` | docente* | Asistencias por clase (filtros por estado y búsqueda).               |
