@@ -875,3 +875,55 @@ def test_equipos_lista_los_de_la_cursada_elegida(client, monkeypatch):
     assert 'Equipo1' in html
     assert 'Cerrar grupos' not in html
     assert 'cursada_id' not in html or '1' in html
+
+
+# --- perfil del alumno (/perfil) ---
+
+def test_perfil_sin_sesion_redirige_a_login(client):
+    respuesta = client.get('/perfil')
+
+    assert respuesta.status_code == 302
+
+
+def test_perfil_ok_renderiza_categorias(client, monkeypatch, respuesta_falsa):
+    _sesion_estudiante(client)
+    monkeypatch.setattr(requests, 'request', lambda *args, **kwargs: respuesta_falsa(200, {
+        'estudiante': {'id': 1, 'nombre': 'Luz', 'apellido': 'Perez', 'padron': '111111'},
+        'categorias': [{
+            'nombre': 'Parcial', 'criterio': 'nota', 'modalidad': 'individual',
+            'requiere_corrector': True,
+            'instancias': [{'id': 10, 'numero': 1, 'nombre': '1er parcial',
+                            'nota': 8, 'estado': None, 'corrector': None}],
+        }],
+    }))
+
+    respuesta = client.get('/perfil')
+
+    assert respuesta.status_code == 200
+    html = respuesta.get_data(as_text=True)
+    assert 'Luz' in html
+    assert 'Parcial' in html
+    assert 'Editar' not in html
+
+
+def test_perfil_error_de_api_no_rompe(client, monkeypatch):
+    _sesion_estudiante(client)
+
+    def _cae(*args, **kwargs):
+        raise requests.exceptions.ConnectionError('down')
+
+    monkeypatch.setattr(requests, 'request', _cae)
+
+    respuesta = client.get('/perfil')
+
+    assert respuesta.status_code == 200
+    assert 'conectar' in respuesta.get_data(as_text=True)
+
+
+def test_perfil_401_cierra_sesion_y_redirige(client, monkeypatch, respuesta_falsa):
+    _sesion_estudiante(client)
+    monkeypatch.setattr(requests, 'request', lambda *args, **kwargs: respuesta_falsa(401, {}))
+
+    respuesta = client.get('/perfil')
+
+    assert respuesta.status_code == 302
