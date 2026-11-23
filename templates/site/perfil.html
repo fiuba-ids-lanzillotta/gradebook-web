@@ -1,0 +1,16 @@
+{% extends "site/base_alumno.html" %}
+
+{% block title %}Perfil · Gradebook{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/perfil.css') }}">
+{% endblock %}
+
+{% block content %}
+<section class="alumno-card perfil">
+    {% if error %}
+    <p class="alumno-flash alumno-flash--error">{{ error }}</p>
+    {% endif %}
+    {% include "components/perfil_notas.html" %}
+</section>
+{% endblock %}

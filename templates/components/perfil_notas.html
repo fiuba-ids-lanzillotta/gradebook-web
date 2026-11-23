@@ -1,0 +1,66 @@
+<div class="perfil__tope">
+    <div>
+        <h1 class="perfil__titulo">{{ estudiante.nombre }} {{ estudiante.apellido }}</h1>
+        <p class="perfil__padron">{{ estudiante.padron }}</p>
+    </div>
+    {% if puede_editar %}
+    <div class="perfil__acciones">
+        <button type="button" class="btn-outline perfil__editar">Editar</button>
+        <button type="submit" class="btn-solid perfil__guardar">Guardar</button>
+    </div>
+    {% endif %}
+</div>
+
+{% for categoria in categorias %}
+<article class="perfil__categoria">
+    <header class="perfil__cabecera">
+        <h2>{{ categoria.nombre }}</h2>
+        <p>
+            {{ categoria.criterio_etiqueta }}
+            {% if categoria.modalidad == 'grupal' %}
+            · {% if categoria.equipo %}Equipo {{ categoria.equipo.nombre }}{% else %}Sin equipo{% endif %}
+            {% endif %}
+        </p>
+    </header>
+    {% if categoria.instancias %}
+    <div class="perfil__instancias">
+        {% for instancia in categoria.instancias %}
+        <div class="perfil__instancia">
+            <span class="perfil__instancia-nombre">{{ instancia.nombre }}</span>
+            <span class="perfil__valor">
+                {% if categoria.criterio == 'nota' %}
+                {{ instancia.nota_texto or '—' }}
+                {% else %}
+                {{ instancia.estado_etiqueta or '—' }}
+                {% endif %}
+            </span>
+            {% if categoria.editable %}
+            <input type="hidden" name="instancia_id" value="{{ instancia.id }}">
+            <input type="hidden" name="modalidad" value="{{ categoria.modalidad }}">
+            <input type="hidden" name="criterio" value="{{ categoria.criterio }}">
+            <input type="hidden" name="grupo_id" value="{{ categoria.equipo.id if categoria.equipo else '' }}">
+            <input type="hidden" name="original" value="{% if categoria.criterio == 'nota' %}{{ instancia.nota_texto }}{% else %}{{ instancia.estado or '' }}{% endif %}">
+            {% if categoria.criterio == 'nota' %}
+            <input class="perfil__control" type="number" name="valor" min="0" max="10" step="0.01" inputmode="decimal" value="{{ instancia.nota_texto }}" aria-label="Nota de {{ instancia.nombre }}">
+            {% else %}
+            <select class="perfil__control" name="valor" aria-label="Estado de {{ instancia.nombre }}">
+                <option value="" {% if not instancia.estado %}selected{% endif %}>Elegir</option>
+                {% for codigo, etiqueta in categoria.opciones %}
+                <option value="{{ codigo }}" {% if instancia.estado == codigo %}selected{% endif %}>{{ etiqueta }}</option>
+                {% endfor %}
+            </select>
+            {% endif %}
+            {% endif %}
+            {% if instancia.corrector %}
+            <span class="perfil__corrector">Corregido por {{ instancia.corrector.apellido }}</span>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p class="perfil__vacio">Esta categoría no tiene instancias.</p>
+    {% endif %}
+</article>
+{% else %}
+<p class="listado__vacio">No hay categorías habilitadas en esta cursada.</p>
+{% endfor %}

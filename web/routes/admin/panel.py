@@ -39,6 +39,7 @@ from web.cursada_filtro import elegida, guardar, opciones
 from web.services.docentes import obtener_docente
 from web.services import estudiantes as servicio
 from web.services import notas as notas_servicio
+from web.notas_vista import preparar_categorias
 
 panel_bp = Blueprint('panel', __name__)
 
@@ -404,35 +405,6 @@ def dar_de_alta(estudiante_id):
     return render_template('admin/panel.html', **_contexto_listado(listado, error=resultado.get('error'))), 400
 
 
-ESTADOS = {
-    'aprobado_desaprobado': (('aprobado', 'Aprobado'), ('desaprobado', 'Desaprobado')),
-    'entregado_no_entregado': (('entregado', 'Entregado'), ('no_entregado', 'No entregado')),
-}
-ETIQUETAS_ESTADO = {
-    'aprobado': 'Aprobado',
-    'desaprobado': 'Desaprobado',
-    'entregado': 'Entregado',
-    'no_entregado': 'No entregado',
-}
-ETIQUETAS_CRITERIO = {
-    'nota': 'Nota',
-    'aprobado_desaprobado': 'Aprobado / desaprobado',
-    'entregado_no_entregado': 'Entregado / no entregado',
-}
-
-
-def _nota_visible(valor) -> str:
-    if valor is None or valor == '':
-        return ''
-
-    numero = float(valor)
-
-    if numero == int(numero):
-        return str(int(numero))
-
-    return f'{numero:.2f}'.rstrip('0').rstrip('.')
-
-
 @panel_bp.route('/alumnos/<int:estudiante_id>')
 @admin_required
 def perfil(estudiante_id):
@@ -461,7 +433,7 @@ def perfil(estudiante_id):
 
     datos = resultado.get('datos') or {}
     puede_cargar = tiene_permiso(PERMISO_EVALUACIONES_GESTIONAR)
-    categorias = _categorias_perfil(datos.get('categorias') or [], puede_cargar)
+    categorias = preparar_categorias(datos.get('categorias') or [], puede_cargar)
 
     return render_template(
         'admin/perfil.html',
@@ -470,22 +442,6 @@ def perfil(estudiante_id):
         puede_editar=any(categoria['editable'] for categoria in categorias),
         **contexto_admin('listado'),
     )
-
-
-def _categorias_perfil(categorias: list, puede_cargar: bool) -> list:
-    for categoria in categorias:
-        categoria['criterio_etiqueta'] = ETIQUETAS_CRITERIO.get(categoria.get('criterio'), categoria.get('criterio'))
-        categoria['opciones'] = ESTADOS.get(categoria.get('criterio'), ())
-        categoria['editable'] = bool(
-            puede_cargar and categoria.get('requiere_corrector')
-            and (categoria.get('modalidad') != 'grupal' or categoria.get('equipo'))
-        )
-
-        for instancia in categoria.get('instancias') or []:
-            instancia['nota_texto'] = _nota_visible(instancia.get('nota'))
-            instancia['estado_etiqueta'] = ETIQUETAS_ESTADO.get(instancia.get('estado') or '', '')
-
-    return categorias
 
 
 @panel_bp.route('/alumnos/<int:estudiante_id>/notas', methods=['POST'])

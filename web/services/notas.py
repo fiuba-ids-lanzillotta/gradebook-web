@@ -13,3 +13,7 @@ def cargar(token: str, instancia_id: int, notas: list) -> dict:
         token, 'PUT', f'/instancias/{instancia_id}/notas',
         json_body={'notas': notas}, ok=(200,),
     )
+
+
+def mias(token: str) -> dict:
+    return pedir_api(token, 'GET', '/me/calificaciones', ok=(200,))

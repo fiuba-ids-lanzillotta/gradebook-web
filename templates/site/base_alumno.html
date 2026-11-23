@@ -6,6 +6,7 @@
     <title>{% block title %}Gradebook{% endblock %}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/common.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/alumno.css') }}?v=12">
+    {% block head %}{% endblock %}
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Afacad:wght@400;500;600;700&family=Akatab:wght@400;500;700&display=swap" rel="stylesheet">
@@ -42,10 +43,10 @@
                         <span class="alumno-cuenta__rol">Alumno</span>
                     </span>
                 </div>
-                <span class="alumno-cuenta__item alumno-cuenta__item--off" title="El perfil todavía no está disponible">
+                <a class="alumno-cuenta__item" href="{{ url_for('web.site.perfil.index') }}">
                     <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.2" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M5.5 19.2c1.4-3 3.6-4.4 6.5-4.4s5.1 1.4 6.5 4.4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
                     Ver perfil
-                </span>
+                </a>
                 <a class="alumno-cuenta__item alumno-cuenta__item--salir" href="{{ url_for('web.admin.auth.logout') }}">
                     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 7V5.8A1.8 1.8 0 0 1 11.8 4h6.4A1.8 1.8 0 0 1 20 5.8v12.4a1.8 1.8 0 0 1-1.8 1.8h-6.4A1.8 1.8 0 0 1 10 18.2V17" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M4 12h10M11 8.5 14.5 12 11 15.5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
                     Cerrar sesión
