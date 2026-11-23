@@ -170,6 +170,7 @@
         const elegido = estado.value;
         const coinciden = filas.map((_, indice) => indice).filter((indice) => {
             const mismoEstado = !elegido || filas[indice].dataset.estado === elegido;
+
             return mismoEstado && textoFila(indice).includes(consulta);
         });
         const total = Math.max(1, Math.ceil(coinciden.length / POR_PAGINA));

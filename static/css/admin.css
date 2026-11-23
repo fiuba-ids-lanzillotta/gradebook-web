@@ -1125,17 +1125,26 @@ button.listado__pagina {
 .categorias__alta-grid { grid-template-columns: 1.2fr 0.9fr 1.2fr 0.55fr 0.6fr 0.9fr 0.9fr auto; }
 .listado.categorias .listado__tabla { table-layout: fixed; }
 .listado.categorias .listado__tabla th,
-.listado.categorias .listado__tabla td { width: 10.5%; }
+.listado.categorias .listado__tabla td { text-align: left; }
+.listado.categorias .listado__tabla th:nth-child(1),
+.listado.categorias .listado__tabla td:nth-child(1) { width: 13%; }
+.listado.categorias .listado__tabla th:nth-child(4),
+.listado.categorias .listado__tabla td:nth-child(4),
+.listado.categorias .listado__tabla th:nth-child(7),
+.listado.categorias .listado__tabla td:nth-child(7),
+.listado.categorias .listado__tabla th:nth-child(8),
+.listado.categorias .listado__tabla td:nth-child(8) { width: 8%; }
+.listado.categorias .listado__tabla th:nth-child(6),
+.listado.categorias .listado__tabla td:nth-child(6) { width: 16%; }
 .listado.categorias .listado__tabla th:nth-child(9),
-.listado.categorias .listado__tabla td:nth-child(9) { width: 11%; }
+.listado.categorias .listado__tabla td:nth-child(9) { width: 12%; }
 .listado.categorias .listado__tabla th:last-child,
 .listado.categorias .listado__tabla td:last-child { width: 5%; }
-.listado.categorias .listado__tabla th.categorias__centro,
-.listado.categorias .listado__tabla td.categorias__centro { text-align: center; }
 .categorias__instancias { font-variant-numeric: tabular-nums; font-weight: 700; color: #3d6488; }
 .categorias__visibilidad {
     width: 100%;
-    padding: 6px 8px;
+    max-width: 100%;
+    padding: 6px 20px 6px 8px;
     border: 1px solid #d1d5db;
     border-radius: 8px;
     background: #f9fafb;
@@ -1319,6 +1328,65 @@ button.listado__pagina {
 .registros__orden a.is-actual { color: #00A0E3; }
 @media (max-width: 980px) {
     .categorias__alta-grid { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 720px) {
+    .listado.categorias .categorias__alta-grid { grid-template-columns: 1fr; }
+    .listado.categorias .listado__card { padding: 20px 14px; }
+    .listado.categorias .listado__tabla { table-layout: auto; width: 100%; }
+    .listado.categorias .listado__tabla th,
+    .listado.categorias .listado__tabla td,
+    .listado.categorias .listado__tabla th:nth-child(n),
+    .listado.categorias .listado__tabla td:nth-child(n) { width: auto; max-width: none; }
+    .listado.categorias .listado__tabla tr {
+        border: 1px solid #e3e9f0;
+        border-radius: 12px;
+        padding: 12px 14px;
+        margin-bottom: 12px;
+        background: #fff;
+    }
+    .listado.categorias .listado__tabla tr:last-child { border-bottom: 1px solid #e3e9f0; }
+    .listado.categorias .listado__tabla td {
+        align-items: center;
+        padding: 6px 0;
+        width: 100%;
+    }
+    .listado.categorias .listado__tabla td.categorias__nombre {
+        display: block;
+        font-weight: 700;
+        color: #122f4a;
+        font-size: 16px;
+        padding-bottom: 8px;
+        margin-bottom: 4px;
+        border-bottom: 1px solid #eef2f6;
+    }
+    .listado.categorias .listado__tabla td.categorias__nombre::before { content: none; }
+    .listado.categorias .listado__tabla td.categorias__celda-visibilidad {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 6px;
+        justify-content: stretch;
+    }
+    .listado.categorias .listado__tabla td.categorias__celda-visibilidad::before {
+        justify-self: start;
+    }
+    .listado.categorias .listado__tabla td.categorias__celda-visibilidad form {
+        width: 100%;
+        min-width: 0;
+    }
+    .listado.categorias .categorias__visibilidad {
+        width: 100%;
+        min-height: 38px;
+        font-size: 14px;
+    }
+    .listado.categorias .listado__tabla td.listado__acciones {
+        justify-content: flex-end;
+        padding-top: 8px;
+        margin-top: 4px;
+        border-top: 1px solid #eef2f6;
+    }
+    .listado.categorias .listado__tabla td.listado__acciones::before { content: none; }
+    .listado.categorias .listado__vacio { display: block; text-align: center; }
+    .listado.categorias .listado__vacio::before { content: none; }
 }
 .listado__icon-btn--off { opacity: 0.45; cursor: default; }
 .cursada__marca {

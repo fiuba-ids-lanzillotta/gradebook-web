@@ -4,7 +4,7 @@
 
 {% block content %}
 {% set tipos = {'obligatorio': 'Obligatoria', 'opcional': 'Opcional'} %}
-{% set criterios = {'nota': 'Nota', 'aprobado_desaprobado': 'Aprobado/Desaprobado', 'entregado_no_entregado': 'Entregado/N.E'} %}
+{% set criterios = {'nota': 'Nota', 'aprobado_desaprobado': 'Aprobado/N.A', 'entregado_no_entregado': 'Entregado/N.E'} %}
 {% set modalidades = {'individual': 'Individual', 'grupal': 'Grupal'} %}
 <section class="listado categorias">
     <div class="listado__card">
@@ -38,7 +38,7 @@
                     <select name="criterio" required>
                         <option value="" disabled selected>Criterio</option>
                         <option value="nota">Nota</option>
-                        <option value="aprobado_desaprobado">Aprobado/Desaprobado</option>
+                        <option value="aprobado_desaprobado">Aprobado/N.A</option>
                         <option value="entregado_no_entregado">Entregado/N.E</option>
                     </select>
                 </label>
@@ -70,14 +70,14 @@
             <table class="listado__tabla">
                 <thead>
                     <tr>
-                        <th class="categorias__centro">Evaluación</th>
-                        <th class="categorias__centro">Tipo</th>
-                        <th class="categorias__centro">Criterio</th>
-                        <th class="categorias__centro">Peso</th>
-                        <th class="categorias__centro">Modalidad</th>
+                        <th>Evaluación</th>
+                        <th>Tipo</th>
+                        <th>Criterio</th>
+                        <th>Peso</th>
+                        <th>Modalidad</th>
                         <th>Visibilidad</th>
-                        <th class="categorias__centro">Instancias</th>
-                        <th class="categorias__centro">Corrector</th>
+                        <th>Instancias</th>
+                        <th>Corrector</th>
                         <th>Crear grupos</th>
                         <th></th>
                     </tr>
@@ -86,12 +86,12 @@
                     {% set hay_activa = evaluaciones | selectattr('permite_crear_grupos') | list %}
                     {% for ev in evaluaciones %}
                     <tr>
-                        <td class="categorias__centro">{{ ev.nombre }}</td>
-                        <td class="categorias__centro">{{ tipos.get(ev.tipo, ev.tipo) }}</td>
-                        <td class="categorias__centro">{{ criterios.get(ev.criterio, ev.criterio) }}</td>
-                        <td class="categorias__centro">{{ ev.peso if ev.peso != ev.peso|int else ev.peso|int }}</td>
-                        <td class="categorias__centro">{{ modalidades.get(ev.modalidad, ev.modalidad) }}</td>
-                        <td>
+                        <td data-label="Evaluación" class="categorias__nombre">{{ ev.nombre }}</td>
+                        <td data-label="Tipo">{{ tipos.get(ev.tipo, ev.tipo) }}</td>
+                        <td data-label="Criterio">{{ criterios.get(ev.criterio, ev.criterio) }}</td>
+                        <td data-label="Peso">{{ ev.peso if ev.peso != ev.peso|int else ev.peso|int }}</td>
+                        <td data-label="Modalidad">{{ modalidades.get(ev.modalidad, ev.modalidad) }}</td>
+                        <td data-label="Visibilidad" class="categorias__celda-visibilidad">
                             {% if puede_crear %}
                             <form method="POST" action="{{ url_for('web.admin.categorias.visibilidad', evaluacion_id=ev.id) }}">
                                 <select class="categorias__visibilidad" name="visibilidad" aria-label="Visibilidad de {{ ev.nombre }}" onchange="this.form.submit()">
@@ -103,8 +103,8 @@
                             {{ 'Habilitada' if ev.visibilidad == 'habilitado' else 'Deshabilitada' }}
                             {% endif %}
                         </td>
-                        <td class="categorias__centro categorias__instancias">{{ ev.instancias }}</td>
-                        <td class="categorias__centro">
+                        <td data-label="Instancias" class="categorias__instancias">{{ ev.instancias }}</td>
+                        <td data-label="Corrector">
                             {% if ev.requiere_corrector %}
                             <span class="categorias__tick" title="Requiere corrector" aria-label="Requiere corrector">
                                 <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.2 8.2 6.4 11.4 12.8 4.6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -113,7 +113,7 @@
                             <span class="categorias__no">—</span>
                             {% endif %}
                         </td>
-                        <td>
+                        <td data-label="Crear grupos">
                             {% if ev.modalidad == 'grupal' %}
                             {% set ocupada = hay_activa and not ev.permite_crear_grupos %}
                             <form method="POST" action="{{ url_for('web.admin.categorias.grupos', evaluacion_id=ev.id) }}">
@@ -134,7 +134,7 @@
                             <span class="categorias__no">—</span>
                             {% endif %}
                         </td>
-                        <td>
+                        <td class="listado__acciones">
                             <span class="listado__icon-btn listado__icon-btn--off" title="Editar todavía no está disponible">
                                 <img src="{{ url_for('static', filename='img/edit.svg') }}" alt="">
                             </span>

@@ -12,7 +12,7 @@ ETIQUETAS_ESTADO = {
 }
 ETIQUETAS_CRITERIO = {
     'nota': 'Nota',
-    'aprobado_desaprobado': 'Aprobado / desaprobado',
+    'aprobado_desaprobado': 'Aprobado/N.A',
     'entregado_no_entregado': 'Entregado / no entregado',
 }
 
