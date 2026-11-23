@@ -235,6 +235,7 @@ html:has(.admin-body),
     background: #3d9a5a;
     flex-shrink: 0;
 }
+.cursada-filtro__marca[hidden] { display: none; }
 .cursada-filtro input {
     width: auto;
     flex: 0 1 auto;
@@ -454,6 +455,13 @@ html:has(.admin-body),
     display: inline-flex;
     align-items: center;
     justify-content: center;
+}
+button.listado__pagina {
+    border: none;
+    background: transparent;
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
 }
 .listado__pagina:hover { background: #e8f4fb; }
 .listado__pagina.is-current { background: #00A0E3; color: #fff; }
@@ -1134,6 +1142,54 @@ html:has(.admin-body),
     font: inherit;
     font-size: 13px;
     color: #122f4a;
+}
+.vista__hoja { display: flex; align-items: flex-start; width: 100%; min-width: 0; }
+.vista__nombres { flex: 0 0 auto; width: auto; border-right: 1px solid #e8eef4; }
+.vista__wrap { overflow-x: auto; flex: 1 1 auto; width: 0; min-width: 0; }
+.vista__wrap .vista__tabla { width: max-content; }
+.vista__tabla { border-collapse: separate; border-spacing: 0; }
+.vista__tabla thead th,
+.vista__tabla td {
+    box-sizing: border-box;
+    height: 44px;
+    padding: 0 10px;
+    line-height: 44px;
+    text-align: left;
+    white-space: nowrap;
+    vertical-align: middle;
+    background: #fff;
+    border-bottom: 1px solid #f0f2f5;
+}
+.vista__tabla thead tr:first-child th { height: 32px; line-height: 32px; }
+.vista__grupo { color: #3d6488; border-bottom: 1px solid #eef2f6; }
+.vista__nombre { font-weight: 600; color: #122f4a; }
+.vista__padron,
+.vista__nota { font-variant-numeric: tabular-nums; font-weight: 700; color: #122f4a; }
+.vista__corrector { white-space: nowrap; color: #3d6488; font-size: 13px; }
+.vista__estado { font-weight: 700; white-space: nowrap; }
+.vista__estado--cursando { color: #17663a; }
+.vista__estado--abandono { color: #b42318; }
+.vista__estado--baja { color: #1d6f96; }
+.listado.vista .listado__buscar select {
+    padding: 8px 10px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    background: #f9fafb;
+    font: inherit;
+    color: #122f4a;
+}
+.vista__movil { display: none; }
+@media (max-width: 720px) {
+    .vista__escritorio { display: none; }
+    .vista__movil {
+        display: block;
+        margin: 28px auto 12px;
+        max-width: 280px;
+        text-align: center;
+        color: #3d6488;
+        font-weight: 600;
+        line-height: 1.45;
+    }
 }
 .categorias__tick {
     display: inline-flex;

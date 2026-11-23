@@ -67,6 +67,7 @@ SOLAPA_PERMISO = {
     'equipos': PERMISO_ESTUDIANTES_LEER,
     'categorias': PERMISO_EVALUACIONES_LEER,
     'registros': PERMISO_REGISTROS_LEER,
+    'vista': PERMISO_NOTAS_LEER,
     'asistencia': PERMISO_ASISTENCIAS_LEER,
     'docentes': PERMISO_DOCENTES_LEER,
 }

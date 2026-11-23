@@ -1,0 +1,207 @@
+{% extends "admin/base_admin.html" %}
+
+{% block title %}Vista general · Gradebook{% endblock %}
+
+{% block content %}
+<section class="listado vista">
+    <div class="listado__card">
+        <h1 class="listado__title">Vista general</h1>
+        {% if cursada_filtro %}
+        <p class="listado__cursada">{{ cursada_filtro.cuatrimestre }}C {{ cursada_filtro.anio }}{% if cursada_filtro.codigo %} · {{ cursada_filtro.codigo }}{% endif %}</p>
+        {% endif %}
+
+        {% if error %}
+        <p class="listado__flash listado__flash--error">{{ error }}</p>
+        {% endif %}
+
+        <p class="vista__movil">La vista general no está disponible en el celular. Abrila desde una computadora.</p>
+
+        <div class="vista__escritorio">
+        <div class="listado__buscar">
+            <input type="search" id="vista-buscar" placeholder="Buscar" aria-label="Buscar" autocomplete="off">
+            <select id="vista-estado" aria-label="Estado">
+                <option value="">Estado</option>
+                <option value="cursando">Cursando</option>
+                <option value="abandono">Abandonó</option>
+                <option value="baja">Se dió de baja</option>
+            </select>
+        </div>
+
+        <div class="vista__hoja">
+            <table class="listado__tabla vista__tabla vista__nombres">
+                <thead>
+                    <tr><th>&nbsp;</th></tr>
+                    <tr><th>Apellido, Nombre</th></tr>
+                </thead>
+                <tbody id="vista-nombres">
+                    {% for alumno in alumnos %}
+                    <tr class="vista__fila">
+                        <td class="vista__nombre">{{ alumno.apellido }}, {{ alumno.nombre }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <div class="vista__wrap">
+                <table class="listado__tabla vista__tabla">
+                    <thead>
+                        <tr>
+                            <th>&nbsp;</th>
+                            <th>&nbsp;</th>
+                            <th>&nbsp;</th>
+                            {% for categoria in categorias %}
+                            {% if categoria.instancias %}
+                            <th class="vista__grupo" colspan="{{ categoria.instancias|length * 2 }}">{{ categoria.nombre }}</th>
+                            {% endif %}
+                            {% endfor %}
+                        </tr>
+                        <tr>
+                            <th>Padrón</th>
+                            <th>Correo</th>
+                            <th>Estado</th>
+                            {% for categoria in categorias %}
+                            {% for instancia in categoria.instancias %}
+                            <th>{{ instancia.nombre }}</th>
+                            <th>Corrector</th>
+                            {% endfor %}
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody id="vista-cuerpo">
+                        {% for alumno in alumnos %}
+                        <tr class="vista__fila" data-estado="{{ alumno.estado }}">
+                            <td class="vista__padron">{{ alumno.padron }}</td>
+                            <td>{{ alumno.email }}</td>
+                            <td><span class="vista__estado vista__estado--{{ alumno.estado }}">{{ alumno.estado_etiqueta }}</span></td>
+                            {% for categoria in categorias %}
+                            {% for instancia in categoria.instancias %}
+                            {% set celda = alumno.notas[instancia.id|string] %}
+                            <td class="vista__nota">{{ celda.valor }}</td>
+                            <td class="vista__corrector">{{ celda.corrector }}</td>
+                            {% endfor %}
+                            {% endfor %}
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <p id="vista-vacio" class="listado__vacio" hidden>No hay alumnos para ese filtro.</p>
+        <nav class="listado__paginas" id="vista-paginas" aria-label="Paginación" hidden></nav>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const POR_PAGINA = 10;
+    const buscar = document.getElementById('vista-buscar');
+    const estado = document.getElementById('vista-estado');
+    const cuerpo = document.getElementById('vista-cuerpo');
+    const paginas = document.getElementById('vista-paginas');
+    const vacio = document.getElementById('vista-vacio');
+    const nombres = document.getElementById('vista-nombres');
+    const filasNombre = nombres ? [...nombres.querySelectorAll('.vista__fila')] : [];
+    const filas = cuerpo ? [...cuerpo.querySelectorAll('.vista__fila')] : [];
+    let pagina = 1;
+
+    const normalizar = (texto) => texto.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+
+    const textoFila = (indice) => normalizar(
+        filasNombre[indice].textContent + ' ' + [...filas[indice].cells].slice(0, 3).map((celda) => celda.textContent).join(' ')
+    );
+
+    const numeros = (total, actual) => {
+        if (total <= 7) {
+            return Array.from({ length: total }, (_, indice) => indice + 1);
+        }
+
+        const marcas = [1, total, actual - 1, actual, actual + 1].filter((numero) => numero >= 1 && numero <= total);
+        const unicos = [...new Set(marcas)].sort((a, b) => a - b);
+
+        return unicos.reduce((lista, numero) => {
+            if (lista.length && numero - lista[lista.length - 1] > 1) {
+                lista.push('…');
+            }
+            lista.push(numero);
+
+            return lista;
+        }, []);
+    };
+
+    const dibujarPaginas = (total) => {
+        paginas.replaceChildren();
+        paginas.hidden = total <= 1;
+
+        const agregar = (etiqueta, destino, actual) => {
+            const boton = document.createElement('button');
+            boton.type = 'button';
+            boton.className = 'listado__pagina' + (actual ? ' is-current' : '');
+            boton.textContent = etiqueta;
+            if (destino) {
+                boton.addEventListener('click', () => {
+                    pagina = destino;
+                    mostrar();
+                });
+            }
+            paginas.appendChild(boton);
+        };
+
+        if (pagina > 1) {
+            agregar('‹', pagina - 1);
+        }
+        numeros(total, pagina).forEach((numero) => {
+            if (numero === '…') {
+                const puntos = document.createElement('span');
+                puntos.className = 'listado__pagina listado__pagina--ellipsis';
+                puntos.textContent = '…';
+                paginas.appendChild(puntos);
+            } else {
+                agregar(String(numero), numero, numero === pagina);
+            }
+        });
+        if (pagina < total) {
+            agregar('›', pagina + 1);
+        }
+    };
+
+    const mostrar = () => {
+        const consulta = normalizar(buscar.value.trim());
+        const elegido = estado.value;
+        const coinciden = filas.map((_, indice) => indice).filter((indice) => {
+            const mismoEstado = !elegido || filas[indice].dataset.estado === elegido;
+            return mismoEstado && textoFila(indice).includes(consulta);
+        });
+        const total = Math.max(1, Math.ceil(coinciden.length / POR_PAGINA));
+
+        if (pagina > total) {
+            pagina = total;
+        }
+
+        const desde = (pagina - 1) * POR_PAGINA;
+        const visibles = new Set(coinciden.slice(desde, desde + POR_PAGINA));
+
+        filas.forEach((_, indice) => {
+            const ocultar = !visibles.has(indice);
+            filas[indice].hidden = ocultar;
+            filasNombre[indice].hidden = ocultar;
+        });
+        vacio.hidden = coinciden.length > 0;
+        dibujarPaginas(coinciden.length ? total : 0);
+    };
+
+    if (buscar && filas.length) {
+        buscar.addEventListener('input', () => {
+            pagina = 1;
+            mostrar();
+        });
+        estado.addEventListener('change', () => {
+            pagina = 1;
+            mostrar();
+        });
+        mostrar();
+    } else if (vacio) {
+        vacio.hidden = filas.length > 0;
+    }
+</script>
+{% endblock %}

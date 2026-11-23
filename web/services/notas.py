@@ -17,3 +17,9 @@ def cargar(token: str, instancia_id: int, notas: list) -> dict:
 
 def mias(token: str) -> dict:
     return pedir_api(token, 'GET', '/me/calificaciones', ok=(200,))
+
+
+def vista(token: str, cursada_id: int, q: str = '') -> dict:
+    params = {'q': q} if q else None
+
+    return pedir_api(token, 'GET', f'/cursadas/{cursada_id}/vista', params=params, ok=(200,))

@@ -17,6 +17,21 @@ ETIQUETAS_CRITERIO = {
 }
 
 
+def etiqueta_estado(criterio: str, estado: str) -> str:
+    """Sin entrega cargada, una categoría de entrega figura como no entregada."""
+    if not estado and criterio == 'entregado_no_entregado':
+        return ETIQUETAS_ESTADO['no_entregado']
+
+    return ETIQUETAS_ESTADO.get(estado or '', '')
+
+
+def valor_celda(criterio: str, nota, estado: str) -> str:
+    if criterio == 'nota':
+        return _nota_visible(nota)
+
+    return etiqueta_estado(criterio, estado)
+
+
 def preparar_categorias(categorias: list, puede_cargar: bool) -> list:
     for categoria in categorias:
         categoria['criterio_etiqueta'] = ETIQUETAS_CRITERIO.get(categoria.get('criterio'), categoria.get('criterio'))
@@ -28,7 +43,7 @@ def preparar_categorias(categorias: list, puede_cargar: bool) -> list:
 
         for instancia in categoria.get('instancias') or []:
             instancia['nota_texto'] = _nota_visible(instancia.get('nota'))
-            instancia['estado_etiqueta'] = ETIQUETAS_ESTADO.get(instancia.get('estado') or '', '')
+            instancia['estado_etiqueta'] = etiqueta_estado(categoria.get('criterio'), instancia.get('estado') or '')
 
     return categorias
 
