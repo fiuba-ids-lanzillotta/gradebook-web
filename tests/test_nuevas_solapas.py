@@ -196,3 +196,40 @@ def test_preparar_categorias_sin_permiso_nunca_editable():
     ], puede_cargar=False)
 
     assert categorias[0]['editable'] is False
+
+
+# --- planilla de la cursada (vista) ---
+
+def test_notas_vista_get_sin_q(monkeypatch, respuesta_falsa):
+    from web.services import notas
+
+    capturado = _capturar_post_o_get(monkeypatch, respuesta_falsa, 200,
+                                     {'categorias': [], 'alumnos': []})
+
+    resultado = notas.vista('token', 3)
+
+    assert capturado['method'] == 'GET'
+    assert capturado['url'].endswith('/cursadas/3/vista')
+    assert capturado['params'] is None
+    assert resultado['ok']
+
+
+def test_notas_vista_get_con_q(monkeypatch, respuesta_falsa):
+    from web.services import notas
+
+    capturado = _capturar_post_o_get(monkeypatch, respuesta_falsa, 200, {})
+
+    notas.vista('token', 3, q='perez')
+
+    assert capturado['params'] == {'q': 'perez'}
+
+
+def test_valor_celda_por_criterio():
+    from web.notas_vista import valor_celda
+
+    assert valor_celda('nota', 8.5, None) == '8.5'
+    assert valor_celda('nota', 8.0, None) == '8'
+    assert valor_celda('nota', None, None) == ''
+    assert valor_celda('aprobado_desaprobado', None, 'aprobado') == 'Aprobado'
+    assert valor_celda('entregado_no_entregado', None, None) == 'No entregado'
+    assert valor_celda('entregado_no_entregado', None, 'entregado') == 'Entregado'

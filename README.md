@@ -196,6 +196,7 @@ Notas:
 | `/admin/cambiar-contrasena` | —        | Define contraseña nueva desde el link del mail (`?token=`).          |
 | `/admin/`                   | docente  | Listado de alumnos del cuatrimestre: alta, edición, baja/abandono, CSV.|
 | `/admin/alumnos/{id}`       | docente* | Perfil de notas del alumno (categorías habilitadas, instancias, corrección).|
+| `/admin/vista`              | docente* | Planilla de la cursada elegida: inscriptos con estado y la nota de cada instancia. |
 | `/admin/docentes`           | docente* | Gestión de docentes (listar, crear, editar, desactivar, permisos).    |
 | `/admin/asistencia`         | docente* | Toma de asistencia del día (QR / código / padrón).                   |
 | `/admin/asistencia/listado` | docente* | Asistencias por clase (filtros por estado y búsqueda).               |
@@ -207,7 +208,7 @@ Notas:
 
 \* Las pantallas de docente están gateadas por permisos (`PERMISO_*` en `web/constants.py`); el
 sidebar solo muestra las solapas habilitadas. Solapas declaradas pero sin pantalla todavía:
-dashboards, entregas, vista general (ver `.agents/skills/add-page`).
+dashboards, entregas (ver `.agents/skills/add-page`).
 
 ## Tests
 

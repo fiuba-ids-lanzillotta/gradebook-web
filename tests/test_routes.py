@@ -927,3 +927,91 @@ def test_perfil_401_cierra_sesion_y_redirige(client, monkeypatch, respuesta_fals
     respuesta = client.get('/perfil')
 
     assert respuesta.status_code == 302
+
+
+# --- planilla docente (/admin/vista) ---
+
+def test_vista_sin_sesion_redirige(client):
+    respuesta = client.get('/admin/vista')
+
+    assert respuesta.status_code == 302
+
+
+def test_vista_sin_permiso_redirige(client, monkeypatch):
+    _sesion_docente(client, [])
+    monkeypatch.setattr('web.routes.admin.panel.opciones', lambda token: [])
+
+    respuesta = client.get('/admin/vista')
+
+    assert respuesta.status_code == 302
+
+
+def test_vista_ok_renderiza_planilla(client, monkeypatch):
+    _sesion_docente(client, ['notas.leer'])
+    monkeypatch.setattr('web.routes.admin.vista.elegida', lambda token: {'id': 3})
+    monkeypatch.setattr('web.services.notas.vista', lambda token, cursada_id, q='': {
+        'ok': True,
+        'datos': {
+            'categorias': [{
+                'id': 1, 'nombre': 'Parcial', 'criterio': 'nota',
+                'instancias': [{'id': 10, 'nombre': '1er parcial', 'numero': 1}],
+            }],
+            'alumnos': [{
+                'id': 4, 'apellido': 'Perez', 'nombre': 'Luz', 'padron': '111111',
+                'email': 'l@x', 'estado': 'cursando',
+                'notas': {'10': {'nota': 8, 'estado': None, 'corrector': 'Gomez'}},
+            }],
+        },
+    })
+
+    respuesta = client.get('/admin/vista')
+
+    assert respuesta.status_code == 200
+    html = respuesta.get_data(as_text=True)
+    assert 'Perez' in html
+    assert 'Parcial' in html
+    assert 'Cursando' in html
+
+
+def test_vista_sin_cursada_elegida_no_rompe(client, monkeypatch):
+    _sesion_docente(client, ['notas.leer'])
+    monkeypatch.setattr('web.routes.admin.vista.elegida', lambda token: {})
+
+    respuesta = client.get('/admin/vista')
+
+    assert respuesta.status_code == 200
+
+
+# --- perfil del alumno abierto desde un equipo ---
+
+def test_perfil_desde_equipo_vuelve_al_equipo(client, monkeypatch):
+    _sesion_docente(client, ['notas.leer'])
+    monkeypatch.setattr('web.routes.admin.panel.elegida', lambda token: {'id': 3})
+    monkeypatch.setattr('web.services.notas.calificaciones',
+                        lambda token, cursada_id, estudiante_id: {
+                            'ok': True,
+                            'datos': {'estudiante': {'id': 4, 'nombre': 'Luz', 'apellido': 'Perez'},
+                                      'categorias': []},
+                        })
+
+    respuesta = client.get('/admin/alumnos/4?equipo=9')
+
+    assert respuesta.status_code == 200
+    html = respuesta.get_data(as_text=True)
+    assert '/equipos/9' in html
+    assert 'name="equipo" value="9"' in html
+
+
+def test_perfil_sin_equipo_vuelve_al_listado(client, monkeypatch):
+    _sesion_docente(client, ['notas.leer'])
+    monkeypatch.setattr('web.routes.admin.panel.elegida', lambda token: {'id': 3})
+    monkeypatch.setattr('web.services.notas.calificaciones',
+                        lambda token, cursada_id, estudiante_id: {
+                            'ok': True,
+                            'datos': {'estudiante': {'id': 4}, 'categorias': []},
+                        })
+
+    respuesta = client.get('/admin/alumnos/4')
+
+    assert respuesta.status_code == 200
+    assert 'name="equipo"' not in respuesta.get_data(as_text=True)
